@@ -2,25 +2,26 @@
 
 ## Layout Architecture
 
+- 프론트엔드와 백엔드는 독립 애플리케이션으로 관리한다. 프론트엔드의 패키지 매니페스트, lockfile, 빌드 도구 설정은 [`frontend/`](./frontend/) 안에 두며, 백엔드가 추가되면 백엔드의 의존성과 실행 설정은 [`backend/`](./backend/) 안에 둔다. 저장소 루트에는 애플리케이션별 설정을 임의로 섞지 않는다.
 - 이 애플리케이션은 SPA(Single Page Application)와 CSR(Client-Side Rendering) 방식으로 구현한다. 페이지 이동 시 전체 문서를 새로고침하지 않고 React Router가 라우트를 전환하며, 공통 레이아웃은 유지한 채 가운데 콘텐츠만 교체한다.
 - 모든 일반 서비스 페이지는 `AppLayout`의 3단 구조를 유지한다.
   - 왼쪽: 항상 표시되는 주 네비게이션
   - 가운데: 현재 라우트의 피드 또는 페이지 콘텐츠
   - 오른쪽: 보조 정보 영역
-- 좌측 네비게이션은 페이지마다 새로 만들거나 숨기지 않는다. 공통 레이아웃은 [`src/components/layout/AppLayout.jsx`](./src/components/layout/AppLayout.jsx)와 [`src/components/layout/LeftNav.jsx`](./src/components/layout/LeftNav.jsx)를 사용한다.
+- 좌측 네비게이션은 페이지마다 새로 만들거나 숨기지 않는다. 공통 레이아웃은 [`frontend/src/components/layout/AppLayout.jsx`](./frontend/src/components/layout/AppLayout.jsx)와 [`frontend/src/components/layout/LeftNav.jsx`](./frontend/src/components/layout/LeftNav.jsx)를 사용한다.
 - 라우트에 따라 변경되는 것은 가운데 영역이어야 한다. 새 페이지는 `AppLayout`을 우회하여 독자적인 전체 화면 셸을 만들지 말고, `MainColumn`과 `RightAside`를 사용해 콘텐츠를 배치한다.
 - 좌측 네비게이션의 현재 위치와 선택 상태는 URL 및 React Router의 라우트 상태로 관리한다. 메뉴 이동에는 `Link`, `NavLink`, `useNavigate`를 사용하고, 동일한 네비게이션 상태를 별도의 `useState`로 중복 관리하지 않는다.
 - 상단 탭은 페이지 내부의 표시 필터 또는 하위 콘텐츠 전환이므로 해당 페이지 컴포넌트의 `useState`로 관리한다. 탭 변경 때문에 URL 라우트를 변경하거나 전체 페이지를 다시 렌더링하는 방식으로 구현하지 않는다.
 - 오른쪽 영역은 현재 비어 있을 수 있지만 의도적으로 예약된 확장 영역이다. 새 페이지에서 임의로 가운데 콘텐츠를 오른쪽까지 확장하거나 오른쪽 영역을 제거하지 않는다. 추후 검색, 추천, 지원 현황, 연동 정보 등의 기능이 추가될 수 있도록 `RightAside`의 폭과 위치를 보존한다.
 - 오른쪽 영역에 내용이 필요하지 않은 페이지도 `RightAside`를 유지한다. 필요할 때만 페이지별 보조 카드나 정보를 채운다.
-- 반응형 변경이 필요한 경우에도 데스크톱의 좌측·가운데·우측 관계를 우선 보존하고, 기존 [`AppLayout.css`](./src/components/layout/AppLayout.css)의 반응형 정책과 충돌하지 않게 한다.
+- 반응형 변경이 필요한 경우에도 데스크톱의 좌측·가운데·우측 관계를 우선 보존하고, 기존 [`AppLayout.css`](./frontend/src/components/layout/AppLayout.css)의 반응형 정책과 충돌하지 않게 한다.
 - `/onboarding`이나 이력서 편집처럼 서비스 레이아웃과 목적이 다른 독립 화면은 기존 라우트의 패턴을 따른다. 일반 서비스 페이지를 독립 화면처럼 구현하지 않는다.
 
 ## Design Patterns
 
-- 새 화면은 기존의 시각 언어와 컴포넌트 조합을 따른다. 페이지마다 새로운 카드, 버튼, 탭, 배지 스타일을 임의로 만들지 말고 `src/components/common`의 공통 컴포넌트를 우선 재사용한다.
-- 색상, 간격, 반경, 그림자, 글꼴은 [`src/styles/tokens.css`](./src/styles/tokens.css)의 디자인 토큰을 사용한다. JSX와 CSS에 새로운 하드코딩 색상값을 추가하지 않는다.
-- 컴포넌트별 스타일은 해당 컴포넌트 옆의 CSS 파일에 둔다. 전역 스타일은 [`src/styles/global.css`](./src/styles/global.css)에 이미 정의된 전역 규칙을 확장할 때만 수정한다.
+- 새 화면은 기존의 시각 언어와 컴포넌트 조합을 따른다. 페이지마다 새로운 카드, 버튼, 탭, 배지 스타일을 임의로 만들지 말고 `frontend/src/components/common`의 공통 컴포넌트를 우선 재사용한다.
+- 색상, 간격, 반경, 그림자, 글꼴은 [`frontend/src/styles/tokens.css`](./frontend/src/styles/tokens.css)의 디자인 토큰을 사용한다. JSX와 CSS에 새로운 하드코딩 색상값을 추가하지 않는다.
+- 컴포넌트별 스타일은 해당 컴포넌트 옆의 CSS 파일에 둔다. 전역 스타일은 [`frontend/src/styles/global.css`](./frontend/src/styles/global.css)에 이미 정의된 전역 규칙을 확장할 때만 수정한다.
 - 상태 표현은 기존 패턴을 따른다.
   - 선택·활성·토글: `is-active`, `is-on`, `aria-selected`, `aria-pressed`
   - 카드와 영역: `component__element` 형태의 클래스명
@@ -40,6 +41,21 @@
 - 완성된 작업은 적절한 기준 브랜치로 Pull Request를 통해 병합한다.
 - 브랜치와 커밋에는 작업 목적이 드러나는 명확한 이름을 사용한다.
 
+## API Design
+
+- API는 화면 단위로 필요한 데이터를 기준으로 설계한다. 한 페이지에서만 사용하고 해당 페이지 진입 시 항상 필요한 데이터는 별도 API로 분리하지 않고 그 페이지의 대표 리소스 응답에 포함한다.
+  - 예: 프로필 페이지에서만 쓰이는 켜진 위젯 목록과 순서는 `GET /api/users/{username}` 응답의 `widgets`에 포함한다. 같은 목적의 `GET /api/users/{username}/widgets`를 따로 만들지 않는다.
+- 페이지 진입 시 필수 데이터를 여러 API로 나누어 요청 수를 늘리지 않는다. 화면의 일부만 늦게 표시되는 현상(워터폴 요청)을 피하는 것을 기본으로 한다.
+- 아래 조건 중 하나 이상에 해당할 때만 별도 API로 분리한다.
+  - 다른 페이지나 기능에서도 독립적으로 사용되는 데이터일 때
+  - 대표 리소스와 캐싱 정책 또는 갱신 주기가 크게 다를 때
+  - 데이터가 무거워 대표 리소스의 응답 속도를 저하시킬 때
+  - 설정·편집 화면처럼 해당 데이터만 따로 조회하거나 수정해야 할 때
+- 본인만 사용하는 조회·수정 API는 `{username}` 경로 대신 `/api/users/me/...` 형태의 본인 전용 경로를 사용한다. 타인에게 공개되는 조회 응답과 본인 편집용 응답의 책임을 섞지 않는다.
+- 새 API를 추가하기 전에 기존 API 응답에 이미 포함된 데이터와 역할이 겹치지 않는지 확인한다. 응답 필드가 겹치는 API가 있다면 하나로 통합하거나 용도를 명확히 구분해 문서에 남긴다.
+- 프론트엔드에서는 화면 컴포넌트가 API 호출 방식에 직접 결합되지 않도록 한다. 데이터 조회는 서비스 함수나 hook으로 분리하고, 응답에 포함된 하위 데이터(`widgets` 등)는 페이지에서 받아 하위 컴포넌트에 props로 전달한다.
+- API를 분리하거나 통합한 결정에는 이유를 설계 문서 또는 PR 설명에 간단히 남긴다.
+
 ## Change Checklist
 
 - 새 페이지가 좌측 네비게이션과 우측 예약 영역을 유지하는가?
@@ -51,9 +67,11 @@
 - 페이지에 과도한 폼·도메인 로직이 들어갔다면 별도 컴포넌트나 hook으로 분리할 수 있는가?
 - 데스크톱 레이아웃과 기존 반응형 동작을 깨뜨리지 않는가?
 - Git Flow에 맞는 브랜치에서 작업하고 적절한 기준 브랜치로 병합할 준비가 되었는가?
+- 한 페이지에서만 쓰이는 데이터를 불필요하게 별도 API로 분리하지 않았는가?
+- 새 API가 기존 API 응답과 역할이 겹치지 않는가?
 
 ## Validation
 
-- 변경 후 최소한 `npm run build`를 실행해 React/Vite 빌드가 성공하는지 확인한다.
+- 변경 후 `frontend/`에서 `npm run build`를 실행해 React/Vite 빌드가 성공하는지 확인한다.
 - 따로 요구하지 않는 한 테스트 파일을 작성하지 않고 컴파일만으로 검사를 진행한다.
 - 레이아웃을 변경한 경우 좌측 네비게이션, 가운데 콘텐츠, 우측 영역이 함께 표시되는 주요 라우트를 확인한다.
