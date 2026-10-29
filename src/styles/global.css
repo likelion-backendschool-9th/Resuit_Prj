@@ -1,0 +1,96 @@
+/* 전역 기본 스타일 + 여러 컴포넌트가 함께 쓰는 유틸리티 */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.6;
+}
+a { color: inherit; }
+a:hover { color: var(--accent-text); }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+h1, h2, h3, p, ul, ol { margin: 0; }
+[hidden] { display: none !important; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.muted { color: var(--text-sub); }
+.text-2 { color: var(--text-2); }
+.small { font-size: 13px; }
+.xs { font-size: 12px; }
+.bold { font-weight: 700; }
+.pre-line { white-space: pre-line; }
+.row { display: flex; align-items: center; gap: 8px; }
+.row-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.grow { flex: 1; min-width: 0; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 600px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* 페이지 공통 블록 */
+.page-head { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+.page-head h1 { font-size: 19px; font-weight: 900; }
+.page-title { padding: 16px 24px 4px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.page-title h1 { font-size: 22px; font-weight: 900; }
+.page-desc { padding: 0 24px 12px; font-size: 14px; color: var(--text-sub); }
+.section { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 14px; }
+.section:last-child { border-bottom: 0; }
+.section-title { font-size: 19px; font-weight: 900; }
+.section-label { font-size: 14px; font-weight: 700; color: var(--text-sub); }
+.empty { padding: 48px 20px; text-align: center; color: var(--text-sub); }
+.text-link { color: var(--accent-text); font-weight: 700; text-decoration: none; font-size: 14px; }
+
+/* 폼 */
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field > label, .field > .label { font-size: 15px; font-weight: 700; }
+.input, .textarea {
+  width: 100%;
+  min-height: 48px; padding: 0 14px;
+  border: 1px solid var(--line-strong); border-radius: var(--radius);
+  background: var(--bg); font-size: 15px;
+}
+.textarea { padding: 14px; line-height: 1.7; resize: vertical; }
+.input:focus-visible, .textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+::placeholder { color: var(--text-sub); }
+.check { display: flex; gap: 12px; align-items: center; min-height: 44px; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); margin: 0; }
+
+/* 카드형 선택지 (공고 상세 · 공고 작성) */
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 2px solid var(--line);
+  background: var(--bg);
+}
+.choice.is-on { border-color: var(--accent); background: var(--accent-bg); }
+.choice__title { font-size: 15px; font-weight: 700; }
+.choice__desc { font-size: 13px; color: var(--text-sub); line-height: 1.5; }
+
+/* 공통 카드 */
+.card {
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 16px; background: var(--bg);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.card h2 { font-size: 17px; font-weight: 900; }
+
+/* 이력서 썸네일 */
+.resume-thumb {
+  flex: 0 0 48px; height: 60px; border-radius: 6px;
+  background: var(--accent-bg); border: 1px solid var(--accent-line);
+  display: flex; flex-direction: column; gap: 5px; padding: 9px 8px;
+}
+.resume-thumb span { height: 3px; border-radius: 2px; background: var(--accent-line); }
+.resume-thumb span:first-child { height: 4px; width: 70%; background: var(--accent); }
+.resume-thumb span:last-child { width: 60%; }

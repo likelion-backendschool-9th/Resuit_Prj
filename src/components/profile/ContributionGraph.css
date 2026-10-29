@@ -1,0 +1,11 @@
+.grass { display: flex; flex-direction: column; gap: 8px; }
+.grass__scroll { overflow-x: auto; }
+.grass__grid { display: flex; gap: 3px; width: max-content; }
+.grass__week { display: flex; flex-direction: column; gap: 3px; }
+.grass__cell { display: block; width: 10px; height: 10px; border-radius: 2px; }
+.grass__legend { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 12px; color: var(--text-sub); }
+.g0 { background: var(--grass-0); }
+.g1 { background: var(--grass-1); }
+.g2 { background: var(--grass-2); }
+.g3 { background: var(--grass-3); }
+.g4 { background: var(--grass-4); }

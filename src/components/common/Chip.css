@@ -1,0 +1,14 @@
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--text-2);
+}
+.chip--md { min-height: 34px; padding: 0 14px; font-size: 13px; }
+.chip--sm { min-height: 30px; padding: 0 12px; font-size: 12px; }
+.chip:hover { background: var(--bg-muted); }
+.chip--accent.is-on { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.chip--tech.is-on { border-color: var(--tech); background: var(--tech); color: var(--bg); font-weight: 700; }

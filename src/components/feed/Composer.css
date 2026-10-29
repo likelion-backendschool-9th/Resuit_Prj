@@ -1,0 +1,48 @@
+.composer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 60px;
+}
+.composer__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.composer__text {
+  border: 0;
+  resize: none;
+  outline: none;
+  background: none;
+  font-size: 18px;
+  line-height: 1.6;
+  padding: 4px 0;
+}
+.composer__tech {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--tech-line);
+  border-radius: var(--radius);
+  background: var(--tech-bg);
+}
+.composer__tech-label { font-size: 12px; font-weight: 700; color: var(--tech); }
+.composer__source { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); }
+.composer__source input {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 13px;
+}
+.composer__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.composer__tool { color: var(--accent-text); }

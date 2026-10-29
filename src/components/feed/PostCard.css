@@ -1,0 +1,39 @@
+.post-card {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.post-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.post-card__head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 15px; }
+.post-card__follow { margin-left: auto; }
+.post-card__text { font-size: 15px; line-height: 1.6; white-space: pre-line; }
+
+.post-card__question-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--question-bg);
+  color: var(--question);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+.post-card__question-link:hover { color: var(--question); opacity: 0.85; }
+
+.post-card__actions { display: flex; gap: 28px; flex-wrap: wrap; color: var(--text-sub); font-size: 13px; }
+.post-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-decoration: none;
+}
+.post-card__action:hover { color: var(--accent-text); }
+.post-card__action.is-liked { color: var(--like); }

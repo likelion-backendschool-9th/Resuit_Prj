@@ -1,0 +1,29 @@
+.settings-menu {
+  margin-top: 4px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.settings-menu__account { display: flex; align-items: center; gap: 10px; padding: 8px; }
+.settings-menu__divider { border: 0; height: 1px; background: var(--line); margin: 4px 0; }
+.settings-menu__item {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  text-decoration: none;
+  font-size: 14px;
+  color: var(--text);
+}
+.settings-menu__item:hover { background: var(--bg-muted); color: var(--text); }
+.settings-menu__item--danger { color: var(--danger); font-weight: 700; }
+.settings-menu__item--danger:hover { color: var(--danger); }

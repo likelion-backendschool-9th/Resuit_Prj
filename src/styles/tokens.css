@@ -1,0 +1,135 @@
+/* =========================================================
+   디자인 토큰
+   - 화면 코드에서는 색상값을 직접 쓰지 말고 아래 변수만 쓴다.
+   - 다크 모드는 [data-theme="dark"]에서 같은 이름의 값만 바꾼다.
+   ========================================================= */
+
+:root {
+  --bg: #FFFFFF;
+  --bg-sub: #F7F9F9;
+  --bg-muted: #EEF1F4;
+  --bg-input: #EFF3F4;
+  --text: #0F1419;
+  --text-2: #3A4651;
+  --text-sub: #536471;
+  --line: #E6E8EB;
+  --line-strong: #CFD9DE;
+  --shadow: 0 4px 16px rgba(15, 20, 25, 0.08);
+
+  --accent: #1A7F5A;
+  --accent-hover: #146B4B;
+  --on-accent: #FFFFFF;
+  --accent-text: #14664A;
+  --accent-bg: #F2F7F5;
+  --accent-line: #D3E8DE;
+
+  --invert-bg: #0F1419;
+  --invert-text: #FFFFFF;
+
+  --danger: #B42318;
+  --like: #C0254A;
+
+  --special: #9A3D06;
+  --special-bg: #FEF0E6;
+  --special-soft: #FFF8F3;
+  --special-line: #F3C9A5;
+
+  --question: #1D4E89;
+  --question-bg: #E8F0FB;
+
+  --tech: #0B5D57;
+  --tech-bg: #EEF8F7;
+  --tech-line: #B5DDD8;
+
+  --blog: #7A5400;
+  --blog-bg: #FFF4D6;
+
+  --repo: #5B2A9E;
+  --repo-bg: #F1EAFB;
+
+  --grass-0: #EBEDF0;
+  --grass-1: #9BE9A8;
+  --grass-2: #40C463;
+  --grass-3: #30A14E;
+  --grass-4: #216E39;
+
+  /* 아바타 (배경 / 글자) */
+  --av1-bg: #FDE7D4; --av1-fg: #8A3B0C;
+  --av2-bg: #E3E8F8; --av2-fg: #2B3F8C;
+  --av3-bg: #F3E3F5; --av3-fg: #6E2477;
+  --av4-bg: #E6F4EA; --av4-fg: #14664A;
+  --av5-bg: #DCEBFA; --av5-fg: #1D4E89;
+  --av6-bg: #E0F2F1; --av6-fg: #0B5D57;
+  --co1-bg: #0F1419; --co1-fg: #FFFFFF;
+  --co2-bg: #1D4E89; --co2-fg: #FFFFFF;
+  --co3-bg: #3A4651; --co3-fg: #FFFFFF;
+  --co4-bg: #0B5D57; --co4-fg: #FFFFFF;
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --font: 'Noto Sans KR', system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --bg: #15202B;
+  --bg-sub: #0E1621;
+  --bg-muted: #22303C;
+  --bg-input: #1E2A36;
+  --text: #E7E9EA;
+  --text-2: #B4BEC8;
+  --text-sub: #8B98A5;
+  --line: #2F3B47;
+  --line-strong: #3A4754;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  --accent: #1F9A6C;
+  --accent-hover: #24B07C;
+  --on-accent: #FFFFFF;
+  --accent-text: #6FD3A8;
+  --accent-bg: #12302A;
+  --accent-line: #24513F;
+
+  --invert-bg: #E7E9EA;
+  --invert-text: #0F1419;
+
+  --danger: #F97066;
+  --like: #F4728F;
+
+  --special: #F5A46B;
+  --special-bg: #3A2414;
+  --special-soft: #2A1D14;
+  --special-line: #6B4320;
+
+  --question: #8DB8F0;
+  --question-bg: #17283E;
+
+  --tech: #6FD1C7;
+  --tech-bg: #10302E;
+  --tech-line: #22524C;
+
+  --blog: #F0C35A;
+  --blog-bg: #3A2E10;
+
+  --repo: #C3A3F5;
+  --repo-bg: #2A1F3D;
+
+  --grass-0: #2D333B;
+  --grass-1: #0E4429;
+  --grass-2: #006D32;
+  --grass-3: #26A641;
+  --grass-4: #39D353;
+
+  --av1-bg: #4A2A14; --av1-fg: #F5B48A;
+  --av2-bg: #232E55; --av2-fg: #A9B8F2;
+  --av3-bg: #3E2142; --av3-fg: #E0A6E8;
+  --av4-bg: #173A27; --av4-fg: #6FD3A8;
+  --av5-bg: #1B3352; --av5-fg: #8DB8F0;
+  --av6-bg: #0F3633; --av6-fg: #6FD1C7;
+  --co1-bg: #E7E9EA; --co1-fg: #0F1419;
+  --co2-bg: #3A6FB0; --co2-fg: #FFFFFF;
+  --co3-bg: #5B6B7A; --co3-fg: #FFFFFF;
+  --co4-bg: #1E8077; --co4-fg: #FFFFFF;
+  color-scheme: dark;
+}

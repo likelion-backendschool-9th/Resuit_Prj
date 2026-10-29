@@ -1,0 +1,40 @@
+.common-resume {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 18px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-lg);
+  background: var(--accent-bg);
+}
+.common-resume__thumb { flex-basis: 64px; height: 80px; background: var(--bg); padding: 12px 10px; gap: 6px; }
+
+.request-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-line);
+  color: var(--accent-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.resume-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+}
+.resume-row:hover { background: var(--bg-sub); color: var(--text); }
+
+.stat { padding: 12px 4px; border-radius: var(--radius); background: var(--bg-sub); text-align: center; }
+.stat b { display: block; font-size: 22px; font-weight: 900; }

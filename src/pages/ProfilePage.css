@@ -1,0 +1,39 @@
+.profile__banner { height: 180px; background: var(--accent); }
+.profile__head {
+  padding: 0 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.profile__head-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: -56px; }
+.profile__avatar { border: 4px solid var(--bg); border-radius: 50%; }
+.profile__stats { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; color: var(--text-sub); }
+.profile__stats strong { color: var(--text); }
+.profile__sharer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--tech-bg);
+}
+.profile__edit {
+  margin: 16px 24px 0;
+  padding: 16px;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-lg);
+  background: var(--accent-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.profile__edit h2 { font-size: 16px; font-weight: 900; }
+.profile__widget { margin: 16px 24px 0; }
+.profile__widget h2 { font-size: 16px; }
+
+.skill-tag { font-size: 13px; padding: 4px 10px; border-radius: var(--radius-sm); background: var(--bg-muted); }
+
+.linked { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.linked__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
