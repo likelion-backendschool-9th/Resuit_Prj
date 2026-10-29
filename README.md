@@ -1,12 +1,15 @@
+# Resuit Proejct
+
 # Resset 웹 (React 프로토타입)
 
 이력서 피드백 SNS **Resset**의 프론트엔드 프로토타입입니다.
 React 19 + Vite 8 + React Router 7로 만들었고, Tailwind는 쓰지 않았습니다. 스타일은 일반 CSS 파일과 CSS 변수(디자인 토큰)로 작성했습니다.
-지금은 `src/data/mock.js`의 예시 데이터로 동작하며, 백엔드 API가 준비되면 이 부분만 교체하면 됩니다.
+지금은 `frontend/src/data/mock.js`의 예시 데이터로 동작하며, 백엔드 API가 준비되면 이 부분만 교체하면 됩니다.
 
 ## 실행
 
 ```bash
+cd frontend
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # dist/ 에 정적 파일 생성
@@ -15,27 +18,34 @@ npm run preview    # 빌드 결과 미리보기
 
 Node.js 20.19 이상이 필요합니다.
 
+프론트엔드 소스, Vite 설정, 의존성 및 패키지 스크립트는 모두 `frontend/`에 있습니다. 백엔드가 추가되면 백엔드 설정과 의존성도 별도의 `backend/`에 둡니다.
+
 ## 폴더 구조
 
 ```
-src/
-├─ main.jsx                    진입점 (Provider · Router 연결)
-├─ App.jsx                     라우트 정의
-├─ styles/
-│  ├─ tokens.css               색 · 반경 · 폰트 토큰 (라이트/다크)
-│  └─ global.css               기본 스타일 + 공통 유틸 클래스
-├─ data/mock.js                예시 데이터 (게시글 · 공고 · 이력서 · 피드백 · 스레드)
-├─ context/
-│  ├─ ThemeContext.jsx         다크 모드 상태
-│  └─ AppStateContext.jsx      화면 간 공유 상태 (로그인 · 피드 · 팔로우 · 지원 · 피드백 요청 · 답변)
-├─ components/
-│  ├─ layout/                  AppLayout(3단) · LeftNav · SettingsMenu
-│  ├─ common/                  Icon · Avatar · Badge · Button · Tabs · Chip · FollowButton · SearchBox · ThemeToggle
-│  ├─ feed/                    Composer(글쓰기) · PostCard · PostEmbeds(태그/블로그/레포/근거)
-│  ├─ jobs/                    JobCard
-│  ├─ feedback/                FeedbackRequestCard
-│  └─ profile/                 ContributionGraph(GitHub 잔디)
-└─ pages/                      화면 단위 컴포넌트 (아래 표)
+frontend/
+├─ package.json
+├─ package-lock.json
+├─ index.html
+├─ vite.config.js
+└─ src/
+   ├─ main.jsx                    진입점 (Provider · Router 연결)
+   ├─ App.jsx                     라우트 정의
+   ├─ styles/
+   │  ├─ tokens.css               색 · 반경 · 폰트 토큰 (라이트/다크)
+   │  └─ global.css               기본 스타일 + 공통 유틸 클래스
+   ├─ data/mock.js                예시 데이터 (게시글 · 공고 · 이력서 · 피드백 · 스레드)
+   ├─ context/
+   │  ├─ ThemeContext.jsx         다크 모드 상태
+   │  └─ AppStateContext.jsx      화면 간 공유 상태 (로그인 · 피드 · 팔로우 · 지원 · 피드백 요청 · 답변)
+   ├─ components/
+   │  ├─ layout/                  AppLayout(3단) · LeftNav · SettingsMenu
+   │  ├─ common/                  Icon · Avatar · Badge · Button · Tabs · Chip · FollowButton · SearchBox · ThemeToggle
+   │  ├─ feed/                    Composer(글쓰기) · PostCard · PostEmbeds(태그/블로그/레포/근거)
+   │  ├─ jobs/                    JobCard
+   │  ├─ feedback/                FeedbackRequestCard
+   │  └─ profile/                 ContributionGraph(GitHub 잔디)
+   └─ pages/                      화면 단위 컴포넌트 (아래 표)
 ```
 
 컴포넌트마다 같은 이름의 `.css` 파일이 옆에 있습니다. 클래스 이름은 `컴포넌트__요소`, 상태는 `is-active`/`is-on` 형태로 씁니다.
@@ -63,10 +73,10 @@ src/
 
 ## 수정 가이드
 
-- **색**: `styles/tokens.css`의 변수만 고칩니다. 화면 코드에는 색상값을 직접 쓰지 않아요. 다크 모드는 `[data-theme='dark']` 블록에서 같은 이름을 덮어써요.
-- **메뉴**: `components/layout/LeftNav.jsx` 위쪽의 `ITEMS_TOP`, `RESUME_CHILDREN`, `ITEMS_BOTTOM` 배열을 고칩니다.
-- **예시 데이터**: `data/mock.js`
-- **공유 상태와 이후 API 연동**: `context/AppStateContext.jsx`. 각 함수(`addPost`, `toggleFollow`, `toggleMyRequest`, `addFeedback` 등)를 API 호출로 바꾸면 됩니다.
+- **색**: `frontend/src/styles/tokens.css`의 변수만 고칩니다. 화면 코드에는 색상값을 직접 쓰지 않아요. 다크 모드는 `[data-theme='dark']` 블록에서 같은 이름을 덮어써요.
+- **메뉴**: `frontend/src/components/layout/LeftNav.jsx` 위쪽의 `ITEMS_TOP`, `RESUME_CHILDREN`, `ITEMS_BOTTOM` 배열을 고칩니다.
+- **예시 데이터**: `frontend/src/data/mock.js`
+- **공유 상태와 이후 API 연동**: `frontend/src/context/AppStateContext.jsx`. 각 함수(`addPost`, `toggleFollow`, `toggleMyRequest`, `addFeedback` 등)를 API 호출로 바꾸면 됩니다.
 - **라우터**: `HashRouter`를 써서 GitHub Pages 같은 정적 호스팅에서도 새로고침이 됩니다. 서버 배포로 바꾸면 `BrowserRouter`로 교체하세요. 그래서 화면 안 이동에 `href="#id"`를 쓰면 라우트로 해석되니, 스크롤은 `scrollIntoView`를 쓰세요.
 
 ## 백엔드(3계층) 연동 시 참고
