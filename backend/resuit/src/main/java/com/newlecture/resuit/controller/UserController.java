@@ -7,29 +7,31 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping ("/api/v1/users")
 public class UserController {
 
-	@GetMapping("/api/users/me")
+	@GetMapping("/me")
 	public ResponseEntity<Void> getMyProfile() {
 		return ResponseEntity.ok().build();
 	}
 
-	@PatchMapping("/api/users/me")
+	@PatchMapping("/me")
 	public ResponseEntity<Void> updateMyProfile(
 			@RequestBody(required = false) Map<String, Object> profileRequest) {
 		return ResponseEntity.ok().build();
 	}
 
-	@GetMapping("/api/users/{username}")
+	@GetMapping("/{username}")
 	public ResponseEntity<Void> getUserProfile(@PathVariable String username) {
 		return ResponseEntity.ok().build();
 	}
 
-	@GetMapping("/api/users/{username}/tweets")
+	@GetMapping("/{username}/tweets")
 	public ResponseEntity<Void> getUserTweets(
 			@PathVariable String username,
 			@RequestParam(required = false) String type,
@@ -38,7 +40,7 @@ public class UserController {
 		return ResponseEntity.ok().build();
 	}
 
-	@GetMapping("/api/users/{username}/feedbacks")
+	@GetMapping("/{username}/feedbacks")
 	public ResponseEntity<Void> getUserFeedbacks(
 			@PathVariable String username,
 			@RequestParam(required = false) Integer page,

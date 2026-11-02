@@ -9,14 +9,16 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api/v1/jobs")
 public class JobController {
 
 	// 정해진 dto 규격이 없지만 일단 작성해놓음. 참고
-	@GetMapping("/api/jobs")
+	@GetMapping("/")
 	public ResponseEntity<Void> getJobs(
 			@RequestParam(required = false) String type,
 			@RequestParam(required = false) Integer page,
@@ -24,12 +26,12 @@ public class JobController {
 		return ResponseEntity.ok().build();
 	}
 
-	@GetMapping("/api/jobs/{id}")
+	@GetMapping("/{id}")
 	public ResponseEntity<Void> getJob(@PathVariable Long id) {
 		return ResponseEntity.ok().build();
 	}
 
-	@PostMapping("/api/jobs/{jobId}/applications")
+	@PostMapping("/{jobId}/applications")
 	public ResponseEntity<Void> applyForJob(
 			@PathVariable Long jobId,
 			@RequestParam(required = false) String mode,
@@ -37,25 +39,25 @@ public class JobController {
 		return ResponseEntity.ok().build();
 	}
 
-	@DeleteMapping("/api/jobs/{jobId}/applications")
+	@DeleteMapping("/{jobId}/applications")
 	public ResponseEntity<Void> cancelApplication(@PathVariable Long jobId) {
 		return ResponseEntity.ok().build();
 	}
 
-	@PostMapping("/api/jobs")
+	@PostMapping("/")
 	public ResponseEntity<Void> createJob(
 			@RequestBody(required = false) Map<String, Object> jobRequest) {
 		return ResponseEntity.ok().build();
 	}
 
-	@PatchMapping("/api/jobs/{jobId}")
+	@PatchMapping("/{jobId}")
 	public ResponseEntity<Void> updateJob(
 			@PathVariable Long jobId,
 			@RequestBody(required = false) Map<String, Object> jobRequest) {
 		return ResponseEntity.ok().build();
 	}
 
-	@DeleteMapping("/api/jobs/{jobId}")
+	@DeleteMapping("/{jobId}")
 	public ResponseEntity<Void> deleteJob(@PathVariable Long jobId) {
 		return ResponseEntity.ok().build();
 	}
