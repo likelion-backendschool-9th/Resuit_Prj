@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -19,8 +20,15 @@ public class ResumeController {
 		return ResponseEntity.ok().build();
 	}
 
+	@GetMapping("/api/feedback-requests")
+	public ResponseEntity<Void> getFeedbackRequests(
+			@RequestParam(required = false) String category,
+			@RequestParam(required = false) Boolean mine) {
+		return ResponseEntity.ok().build();
+	}
+
 	@PostMapping("/api/feedback-requests")
-	public ResponseEntity<Void> requestCommonResumeFeedback(
+	public ResponseEntity<Void> createFeedbackRequest(
 			@RequestBody(required = false) Map<String, Object> feedbackRequest) {
 		return ResponseEntity.ok().build();
 	}
@@ -28,6 +36,28 @@ public class ResumeController {
 	@DeleteMapping("/api/feedback-requests/{requestId}")
 	public ResponseEntity<Void> cancelCommonResumeFeedback(
 			@PathVariable Long requestId) {
+		return ResponseEntity.ok().build();
+	}
+
+	@GetMapping("/api/resumes/{id}")
+	public ResponseEntity<Void> previewResume(@PathVariable Long id) {
+		return ResponseEntity.ok().build();
+	}
+
+	@GetMapping("/api/feedback-requests/{id}/comments")
+	public ResponseEntity<Void> getFeedbackComments(@PathVariable Long id) {
+		return ResponseEntity.ok().build();
+	}
+
+	@PostMapping("/api/feedback-requests/{id}/comments")
+	public ResponseEntity<Void> createFeedbackComment(
+			@PathVariable Long id,
+			@RequestBody(required = false) Map<String, Object> commentRequest) {
+		return ResponseEntity.ok().build();
+	}
+
+	@PostMapping("/api/feedbacks/{feedbackId}/adopt")
+	public ResponseEntity<Void> adoptFeedback(@PathVariable Long feedbackId) {
 		return ResponseEntity.ok().build();
 	}
 
