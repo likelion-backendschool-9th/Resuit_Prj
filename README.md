@@ -1,8 +1,18 @@
 # Resuit Proejct
 
-# Resset 웹 (React 프로토타입)
+## 로컬 PostgreSQL 데이터베이스 준비
 
-이력서 피드백 SNS **Resset**의 프론트엔드 프로토타입입니다.
+루트 `.env` 파일을 준비한 후 다음 명령어를 실행합니다.
+
+```bash
+docker compose up db
+```
+
+단순 docker compose up만 쓰면 프론트 백도 다 올라갑니다.
+
+# Resuit 웹 (React 프로토타입)
+
+이력서 피드백 SNS **Resuit**의 프론트엔드 프로토타입입니다.
 React 19 + Vite 8 + React Router 7로 만들었고, Tailwind는 쓰지 않았습니다. 스타일은 일반 CSS 파일과 CSS 변수(디자인 토큰)로 작성했습니다.
 지금은 `frontend/src/data/mock.js`의 예시 데이터로 동작하며, 백엔드 API가 준비되면 이 부분만 교체하면 됩니다.
 
