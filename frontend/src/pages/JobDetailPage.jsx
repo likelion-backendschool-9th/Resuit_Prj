@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { JOBS } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
-import Avatar from '../components/common/Avatar.jsx';
-import Badge from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
-import FollowButton from '../components/common/FollowButton.jsx';
 import Icon from '../components/common/Icon.jsx';
+import JobHead from '../components/jobs/JobHead.jsx';
+import GeneralJobDetail from '../components/jobs/GeneralJobDetail.jsx';
 import './JobDetailPage.css';
 
 const MODES = [
@@ -14,9 +13,8 @@ const MODES = [
   { id: 'blank', title: '처음부터 작성', desc: '빈 이력서에서 이 회사에 맞춰 전부 새로 작성', cta: '빈 이력서로 작성하기' }
 ];
 
-export default function JobDetailPage() {
-  const { id } = useParams();
-  const job = JOBS.find((j) => String(j.id) === id && j.type === 'special') || JOBS[0];
+// 특화 공고 상세: 요구 문항을 확인하고 특화 이력서 작성으로 넘어간다.
+function SpecialJobDetail({ job }) {
   const [mode, setMode] = useState('base');
   const current = MODES.find((m) => m.id === mode);
 
@@ -28,41 +26,22 @@ export default function JobDetailPage() {
           <h1>공고</h1>
         </div>
 
-        <div className="section" style={{ gap: 20 }}>
-          <div className="row" style={{ gap: 12 }}>
-            <Avatar initial={job.initial} color={job.av} size={56} company />
-            <div className="grow"><div className="bold">{job.company}</div><div className="small muted">@{job.handle}</div></div>
-            <FollowButton handle={job.handle} />
-          </div>
-          <div className="stack" style={{ gap: 10 }}>
-            <div className="row-wrap" style={{ gap: 6 }}>
-              <Badge tone="special" size="md">특화 공고</Badge>
-              <Badge size="md">마감 {job.dday}</Badge>
-            </div>
-            <h2 className="job-detail__title">{job.title}</h2>
-            <div className="small muted">{job.meta}</div>
-          </div>
-          <p style={{ lineHeight: 1.75 }}>{job.intro}</p>
-          <div className="grid-2">
-            <section className="job-detail__box"><h3>자격 요건</h3><ul>{job.requirements.map((r) => <li key={r}>{r}</li>)}</ul></section>
-            <section className="job-detail__box"><h3>우대 사항</h3><ul>{job.preferred.map((r) => <li key={r}>{r}</li>)}</ul></section>
-          </div>
-        </div>
+        <JobHead job={job} />
 
-        <section className="section">
-          <div className="row-wrap" style={{ justifyContent: 'space-between' }}>
+        <section className="section" style={{ padding: 24 }}>
+          <div className="row-wrap" style={{ justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
             <h3 className="section-title">회사가 요구하는 문항</h3>
             <span className="small muted">특화 이력서에 함께 작성돼요</span>
           </div>
           {job.questions.map((q, i) => (
             <div key={q.text} className="req-item">
               <span className="req-item__num">{i + 1}</span>
-              <div><div className="bold">{q.text}</div><div className="small muted">필수 · {q.limit}자 이내</div></div>
+              <div className="stack" style={{ gap: 4 }}><div className="bold">{q.text}</div><div className="small muted">필수 · {q.limit}자 이내</div></div>
             </div>
           ))}
         </section>
 
-        <section className="section">
+        <section className="section" style={{ padding: 24 }}>
           <h3 className="section-title">특화 이력서 작성 시작</h3>
           <div className="grid-2" role="radiogroup" aria-label="작성 방식">
             {MODES.map((m) => (
@@ -79,10 +58,25 @@ export default function JobDetailPage() {
       <RightAside>
         <section className="card">
           <h2>지원 방식</h2>
-          <div><div className="xs bold text-2">일반 공고</div><div className="text-2" style={{ fontSize: 14 }}>공통 이력서를 그대로 제출</div></div>
-          <div><div className="xs bold" style={{ color: 'var(--special)' }}>특화 공고</div><div className="text-2" style={{ fontSize: 14 }}>회사 요구 문항을 담은 특화 이력서를 공고에서 바로 작성해 제출</div></div>
+          <div className="stack" style={{ gap: 4 }}><span className="xs bold text-2">일반 공고</span><span className="text-2" style={{ fontSize: 14 }}>공통 이력서를 그대로 제출</span></div>
+          <div className="stack" style={{ gap: 4 }}><span className="xs bold" style={{ color: 'var(--special)' }}>특화 공고</span><span className="text-2" style={{ fontSize: 14 }}>회사 요구 문항을 담은 특화 이력서를 공고에서 바로 작성해 제출</span></div>
         </section>
+        {job.otherJobs && (
+          <section className="card" style={{ gap: 10 }}>
+            <h2>이 회사의 다른 공고</h2>
+            {job.otherJobs.map((o) => <Link key={o.label} to={o.to} style={{ textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>{o.label}</Link>)}
+          </section>
+        )}
       </RightAside>
     </>
   );
+}
+
+// /jobs/:id : 공고 종류에 맞는 상세 화면을 보여 준다.
+export default function JobDetailPage() {
+  const { id } = useParams();
+  const job = JOBS.find((j) => String(j.id) === id) || JOBS[0];
+  return job.type === 'special'
+    ? <SpecialJobDetail key={job.id} job={job} />
+    : <GeneralJobDetail key={job.id} job={job} />;
 }

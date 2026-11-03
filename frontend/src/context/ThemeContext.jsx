@@ -12,7 +12,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem('resset-theme', theme); } catch { /* 저장 불가 환경은 무시 */ }
+    try { localStorage.setItem('resuit-theme', theme); } catch { /* 저장 불가 환경은 무시 */ }
   }, [theme]);
 
   const toggleTheme = useCallback(() => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), []);

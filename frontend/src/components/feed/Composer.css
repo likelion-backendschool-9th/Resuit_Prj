@@ -45,4 +45,38 @@
   padding-top: 10px;
   border-top: 1px solid var(--line);
 }
-.composer__tool { color: var(--accent-text); }
+.composer__tool { color: var(--accent); }
+.composer__tool.is-on { background: var(--accent-bg); }
+
+.composer__code { display: flex; flex-direction: column; border: 1px solid var(--code-line); border-radius: var(--radius); overflow: hidden; }
+.composer__code-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--code-head);
+  border-bottom: 1px solid var(--code-line);
+}
+.composer__code-file {
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--code-line);
+  border-radius: 6px;
+  background: var(--code-bg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.composer__code-text {
+  border: 0;
+  resize: vertical;
+  outline: none;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  white-space: pre;
+  color: var(--code-text);
+  background: var(--code-bg);
+}

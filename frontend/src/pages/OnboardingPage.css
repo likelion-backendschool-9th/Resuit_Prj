@@ -1,7 +1,8 @@
 .onboarding { min-height: 100vh; background: var(--bg-sub); }
-.onboarding__wrap { max-width: 560px; margin: 0 auto; padding: 32px 16px 64px; display: flex; flex-direction: column; gap: 24px; }
+.onboarding__wrap { max-width: 560px; margin: 0 auto; padding: 48px 16px; display: flex; flex-direction: column; gap: 24px; }
 .onboarding__hero { text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; }
-.onboarding__brand { font-size: 34px; font-weight: 900; color: var(--accent-text); letter-spacing: -0.5px; }
+.onboarding__brand { font-size: 34px; font-weight: 900; color: var(--accent); letter-spacing: -0.5px; }
+.onboarding__tagline { font-size: 16px; color: var(--text-2); }
 
 .onboarding__steps { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .onboarding__steps li { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-sub); }
@@ -18,11 +19,17 @@
   flex-direction: column;
   gap: 18px;
 }
-.onboarding__panel h1 { font-size: 23px; font-weight: 900; }
+.onboarding__panel h1 { font-size: 22px; font-weight: 900; }
+.onboarding__panel h1.onboarding__title--lg { font-size: 24px; }
+.onboarding__desc { color: var(--text-2); line-height: 1.7; }
+.onboarding__panel .btn:not(.btn--ghost) { border-radius: var(--radius); }
+.onboarding__github { min-height: 54px; gap: 10px; }
+.onboarding__email { min-height: 48px; font-size: 15px; font-weight: 500; }
+.onboarding__next { min-height: 52px; }
 .onboarding__divider { display: flex; align-items: center; gap: 12px; color: var(--text-sub); font-size: 13px; }
 .onboarding__divider::before, .onboarding__divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .onboarding__box { padding: 0 14px; border: 1px solid var(--line); border-radius: var(--radius); }
-.onboarding__fieldset { margin: 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.onboarding__fieldset { margin: 0; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
 .onboarding__fieldset legend { font-weight: 700; padding: 0 6px; }
 .onboarding__preview {
   padding: 14px;

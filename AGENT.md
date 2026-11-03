@@ -1,4 +1,4 @@
-# Resset Web Project Guidelines
+# Resuit Web Project Guidelines
 
 ## Layout Architecture
 

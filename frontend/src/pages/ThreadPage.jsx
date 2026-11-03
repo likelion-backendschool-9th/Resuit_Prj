@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAppState } from '../context/AppStateContext.jsx';
-import { SHARER_BADGES } from '../data/mock.js';
+import { SHARER_BADGES, SIMILAR_QUESTIONS } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Avatar from '../components/common/Avatar.jsx';
 import Badge from '../components/common/Badge.jsx';
@@ -33,26 +33,26 @@ export default function ThreadPage() {
         <article className="section">
           <div className="row" style={{ gap: 12 }}>
             <Avatar initial={thread.initial} color={thread.av} size={48} />
-            <div className="grow"><div className="bold">{thread.author}</div><div className="small muted">@{thread.handle}</div></div>
+            <div className="grow"><div className="bold">{thread.author}</div><div className="muted" style={{ fontSize: 14 }}>@{thread.handle}</div></div>
             <Badge tone="question" size="md">질문</Badge>
           </div>
           <p style={{ fontSize: 20 }}>{thread.body}</p>
           <div className="row-wrap">{thread.tags.map((t) => <span key={t} className="small" style={{ color: 'var(--accent-text)' }}>#{t}</span>)}</div>
-          <div className="small muted">{thread.time}</div>
-          <div className="row muted" style={{ gap: 20, padding: '12px 0', borderTop: '1px solid var(--line)', fontSize: 14 }}>
+          <div className="muted" style={{ fontSize: 14 }}>{thread.time}</div>
+          <div className="row muted" style={{ gap: 20, padding: '12px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', fontSize: 14 }}>
             <span><strong style={{ color: 'var(--text)' }}>{thread.answers.length}</strong> 답변</span>
             <span><strong style={{ color: 'var(--text)' }}>{thread.reposts}</strong> 리포스트</span>
             <span><strong style={{ color: 'var(--text)' }}>{thread.likes}</strong> 좋아요</span>
           </div>
         </article>
 
-        <div className="post-card">
+        <div className="post-card" style={{ padding: '16px 24px' }}>
           <Avatar initial={me.initial} color={me.av} size={40} />
-          <div className="post-card__body">
+          <div className="post-card__body" style={{ gap: 10 }}>
             <label htmlFor="answer" className="small muted">@{thread.handle} 님에게 답변</label>
             <textarea
               id="answer" rows={2} placeholder="경험을 바탕으로 답변을 남겨 주세요." value={draft} onChange={(e) => setDraft(e.target.value)}
-              style={{ border: 0, outline: 'none', background: 'none', resize: 'none', fontSize: 17 }}
+              style={{ border: 0, outline: 'none', background: 'none', resize: 'none', fontSize: 17, padding: 0 }}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}><Button onClick={submit} disabled={!draft.trim()}>답변</Button></div>
           </div>
@@ -66,7 +66,6 @@ export default function ThreadPage() {
               <div className="post-card__body" style={{ gap: 6 }}>
                 <header className="post-card__head">
                   <strong>{a.author}</strong>
-                  {a.company && <Badge tone="company">기업</Badge>}
                   {SHARER_BADGES[a.handle] && <Badge tone="sharer">{SHARER_BADGES[a.handle]}</Badge>}
                   <span className="muted">@{a.handle} · {a.time}</span>
                   {a.accepted && <Badge tone="accepted">작성자가 채택</Badge>}
@@ -89,7 +88,16 @@ export default function ThreadPage() {
       </MainColumn>
 
       <RightAside>
-        <section className="card">
+        <section className="card" style={{ gap: 14 }}>
+          <h2>비슷한 질문</h2>
+          {SIMILAR_QUESTIONS.map((q) => (
+            <Link key={q.id} to="/threads/1" className="stack" style={{ gap: 2, textDecoration: 'none' }}>
+              <span className="xs bold" style={{ color: 'var(--question)' }}>답변 {q.answers}</span>
+              <span style={{ fontWeight: 500, lineHeight: 1.5 }}>{q.title}</span>
+            </Link>
+          ))}
+        </section>
+        <section className="card" style={{ gap: 8 }}>
           <h2>질문 작성자</h2>
           <Link to="/profile" className="bold" style={{ textDecoration: 'none' }}>{thread.author} @{thread.handle}</Link>
           <span className="small muted">컴퓨터공학 4학년 · 백엔드 지망</span>

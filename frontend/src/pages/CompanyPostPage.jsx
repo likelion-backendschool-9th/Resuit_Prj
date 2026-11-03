@@ -11,6 +11,7 @@ const TYPES = [
   { id: 'general', title: '일반 공고', desc: '지원자가 공통 이력서를 그대로 제출' },
   { id: 'special', title: '특화 공고', desc: '원하는 자기소개 문항을 받아 특화 이력서로 지원' }
 ];
+const NEW_QUESTION_LIMIT = 500;
 
 // 회사 계정: 공고 작성 (특화 공고면 요구 문항 편집)
 export default function CompanyPostPage() {
@@ -23,12 +24,12 @@ export default function CompanyPostPage() {
   ]);
   const special = type === 'special';
 
-  const updateQ = (id, patch) => setQuestions((qs) => qs.map((q) => (q.id === id ? { ...q, ...patch } : q)));
+  const updateQ = (id, text) => setQuestions((qs) => qs.map((q) => (q.id === id ? { ...q, text } : q)));
 
   return (
     <>
       <MainColumn>
-        <div className="page-title" style={{ paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+        <div className="page-title" style={{ alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid var(--line)' }}>
           <h1>새 채용 공고</h1>
           <span className="small muted">블루웨일 스튜디오 계정으로 게시</span>
         </div>
@@ -55,7 +56,7 @@ export default function CompanyPostPage() {
 
           {special && (
             <section className="q-box">
-              <div className="row-wrap" style={{ justifyContent: 'space-between' }}>
+              <div className="row-wrap" style={{ justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 900 }}>요구 문항</h2>
                 <span className="small muted">지원자의 특화 이력서에 그대로 들어갑니다</span>
               </div>
@@ -63,29 +64,27 @@ export default function CompanyPostPage() {
                 <div key={q.id} className="q-item">
                   <span className="q-item__num">{i + 1}</span>
                   <label className="sr-only" htmlFor={`q-${q.id}`}>문항 {i + 1}</label>
-                  <input id={`q-${q.id}`} className="q-item__text" value={q.text} placeholder="질문을 입력하세요" onChange={(e) => updateQ(q.id, { text: e.target.value })} />
-                  <label className="row small muted" style={{ gap: 6 }}>
-                    <input type="number" min={50} step={50} className="q-item__limit" value={q.limit} onChange={(e) => updateQ(q.id, { limit: Number(e.target.value) })} />자 이내
-                  </label>
-                  <IconButton label="문항 삭제" className="icon-btn--plain icon-btn--sm" onClick={() => setQuestions((qs) => qs.filter((x) => x.id !== q.id))}>
+                  <input id={`q-${q.id}`} className="q-item__text" value={q.text} placeholder="[새 문항을 입력하세요]" onChange={(e) => updateQ(q.id, e.target.value)} />
+                  <span className="small muted">{q.limit}자 이내</span>
+                  <IconButton label="문항 삭제" className="icon-btn--plain icon-btn--sm q-item__remove" onClick={() => setQuestions((qs) => qs.filter((x) => x.id !== q.id))}>
                     <Icon name="x" size={16} />
                   </IconButton>
                 </div>
               ))}
-              <button type="button" className="q-box__add" onClick={() => setQuestions((qs) => [...qs, { id: Date.now(), text: '', limit: 500 }])}>문항 추가</button>
+              <button type="button" className="q-box__add" onClick={() => setQuestions((qs) => [...qs, { id: Date.now(), text: '', limit: NEW_QUESTION_LIMIT }])}>문항 추가</button>
             </section>
           )}
 
           <div className="row" style={{ justifyContent: 'flex-end' }}>
-            <Button variant="outline">임시 저장</Button>
-            <Button onClick={() => navigate('/jobs')}>공고 게시</Button>
+            <Button variant="outline" className="company-post__action">임시 저장</Button>
+            <Button className="company-post__action" onClick={() => navigate('/')}>피드에 게시</Button>
           </div>
         </div>
       </MainColumn>
 
       <RightAside>
-        <h2 style={{ fontSize: 17, fontWeight: 900 }}>공고 목록 미리보기</h2>
-        <div className="card" style={{ gap: 10 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 900 }}>피드 미리보기</h2>
+        <div className="card" style={{ gap: 10, padding: 14 }}>
           <div className="row"><Avatar initial="B" color="co2" size={36} company /><strong style={{ fontSize: 14 }}>블루웨일 스튜디오</strong></div>
           <span style={{ alignSelf: 'flex-start' }}>
             <Badge tone={special ? 'special' : 'general'} size="md">{special ? `특화 공고 · 요구 문항 ${questions.length}개` : '일반 공고'}</Badge>

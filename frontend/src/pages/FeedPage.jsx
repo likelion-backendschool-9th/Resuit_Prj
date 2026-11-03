@@ -43,7 +43,7 @@ export default function FeedPage() {
         <Composer ref={composerRef} onPosted={() => setTab('all')} />
         {tab === 'tech' && (
           <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--line)', background: 'var(--bg-sub)' }}>
-            <ChipRadioGroup options={TECH_FILTERS} value={techFilter} onChange={setTechFilter} label="기술 태그 필터" tone="tech" size="sm" />
+            <ChipRadioGroup options={TECH_FILTERS} value={techFilter} onChange={setTechFilter} label="기술 태그 필터" tone="tech" size="filter" />
           </div>
         )}
         {visible.length ? visible.map((p) => <PostCard key={p.id} post={p} />) : <div className="empty">아직 이 탭에 글이 없어요.</div>}
