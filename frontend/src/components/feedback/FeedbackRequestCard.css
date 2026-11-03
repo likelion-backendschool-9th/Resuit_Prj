@@ -22,6 +22,8 @@
   border-radius: var(--radius-lg);
   background: var(--bg-sub);
 }
+.fb-card__input { padding: 12px; font-size: 14px; line-height: 1.6; }
+.fb-item__adopt { margin-left: auto; }
 .fb-item {
   display: flex;
   gap: 10px;

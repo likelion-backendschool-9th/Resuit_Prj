@@ -13,10 +13,14 @@
 .badge--company { background: var(--bg-muted); color: var(--text-2); border-radius: 4px; }
 .badge--general { background: var(--bg-muted); color: var(--text-2); }
 .badge--question { background: var(--question-bg); color: var(--question); }
-.badge--tech { background: var(--tech-bg); color: var(--tech); }
+.badge--tech { background: var(--tech-badge-bg); color: var(--tech); }
 .badge--blog { background: var(--blog-bg); color: var(--blog); }
 .badge--repo { background: var(--repo-bg); color: var(--repo); }
 .badge--special { background: var(--special-bg); color: var(--special); }
 .badge--accent { background: var(--accent-bg); color: var(--accent-text); }
 .badge--sharer { background: var(--tech); color: var(--bg); border-radius: 4px; }
 .badge--accepted { background: var(--accent); color: var(--on-accent); }
+.badge--verified { background: var(--av4-bg); color: var(--av4-fg); }
+.badge--invert { background: var(--invert-bg); color: var(--invert-text); }
+.badge--focus { background: var(--special-bg); color: var(--special); font-weight: 500; }
+.badge--loaded { background: var(--accent-bg); color: var(--accent-text); font-weight: 500; font-size: 12px; }

@@ -18,7 +18,8 @@ const RESUME_CHILDREN = [
 const ITEMS_BOTTOM = [
   { to: '/threads/1', icon: 'bell', label: '알림' },
   { to: '/profile', icon: 'user', label: '프로필' },
-  { to: '/company/post', icon: 'plus', label: '공고 작성', tag: '회사' }
+  { to: '/company/post', icon: 'plus', label: '공고 작성', tag: '회사' },
+  { to: '/talent', icon: 'talent', label: '인재 찾기', pill: '기업' }
 ];
 
 function NavItem({ item }) {
@@ -27,6 +28,7 @@ function NavItem({ item }) {
       <Icon name={item.icon} size={22} />
       {item.label}
       {item.tag && <span className="nav-item__tag">{item.tag}</span>}
+      {item.pill && <span className="nav-item__pill">{item.pill}</span>}
     </NavLink>
   );
 }
@@ -42,7 +44,7 @@ export default function LeftNav() {
   return (
     <nav className="left-nav" aria-label="주 메뉴">
       <div className="left-nav__top">
-        <Link to="/" className="left-nav__logo">Resset</Link>
+        <Link to="/" className="left-nav__logo">Resuit</Link>
         <ThemeToggle />
       </div>
 

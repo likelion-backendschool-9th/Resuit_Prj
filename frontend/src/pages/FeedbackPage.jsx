@@ -28,7 +28,7 @@ export default function FeedbackPage() {
         <p className="page-desc">내 이력서에서 "피드백 요청"을 누른 이력서가 여기에 올라와요. 섹션을 골라 구체적으로 남겨 주세요.</p>
         <Tabs items={TABS} value={tab} onChange={setTab} label="분야" />
         {list.length
-          ? list.map((r, i) => <FeedbackRequestCard key={r.id} request={r} defaultOpen={i === 0} />)
+          ? list.map((r) => <FeedbackRequestCard key={r.id} request={r} defaultOpen={r.id === 1} />)
           : <div className="empty">{tab === 'mine' ? '아직 피드백을 요청한 이력서가 없어요. 내 이력서에서 요청해 보세요.' : '이 분야에 올라온 이력서가 아직 없어요.'}</div>}
       </MainColumn>
 

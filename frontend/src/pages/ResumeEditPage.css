@@ -18,6 +18,7 @@
 }
 .resume-edit__toc-link { display: flex; align-items: center; min-height: 40px; padding: 0 10px; border: 0; border-radius: var(--radius-sm); background: none; text-align: left; font-size: 14px; }
 .resume-edit__toc-link:hover { background: var(--bg-muted); }
+.resume-edit__toc-link.is-active { background: var(--special-soft); font-weight: 700; }
 .resume-edit__toc-group { font-size: 12px; font-weight: 700; color: var(--text-sub); padding: 6px 10px; }
 .resume-edit__toc-group.is-req { color: var(--special); padding-top: 14px; }
 .resume-edit__form { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
@@ -37,6 +38,8 @@
 .resume-block--req { border: 2px solid var(--special-line); }
 .resume-block__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .resume-block__head h2 { font-size: 17px; font-weight: 700; }
+.resume-block__edit { margin-left: auto; min-height: 36px; padding: 0 12px; border: 0; background: none; color: var(--accent); font-size: 14px; font-weight: 700; }
+.resume-block__foot { display: flex; justify-content: space-between; gap: 12px; }
 .resume-skill { font-size: 14px; padding: 6px 12px; border-radius: var(--radius-sm); background: var(--bg-muted); }
 
 .resume-project { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); }
@@ -62,8 +65,6 @@
 .evidence-chip--blog:hover { color: var(--blog); }
 .evidence-chip--add { border: 1px dashed var(--accent); background: var(--bg); color: var(--accent-text); font-weight: 700; }
 
-.progress { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
-.progress > div { height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.2s; }
 
 @media (max-width: 800px) {
   .resume-edit__toc, .resume-edit__side { position: static; flex-basis: 100%; }

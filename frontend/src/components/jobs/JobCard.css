@@ -3,8 +3,8 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
-.job-card__body { padding: 16px; display: flex; flex-direction: column; gap: 6px; }
-.job-card__title { font-size: 17px; font-weight: 700; }
+.job-card__body { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.job-card__title { font-size: 18px; font-weight: 700; }
 .job-card__dday { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--text-sub); }
 .job-card__foot {
   display: flex;
@@ -18,3 +18,6 @@
 }
 .job-card--special { border-color: var(--special-line); }
 .job-card--special .job-card__foot { background: var(--special-soft); border-top-color: var(--special-line); }
+.job-card--compact .job-card__body { gap: 6px; }
+.job-card--compact .job-card__title { font-size: 17px; }
+.job-card--compact .job-card__foot { justify-content: flex-end; }

@@ -12,6 +12,21 @@ export function TechTags({ tags = [], source }) {
   );
 }
 
+// 글에 첨부한 사진
+export function PostImage({ src, alt }) {
+  return <img className="post-media" src={src} alt={alt} loading="lazy" />;
+}
+
+// 글에 첨부한 영상 (소리 없이 자동 재생)
+export function PostVideo({ src, poster, alt, duration }) {
+  return (
+    <div className="post-video">
+      <video className="post-media post-media--video" src={src} poster={poster} aria-label={alt} controls muted loop playsInline autoPlay preload="metadata" />
+      <span className="post-video__label">영상 · {duration}</span>
+    </div>
+  );
+}
+
 // RSS로 자동 공유된 블로그 글
 export function BlogEmbed({ blog }) {
   return (

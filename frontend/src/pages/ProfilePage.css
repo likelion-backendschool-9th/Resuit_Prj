@@ -1,4 +1,4 @@
-.profile__banner { height: 180px; background: var(--accent); }
+.profile__banner { height: 180px; background: var(--banner); }
 .profile__head {
   padding: 0 24px 20px;
   display: flex;
@@ -27,11 +27,42 @@
   background: var(--accent-bg);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
 }
 .profile__edit h2 { font-size: 16px; font-weight: 900; }
+.profile__edit-item { min-height: 40px; gap: 10px; font-size: 14px; }
 .profile__widget { margin: 16px 24px 0; }
 .profile__widget h2 { font-size: 16px; }
+
+.profile__settings-btn { min-height: 36px; }
+.profile__resume-settings {
+  margin: 0;
+  padding: 12px 14px;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.profile__resume-settings legend { padding: 0 6px; font-size: 13px; font-weight: 700; }
+.profile__order { flex: 0 0 22px; height: 22px; }
+.profile__order.is-on {
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile__no-resume { padding: 12px; border: 1px dashed var(--line-strong); border-radius: var(--radius); font-size: 14px; color: var(--text-sub); }
+.profile__resume { display: flex; gap: 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.profile__resume .resume-thumb { flex-basis: 44px; height: 54px; padding: 8px 7px; }
+
+.profile__badge-card { border: 2px solid var(--accent); }
+.profile__badge-note { padding: 10px 12px; border-radius: 10px; background: var(--bg-sub); font-size: 12px; line-height: 1.7; color: var(--text-sub); }
 
 .skill-tag { font-size: 13px; padding: 4px 10px; border-radius: var(--radius-sm); background: var(--bg-muted); }
 

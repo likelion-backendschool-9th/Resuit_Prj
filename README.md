@@ -65,15 +65,16 @@ frontend/
 | 경로 | 페이지 | 주요 동작 |
 |---|---|---|
 | `/onboarding` | OnboardingPage | GitHub 로그인 → 대표 레포 선택 → 블로그 RSS 연결. 로그아웃하면 이 화면으로 옴 |
-| `/` | FeedPage | 상단 탭 고정(추천 · 팔로잉 · 기술 정보 · 질문), 글쓰기(일반 · 기술 정보 · 질문), 좋아요, 팔로우, 오른쪽은 검색만 |
-| `/jobs` | JobsPage | 전체 · 일반 · 특화 공고. 일반은 바로 지원, 특화는 상세로 이동 |
-| `/jobs/:id` | JobDetailPage | 요구 문항 확인, 작성 방식(공통 이력서 기반 / 처음부터) 선택 |
+| `/` | FeedPage | 상단 탭 고정(추천 · 팔로잉 · 기술 정보 · 질문), 글쓰기(일반 · 기술 정보 · 질문 + 코드 첨부), 사진 · 영상 · 코드 블록 글, 좋아요, 팔로우, 오른쪽은 검색만 |
+| `/jobs` | JobsPage | 전체 · 일반 · 특화 공고. 카드에서 공고 상세로 이동 |
+| `/jobs/:id` | JobDetailPage | 특화: 요구 문항 확인, 작성 방식(공통 이력서 기반 / 처음부터) 선택. 일반: 공통 이력서를 골라 지원 · 지원 취소 |
 | `/resumes/edit` | ResumeEditPage | 특화 이력서 작성. `?job=1&mode=base` 또는 `mode=blank` |
-| `/resumes` | ResumesPage | 이력서 › 내 이력서. "피드백 요청" 시 피드백 게시판에 실제로 올라감 |
-| `/feedback` | FeedbackPage | 이력서 › 피드백. 섹션을 골라 피드백 작성 |
+| `/resumes` | ResumesPage | 이력서 › 내 이력서. 공통 이력서 여러 개 추가 · 이름 변경 · 삭제. "피드백 요청" 시 피드백 게시판에 실제로 올라감 |
+| `/feedback` | FeedbackPage | 이력서 › 피드백. 섹션을 골라 피드백 작성, 내 요청의 피드백 채택 |
 | `/threads/:id` | ThreadPage | 질문 스레드, 답변 작성, 도움돼요 |
-| `/profile` | ProfilePage | GitHub 잔디, 프로필 꾸미기(위젯 켜기/끄기), 공유자 배지 |
+| `/profile` | ProfilePage | GitHub 잔디, 프로필 꾸미기(위젯 켜기/끄기), 공개 이력서 설정(최대 3개), 공유자 배지, 리뷰어 인증 배지 진행 현황 |
 | `/company/post` | CompanyPostPage | 일반 · 특화 공고 작성, 요구 문항 추가 · 수정 · 삭제 |
+| `/talent` | TalentSearchPage | 기업 회원 전용 인재 찾기. 분야별 조회는 무료, 배지 · 기술 · 경력 · 활동 근거 · 지역 필터는 기업 Pro(체험) |
 
 공통 동작:
 - **왼쪽 메뉴**: "이력서"를 누르면 하위 메뉴(내 이력서 · 피드백)가 펼쳐져요.
@@ -86,7 +87,7 @@ frontend/
 - **색**: `frontend/src/styles/tokens.css`의 변수만 고칩니다. 화면 코드에는 색상값을 직접 쓰지 않아요. 다크 모드는 `[data-theme='dark']` 블록에서 같은 이름을 덮어써요.
 - **메뉴**: `frontend/src/components/layout/LeftNav.jsx` 위쪽의 `ITEMS_TOP`, `RESUME_CHILDREN`, `ITEMS_BOTTOM` 배열을 고칩니다.
 - **예시 데이터**: `frontend/src/data/mock.js`
-- **공유 상태와 이후 API 연동**: `frontend/src/context/AppStateContext.jsx`. 각 함수(`addPost`, `toggleFollow`, `toggleMyRequest`, `addFeedback` 등)를 API 호출로 바꾸면 됩니다.
+- **공유 상태와 이후 API 연동**: `frontend/src/context/AppStateContext.jsx`. 각 함수(`addPost`, `toggleFollow`, `applyJob`, `toggleResumeRequest`, `addFeedback` 등)를 API 호출로 바꾸면 됩니다.
 - **라우터**: `HashRouter`를 써서 GitHub Pages 같은 정적 호스팅에서도 새로고침이 됩니다. 서버 배포로 바꾸면 `BrowserRouter`로 교체하세요. 그래서 화면 안 이동에 `href="#id"`를 쓰면 라우트로 해석되니, 스크롤은 `scrollIntoView`를 쓰세요.
 
 ## 백엔드(3계층) 연동 시 참고
