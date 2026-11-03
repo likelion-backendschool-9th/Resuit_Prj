@@ -3,14 +3,17 @@
 ## Layout Architecture
 
 - 프론트엔드와 백엔드는 독립 애플리케이션으로 관리한다. 프론트엔드의 패키지 매니페스트, lockfile, 빌드 도구 설정은 [`frontend/`](./frontend/) 안에 두며, 백엔드가 추가되면 백엔드의 의존성과 실행 설정은 [`backend/`](./backend/) 안에 둔다. 저장소 루트에는 애플리케이션별 설정을 임의로 섞지 않는다.
-- 이 애플리케이션은 SPA(Single Page Application)와 CSR(Client-Side Rendering) 방식으로 구현한다. 페이지 이동 시 전체 문서를 새로고침하지 않고 React Router가 라우트를 전환하며, 공통 레이아웃은 유지한 채 가운데 콘텐츠만 교체한다.
+- 이 애플리케이션은 Next.js App Router로 구현한다. 첫 요청은 서버에서 HTML로 렌더링해 검색엔진과 링크 미리보기가 내용을 읽을 수 있게 하고, 이후 페이지 이동은 전체 문서를 새로고침하지 않고 `next/link`로 전환하며, 공통 레이아웃은 유지한 채 가운데 콘텐츠만 교체한다.
+- `src/app/`에는 라우트 파일과 `metadata`만 둔다. 화면은 `src/views/`의 클라이언트 컴포넌트(`'use client'`)로 만들고 라우트 파일에서 불러온다. 일반 서비스 페이지의 라우트는 `src/app/(service)/` 아래에 둔다. `src/pages/`는 Next.js가 Pages Router로 해석하므로 만들지 않는다.
+- 공개 페이지는 라우트 파일에서 `metadata`나 `generateMetadata`로 제목과 설명을 지정하고, 로그인 후 쓰는 페이지는 `robots: { index: false }`로 둔다.
+- 렌더링 중에 `window`, `document`, `localStorage`를 읽지 않는다. 서버에는 없고 서버와 브라우저의 첫 화면이 달라지기 때문이다. 필요하면 `useEffect`에서 읽는다.
 - 모든 일반 서비스 페이지는 `AppLayout`의 3단 구조를 유지한다.
   - 왼쪽: 항상 표시되는 주 네비게이션
   - 가운데: 현재 라우트의 피드 또는 페이지 콘텐츠
   - 오른쪽: 보조 정보 영역
 - 좌측 네비게이션은 페이지마다 새로 만들거나 숨기지 않는다. 공통 레이아웃은 [`frontend/src/components/layout/AppLayout.jsx`](./frontend/src/components/layout/AppLayout.jsx)와 [`frontend/src/components/layout/LeftNav.jsx`](./frontend/src/components/layout/LeftNav.jsx)를 사용한다.
 - 라우트에 따라 변경되는 것은 가운데 영역이어야 한다. 새 페이지는 `AppLayout`을 우회하여 독자적인 전체 화면 셸을 만들지 말고, `MainColumn`과 `RightAside`를 사용해 콘텐츠를 배치한다.
-- 좌측 네비게이션의 현재 위치와 선택 상태는 URL 및 React Router의 라우트 상태로 관리한다. 메뉴 이동에는 `Link`, `NavLink`, `useNavigate`를 사용하고, 동일한 네비게이션 상태를 별도의 `useState`로 중복 관리하지 않는다.
+- 좌측 네비게이션의 현재 위치와 선택 상태는 URL(`usePathname`)로 관리한다. 메뉴 이동에는 `next/link`의 `Link`와 `next/navigation`의 `useRouter`를 사용하고, 동일한 네비게이션 상태를 별도의 `useState`로 중복 관리하지 않는다.
 - 상단 탭은 페이지 내부의 표시 필터 또는 하위 콘텐츠 전환이므로 해당 페이지 컴포넌트의 `useState`로 관리한다. 탭 변경 때문에 URL 라우트를 변경하거나 전체 페이지를 다시 렌더링하는 방식으로 구현하지 않는다.
 - 오른쪽 영역은 현재 비어 있을 수 있지만 의도적으로 예약된 확장 영역이다. 새 페이지에서 임의로 가운데 콘텐츠를 오른쪽까지 확장하거나 오른쪽 영역을 제거하지 않는다. 추후 검색, 추천, 지원 현황, 연동 정보 등의 기능이 추가될 수 있도록 `RightAside`의 폭과 위치를 보존한다.
 - 오른쪽 영역에 내용이 필요하지 않은 페이지도 `RightAside`를 유지한다. 필요할 때만 페이지별 보조 카드나 정보를 채운다.
@@ -76,8 +79,9 @@
 
 - 새 페이지가 좌측 네비게이션과 우측 예약 영역을 유지하는가?
 - 가운데 콘텐츠만 라우트에 따라 바뀌는가?
-- SPA/CSR 방식에 맞게 전체 새로고침 없이 라우트가 전환되는가?
-- 좌측 네비게이션 상태는 URL/React Router로, 상단 탭 상태는 페이지의 `useState`로 관리하는가?
+- 첫 화면이 서버에서 렌더링되고, 이후 전체 새로고침 없이 라우트가 전환되는가?
+- 서버와 브라우저의 첫 화면이 같아 hydration 오류가 나지 않는가?
+- 좌측 네비게이션 상태는 URL로, 상단 탭 상태는 페이지의 `useState`로 관리하는가?
 - 기존 공통 컴포넌트와 디자인 토큰을 재사용했는가?
 - 새로운 스타일이 기존 카드·버튼·탭·배지 패턴과 일관적인가?
 - 페이지에 과도한 폼·도메인 로직이 들어갔다면 별도 컴포넌트나 hook으로 분리할 수 있는가?
@@ -89,6 +93,6 @@
 
 ## Validation
 
-- 변경 후 `frontend/`에서 `npm run build`를 실행해 React/Vite 빌드가 성공하는지 확인한다.
+- 변경 후 `frontend/`에서 `npm run build`를 실행해 Next.js 빌드가 성공하는지 확인한다.
 - 따로 요구하지 않는 한 테스트 파일을 작성하지 않고 컴파일만으로 검사를 진행한다.
 - 레이아웃을 변경한 경우 좌측 네비게이션, 가운데 콘텐츠, 우측 영역이 함께 표시되는 주요 라우트를 확인한다.

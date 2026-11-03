@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useAppState } from '../context/AppStateContext.jsx';
 import { BADGE_PROGRESS, MAX_PUBLIC_RESUMES, PROFILE_POST } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
@@ -98,7 +100,7 @@ export default function ProfilePage() {
                 })}
                 <div className="row-wrap xs muted" style={{ justifyContent: 'space-between' }}>
                   <span>{publicResumes.length} / {MAX_PUBLIC_RESUMES}개 공개 · 체크한 순서대로 보여요</span>
-                  <Link to="/resumes" className="text-link" style={{ fontSize: 12 }}>이력서 이름 바꾸기 · 새로 만들기</Link>
+                  <Link href="/resumes" className="text-link" style={{ fontSize: 12 }}>이력서 이름 바꾸기 · 새로 만들기</Link>
                 </div>
               </fieldset>
             )}
@@ -111,7 +113,7 @@ export default function ProfilePage() {
               <div key={r.id} className="profile__resume">
                 <div className="resume-thumb" aria-hidden="true"><span /><span /><span /></div>
                 <div className="grow"><div className="bold">{r.name}</div><div className="small muted">{r.field} · {r.sections}</div></div>
-                <Link to="/resumes" className="text-link">보기</Link>
+                <Link href="/resumes" className="text-link">보기</Link>
               </div>
             ))}
           </section>
@@ -162,7 +164,7 @@ export default function ProfilePage() {
           <div className="linked"><span className="linked__dot" aria-hidden="true" />GitHub 연결됨 · {me.github}</div>
           <div className="linked"><span className="linked__dot" aria-hidden="true" />벨로그 RSS 연결됨 · @seoyeon</div>
           <p className="small muted">기여 기록은 하루 한 번, 블로그 새 글은 RSS로 주기적으로 가져와요.</p>
-          <Link to="/onboarding" className="text-link">연동 관리</Link>
+          <Link href="/onboarding" className="text-link">연동 관리</Link>
         </section>
         <section className="card">
           <h2>대표 레포</h2>

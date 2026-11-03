@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useAppState } from '../context/AppStateContext.jsx';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Tabs from '../components/common/Tabs.jsx';
@@ -23,7 +25,7 @@ export default function FeedbackPage() {
       <MainColumn>
         <div className="page-title">
           <h1>이력서 피드백</h1>
-          <Link to="/resumes" className="text-link">내 이력서 올리기</Link>
+          <Link href="/resumes" className="text-link">내 이력서 올리기</Link>
         </div>
         <p className="page-desc">내 이력서에서 "피드백 요청"을 누른 이력서가 여기에 올라와요. 섹션을 골라 구체적으로 남겨 주세요.</p>
         <Tabs items={TABS} value={tab} onChange={setTab} label="분야" />

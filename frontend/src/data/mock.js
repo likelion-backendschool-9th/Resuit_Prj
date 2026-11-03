@@ -2,14 +2,6 @@
 // 예시(목업) 데이터. 실제 API가 붙으면 이 파일 대신 api/ 레이어에서 받아온다.
 // av: 아바타 색 토큰 이름 (styles/tokens.css 의 --av1 ~ --av10, --co1 ~ --co4)
 // =========================================================
-import dockerImageSize from '../assets/feed/docker-image-size.jpg';
-import feedbackErd from '../assets/feed/feedback-erd.jpg';
-import githubGrass from '../assets/feed/github-grass.jpg';
-import readmeTemplate from '../assets/feed/readme-template.jpg';
-import feedDemo from '../assets/feed/feed-demo.mp4';
-import feedDemoPoster from '../assets/feed/feed-demo-poster.jpg';
-import darkModeDemo from '../assets/feed/dark-mode-demo.mp4';
-import darkModeDemoPoster from '../assets/feed/dark-mode-demo-poster.jpg';
 
 export const ME = { name: '이서연', handle: 'seoyeon_dev', initial: '서', av: 'av1', github: 'seoyeon-dev' };
 
@@ -18,7 +10,7 @@ export const POSTS = [
   {
     id: 10, type: 'tech', author: '한민서', handle: 'minseo_be', initial: '민', av: 'av6', time: '20분',
     body: 'Docker 이미지 1.24GB → 182MB로 줄인 방법\n빌드 스테이지와 실행 스테이지를 나누고, 실행은 JRE 슬림 이미지만 쓰면 돼요. 배포 시간도 3분 40초에서 52초로 줄었어요.',
-    image: dockerImageSize, imageAlt: 'Docker 이미지 크기 비교 그래프. 1.24GB에서 182MB로 85% 감소',
+    image: '/feed/docker-image-size.jpg', imageAlt: 'Docker 이미지 크기 비교 그래프. 1.24GB에서 182MB로 85% 감소',
     tags: ['Docker', 'Spring'], source: 'Docker 공식 문서 · Multi-stage builds', replies: 14, reposts: 52, likes: 211
   },
   {
@@ -38,7 +30,7 @@ export const POSTS = [
   {
     id: 11, type: 'general', author: '최하은', handle: 'haeun_ux', initial: '하', av: 'av3', time: '1시간',
     body: '트위터 클론 토이 프로젝트 피드 화면 완성했어요.\n상단 탭 고정, 좋아요, 기술 태그 필터까지 넣었는데 UX 피드백 부탁드려요.',
-    video: feedDemo, poster: feedDemoPoster, duration: '0:09',
+    video: '/feed/feed-demo.mp4', poster: '/feed/feed-demo-poster.jpg', duration: '0:09',
     imageAlt: '피드를 스크롤하고 좋아요를 누른 뒤 기술 정보 탭에서 React 태그로 거르는 화면 녹화',
     evidence: '이력서 프로젝트 「SNS 클론」의 근거로 연결됨', replies: 9, reposts: 7, likes: 88
   },
@@ -50,7 +42,7 @@ export const POSTS = [
   {
     id: 12, type: 'question', threadId: 1, author: '이준호', handle: 'junho_be', initial: '준', av: 'av7', time: '1시간',
     body: '이력서 피드백 서비스 ERD인데요, 피드백 요청이 공통 이력서와 특화 이력서를 둘 다 참조해요.\nCHECK 제약으로 둘 중 하나만 들어가게 했는데 이 구조 괜찮을까요?',
-    image: feedbackErd, imageAlt: '공통 이력서, 특화 이력서, 피드백 요청, 피드백 댓글 테이블이 연결된 ERD',
+    image: '/feed/feedback-erd.jpg', imageAlt: '공통 이력서, 특화 이력서, 피드백 요청, 피드백 댓글 테이블이 연결된 ERD',
     replies: 6, reposts: 3, likes: 27
   },
   {
@@ -77,13 +69,13 @@ export const POSTS = [
   {
     id: 13, type: 'general', author: '한민서', handle: 'minseo_be', initial: '민', av: 'av6', time: '4시간',
     body: '1일 1커밋 365일 채웠습니다.\n잔디보다 중요한 건 커밋 메시지랑 PR 설명이라는 걸 배운 1년이었어요. 면접에서도 GitHub 링크 보고 질문 많이 받았어요.',
-    image: githubGrass, imageAlt: 'GitHub 기여 잔디 1년치. 365일 연속 커밋, 올해 기여 1,284회',
+    image: '/feed/github-grass.jpg', imageAlt: 'GitHub 기여 잔디 1년치. 365일 연속 커밋, 올해 기여 1,284회',
     replies: 21, reposts: 18, likes: 342
   },
   {
     id: 14, type: 'tech', author: '정우진', handle: 'woojin_fe', initial: '우', av: 'av4', time: '4시간',
     body: 'CSS 변수 하나로 다크 모드 만들기\n색을 전부 --bg, --text 같은 토큰으로 빼두면 html의 data-theme 값만 바꿔서 끝나요. 컴포넌트 코드는 한 줄도 안 건드렸어요.',
-    video: darkModeDemo, poster: darkModeDemoPoster, duration: '0:06',
+    video: '/feed/dark-mode-demo.mp4', poster: '/feed/dark-mode-demo-poster.jpg', duration: '0:06',
     imageAlt: '프로필 화면에서 다크 모드 버튼을 눌러 라이트와 다크 테마를 오가는 화면 녹화',
     tags: ['React', 'TypeScript'], source: 'MDN · CSS 사용자 지정 속성', replies: 10, reposts: 37, likes: 176
   },
@@ -104,7 +96,7 @@ export const POSTS = [
   {
     id: 16, type: 'general', author: '김하윤', handle: 'hayun_fe', initial: '윤', av: 'av8', time: '7시간',
     body: '포트폴리오 README 템플릿 공유해요.\n프로젝트마다 "문제 → 해결 → 결과"를 따로 적었더니 면접에서 "그래서 뭘 했어요?" 질문이 확 줄었어요.',
-    image: readmeTemplate, imageAlt: 'GitHub README 화면. 프로젝트 소개, 맡은 일, 한눈에 보기 표, 문제 해결 결과 목록',
+    image: '/feed/readme-template.jpg', imageAlt: 'GitHub README 화면. 프로젝트 소개, 맡은 일, 한눈에 보기 표, 문제 해결 결과 목록',
     replies: 12, reposts: 64, likes: 230
   },
   {

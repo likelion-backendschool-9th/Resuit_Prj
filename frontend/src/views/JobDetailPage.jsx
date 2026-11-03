@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import Link from 'next/link';
 import { JOBS } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Button from '../components/common/Button.jsx';
@@ -22,7 +24,7 @@ function SpecialJobDetail({ job }) {
     <>
       <MainColumn>
         <div className="page-head">
-          <Link to="/jobs" className="icon-btn icon-btn--plain" aria-label="공고 목록으로"><Icon name="back" /></Link>
+          <Link href="/jobs" className="icon-btn icon-btn--plain" aria-label="공고 목록으로"><Icon name="back" /></Link>
           <h1>공고</h1>
         </div>
 
@@ -64,7 +66,7 @@ function SpecialJobDetail({ job }) {
         {job.otherJobs && (
           <section className="card" style={{ gap: 10 }}>
             <h2>이 회사의 다른 공고</h2>
-            {job.otherJobs.map((o) => <Link key={o.label} to={o.to} style={{ textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>{o.label}</Link>)}
+            {job.otherJobs.map((o) => <Link key={o.label} href={o.to} style={{ textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>{o.label}</Link>)}
           </section>
         )}
       </RightAside>
@@ -72,9 +74,8 @@ function SpecialJobDetail({ job }) {
   );
 }
 
-// /jobs/:id : 공고 종류에 맞는 상세 화면을 보여 준다.
-export default function JobDetailPage() {
-  const { id } = useParams();
+// /jobs/[id] : 공고 종류에 맞는 상세 화면을 보여 준다.
+export default function JobDetailPage({ id }) {
   const job = JOBS.find((j) => String(j.id) === id) || JOBS[0];
   return job.type === 'special'
     ? <SpecialJobDetail key={job.id} job={job} />

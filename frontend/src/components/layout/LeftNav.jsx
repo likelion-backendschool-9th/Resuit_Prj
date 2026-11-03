@@ -1,5 +1,9 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAppState } from '../../context/AppStateContext.jsx';
 import Icon from '../common/Icon.jsx';
 import Button from '../common/Button.jsx';
 import ThemeToggle from '../common/ThemeToggle.jsx';
@@ -22,19 +26,21 @@ const ITEMS_BOTTOM = [
   { to: '/talent', icon: 'talent', label: '인재 찾기', pill: '기업' }
 ];
 
-function NavItem({ item }) {
+function NavItem({ item, pathname }) {
+  const active = item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`);
   return (
-    <NavLink to={item.to} end={item.end} className={({ isActive }) => `nav-item${isActive ? ' is-active' : ''}`}>
+    <Link href={item.to} aria-current={active ? 'page' : undefined} className={`nav-item${active ? ' is-active' : ''}`}>
       <Icon name={item.icon} size={22} />
       {item.label}
       {item.tag && <span className="nav-item__tag">{item.tag}</span>}
       {item.pill && <span className="nav-item__pill">{item.pill}</span>}
-    </NavLink>
+    </Link>
   );
 }
 
 export default function LeftNav() {
-  const { pathname } = useLocation();
+  const pathname = usePathname();
+  const { requestCompose } = useAppState();
   const inResume = RESUME_CHILDREN.some((c) => pathname.startsWith(c.to));
   // undefined 면 "지금 이력서 화면에 있으면 펼침"을 따른다.
   const [resumeOpen, setResumeOpen] = useState();
@@ -44,11 +50,11 @@ export default function LeftNav() {
   return (
     <nav className="left-nav" aria-label="주 메뉴">
       <div className="left-nav__top">
-        <Link to="/" className="left-nav__logo">Resuit</Link>
+        <Link href="/" className="left-nav__logo">Resuit</Link>
         <ThemeToggle />
       </div>
 
-      {ITEMS_TOP.map((it) => <NavItem key={it.to} item={it} />)}
+      {ITEMS_TOP.map((it) => <NavItem key={it.to} item={it} pathname={pathname} />)}
 
       <button
         type="button"
@@ -63,14 +69,14 @@ export default function LeftNav() {
       {open && (
         <div className="nav-sub">
           {RESUME_CHILDREN.map((c) => (
-            <NavLink key={c.to} to={c.to} end className={({ isActive }) => `nav-sub__item${isActive ? ' is-active' : ''}`}>
+            <Link key={c.to} href={c.to} aria-current={pathname === c.to ? 'page' : undefined} className={`nav-sub__item${pathname === c.to ? ' is-active' : ''}`}>
               {c.label}
-            </NavLink>
+            </Link>
           ))}
         </div>
       )}
 
-      {ITEMS_BOTTOM.map((it) => <NavItem key={it.to} item={it} />)}
+      {ITEMS_BOTTOM.map((it) => <NavItem key={it.to} item={it} pathname={pathname} />)}
 
       <button type="button" className="nav-item nav-item--button" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((v) => !v)}>
         <Icon name="settings" size={22} />
@@ -78,7 +84,7 @@ export default function LeftNav() {
       </button>
       {settingsOpen && <SettingsMenu onClose={() => setSettingsOpen(false)} />}
 
-      <Button size="lg" block to="/" state={{ compose: true }} className="left-nav__post">게시하기</Button>
+      <Button size="lg" block to="/" onClick={requestCompose} className="left-nav__post">게시하기</Button>
     </nav>
   );
 }

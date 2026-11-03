@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { JOBS } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';

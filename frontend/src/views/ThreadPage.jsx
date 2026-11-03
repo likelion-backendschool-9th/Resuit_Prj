@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import Link from 'next/link';
 import { useAppState } from '../context/AppStateContext.jsx';
 import { SHARER_BADGES, SIMILAR_QUESTIONS } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
@@ -9,8 +11,7 @@ import Button from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
 import '../components/feed/PostCard.css';
 
-export default function ThreadPage() {
-  const { id } = useParams();
+export default function ThreadPage({ id }) {
   const { me, threads, addAnswer } = useAppState();
   const thread = threads[id] || threads[1];
   const [draft, setDraft] = useState('');
@@ -26,7 +27,7 @@ export default function ThreadPage() {
     <>
       <MainColumn>
         <div className="page-head">
-          <Link to="/" className="icon-btn icon-btn--plain" aria-label="뒤로"><Icon name="back" /></Link>
+          <Link href="/" className="icon-btn icon-btn--plain" aria-label="뒤로"><Icon name="back" /></Link>
           <h1>게시글</h1>
         </div>
 
@@ -91,7 +92,7 @@ export default function ThreadPage() {
         <section className="card" style={{ gap: 14 }}>
           <h2>비슷한 질문</h2>
           {SIMILAR_QUESTIONS.map((q) => (
-            <Link key={q.id} to="/threads/1" className="stack" style={{ gap: 2, textDecoration: 'none' }}>
+            <Link key={q.id} href="/threads/1" className="stack" style={{ gap: 2, textDecoration: 'none' }}>
               <span className="xs bold" style={{ color: 'var(--question)' }}>답변 {q.answers}</span>
               <span style={{ fontWeight: 500, lineHeight: 1.5 }}>{q.title}</span>
             </Link>
@@ -99,7 +100,7 @@ export default function ThreadPage() {
         </section>
         <section className="card" style={{ gap: 8 }}>
           <h2>질문 작성자</h2>
-          <Link to="/profile" className="bold" style={{ textDecoration: 'none' }}>{thread.author} @{thread.handle}</Link>
+          <Link href="/profile" className="bold" style={{ textDecoration: 'none' }}>{thread.author} @{thread.handle}</Link>
           <span className="small muted">컴퓨터공학 4학년 · 백엔드 지망</span>
         </section>
       </RightAside>

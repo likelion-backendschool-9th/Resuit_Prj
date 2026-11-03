@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAppState } from '../context/AppStateContext.jsx';
 import { REPOS, RSS_RULES } from '../data/mock.js';
 import Avatar from '../components/common/Avatar.jsx';
@@ -16,7 +18,7 @@ const PLATFORMS = Object.entries(RSS_RULES).map(([id, r]) => ({ id, label: r.lab
 // 시작하기 = 로그인 화면. 로그아웃하면 여기로 온다.
 export default function OnboardingPage() {
   const { me, loggedIn, login } = useAppState();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [picked, setPicked] = useState(['study-match-web', 'button-kit']);
   const [platform, setPlatform] = useState('velog');
@@ -28,7 +30,7 @@ export default function OnboardingPage() {
 
   const finish = () => {
     login();
-    navigate('/');
+    router.push('/');
   };
 
   return (

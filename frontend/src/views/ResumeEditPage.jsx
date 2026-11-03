@@ -1,5 +1,8 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { COMMON_RESUME, JOBS } from '../data/mock.js';
 import Badge from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
@@ -7,7 +10,7 @@ import Icon from '../components/common/Icon.jsx';
 import ThemeToggle from '../components/common/ThemeToggle.jsx';
 import './ResumeEditPage.css';
 
-// HashRouter 에서는 href="#id" 가 라우트로 해석되므로 버튼으로 스크롤한다.
+// 왼쪽 목차: 누른 섹션을 표시하고 그 위치로 스크롤한다.
 function TocLink({ target, active, onPick, children }) {
   const go = () => {
     onPick(target);
@@ -20,12 +23,11 @@ function TocLink({ target, active, onPick, children }) {
   );
 }
 
-// 특화 이력서 작성. ?job=공고ID&mode=base(공통 이력서 불러오기)|blank(처음부터)
-export default function ResumeEditPage() {
-  const [params] = useSearchParams();
-  const navigate = useNavigate();
-  const job = JOBS.find((j) => String(j.id) === params.get('job') && j.type === 'special') || JOBS[0];
-  const blank = params.get('mode') === 'blank';
+// 특화 이력서 작성. jobId: 공고 ID / mode: base(공통 이력서 불러오기) | blank(처음부터)
+export default function ResumeEditPage({ jobId, mode }) {
+  const router = useRouter();
+  const job = JOBS.find((j) => String(j.id) === jobId && j.type === 'special') || JOBS[0];
+  const blank = mode === 'blank';
   const [answers, setAnswers] = useState(() => job.questions.map(() => ''));
   const [savedLabel, setSavedLabel] = useState('자동 저장됨 · 방금 전');
   const [picked, setPicked] = useState({ p1: true, p2: true, p3: false });
@@ -41,7 +43,7 @@ export default function ResumeEditPage() {
     <div className="resume-edit">
       <header className="resume-edit__bar">
         <div className="resume-edit__bar-in">
-          <Link to={`/jobs/${job.id}`} className="icon-btn icon-btn--plain" aria-label="공고로 돌아가기"><Icon name="back" /></Link>
+          <Link href={`/jobs/${job.id}`} className="icon-btn icon-btn--plain" aria-label="공고로 돌아가기"><Icon name="back" /></Link>
           <div className="grow" style={{ flexBasis: 320 }}>
             <div className="row" style={{ gap: 6 }}><Badge tone="special" size="md">특화 이력서</Badge><span className="small muted">{savedLabel}</span></div>
             <h1 className="resume-edit__title">{job.company} · {job.role}</h1>
@@ -49,7 +51,7 @@ export default function ResumeEditPage() {
           <div className="row">
             <ThemeToggle />
             <Button variant="outline" onClick={() => setSavedLabel('임시 저장됨 · 방금 전')}>임시 저장</Button>
-            <Button onClick={() => navigate('/resumes')}>제출하기</Button>
+            <Button onClick={() => router.push('/resumes')}>제출하기</Button>
           </div>
         </div>
       </header>
@@ -101,7 +103,7 @@ export default function ResumeEditPage() {
                   <div className="resume-project__evidence">
                     <span className="xs bold muted">근거</span>
                     {p.evidence.map((ev) => (
-                      <Link key={ev.label} to="/profile" className={`evidence-chip evidence-chip--${ev.type}`}>
+                      <Link key={ev.label} href="/profile" className={`evidence-chip evidence-chip--${ev.type}`}>
                         <Icon name={ev.type === 'repo' ? 'repo' : 'rss'} size={14} />{ev.label}
                       </Link>
                     ))}

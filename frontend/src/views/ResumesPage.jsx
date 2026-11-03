@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useAppState } from '../context/AppStateContext.jsx';
 import { SPECIAL_RESUMES } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
@@ -98,7 +100,7 @@ export default function ResumesPage() {
                     <div className="request-notice" role="status">
                       <Icon name="check" size={18} />
                       <span className="request-notice__text">「{r.name}」이 피드백 게시판에 올라갔어요.</span>
-                      <Link to="/feedback" className="text-link" style={{ fontSize: 13 }}>피드백 보러 가기</Link>
+                      <Link href="/feedback" className="text-link" style={{ fontSize: 13 }}>피드백 보러 가기</Link>
                     </div>
                   )}
                 </article>
@@ -108,7 +110,7 @@ export default function ResumesPage() {
             <div className="resume-tip">
               <Icon name="info" size={16} />
               <span className="grow" style={{ flexBasis: 200 }}>프로필에 어떤 이력서를 공개할지는 프로필에서 정해요.</span>
-              <Link to="/profile" className="text-link" style={{ fontSize: 13 }}>프로필 공개 설정</Link>
+              <Link href="/profile" className="text-link" style={{ fontSize: 13 }}>프로필 공개 설정</Link>
             </div>
           </section>
         )}
@@ -117,7 +119,7 @@ export default function ResumesPage() {
           <section className="section">
             <h2 className="section-label">특화 이력서 · 공고별로 작성</h2>
             {SPECIAL_RESUMES.map((r) => (
-              <Link key={r.id} to={`/resumes/edit?job=${r.jobId || 1}&mode=base`} className="resume-row">
+              <Link key={r.id} href={`/resumes/edit?job=${r.jobId || 1}&mode=base`} className="resume-row">
                 <Avatar initial={r.initial} color="co3" company />
                 <div className="grow" style={{ flexBasis: 220 }}>
                   <div className="bold" style={{ fontSize: 16 }}>{r.company} · {r.role}</div>

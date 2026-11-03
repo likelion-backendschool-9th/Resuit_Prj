@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import Icon from '../common/Icon.jsx';
 import './PostEmbeds.css';
 
@@ -30,7 +30,7 @@ export function PostVideo({ src, poster, alt, duration }) {
 // RSS로 자동 공유된 블로그 글
 export function BlogEmbed({ blog }) {
   return (
-    <Link to="/profile" className="embed">
+    <Link href="/profile" className="embed">
       <span className="embed__kicker"><Icon name="rss" size={14} />{blog.source} · RSS로 자동 공유</span>
       <span className="embed__title">{blog.title}</span>
       <span className="small muted">{blog.desc}</span>
@@ -41,7 +41,7 @@ export function BlogEmbed({ blog }) {
 // GitHub 레포 공유
 export function RepoEmbed({ repo }) {
   return (
-    <Link to="/profile" className="embed">
+    <Link href="/profile" className="embed">
       <span className="row"><Icon name="repo" size={18} /><strong>{repo.name}</strong><span className="embed__pill">Public</span></span>
       <span className="text-2" style={{ fontSize: 14 }}>{repo.desc}</span>
       <span className="embed__meta">
