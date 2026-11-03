@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useAppState } from '../../context/AppStateContext.jsx';
 import { MainColumn, RightAside } from '../layout/AppLayout.jsx';
 import Button from '../common/Button.jsx';
@@ -22,7 +22,7 @@ export default function GeneralJobDetail({ job }) {
     <>
       <MainColumn>
         <div className="page-head">
-          <Link to="/jobs" className="icon-btn icon-btn--plain" aria-label="공고 목록으로"><Icon name="back" /></Link>
+          <Link href="/jobs" className="icon-btn icon-btn--plain" aria-label="공고 목록으로"><Icon name="back" /></Link>
           <h1>공고</h1>
         </div>
 
@@ -32,7 +32,7 @@ export default function GeneralJobDetail({ job }) {
           <section className="section" style={{ padding: 24 }}>
             <div className="row-wrap" style={{ justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
               <h3 className="section-title">제출할 공통 이력서 선택</h3>
-              <Link to="/resumes" className="text-link">새 공통 이력서 만들기</Link>
+              <Link href="/resumes" className="text-link">새 공통 이력서 만들기</Link>
             </div>
             <p className="muted" style={{ fontSize: 14 }}>일반 공고는 추가 문항 없이 공통 이력서를 그대로 제출해요. 지원 직무와 분야가 맞는 이력서를 추천해 드려요.</p>
 

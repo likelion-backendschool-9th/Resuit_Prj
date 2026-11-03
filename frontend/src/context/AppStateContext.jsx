@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useMemo, useState } from 'react';
 import { ME, POSTS, FEEDBACK_REQUESTS, COMMON_RESUMES, PUBLIC_RESUME_IDS, THREADS } from '../data/mock.js';
 
@@ -11,6 +13,7 @@ const feedbackCardId = (resumeId) => `resume-${resumeId}`;
 
 export function AppStateProvider({ children }) {
   const [loggedIn, setLoggedIn] = useState(true);
+  const [composeRequested, setComposeRequested] = useState(false);
   const [posts, setPosts] = useState(POSTS);
   const [liked, setLiked] = useState({});
   const [following, setFollowing] = useState({});
@@ -29,6 +32,11 @@ export function AppStateProvider({ children }) {
       loggedIn,
       login: () => setLoggedIn(true),
       logout: () => setLoggedIn(false),
+
+      // 왼쪽 메뉴 "게시하기": 피드의 글쓰기 칸으로 포커스를 보낸다
+      composeRequested,
+      requestCompose: () => setComposeRequested(true),
+      clearComposeRequest: () => setComposeRequested(false),
 
       // 피드
       posts,
@@ -106,7 +114,7 @@ export function AppStateProvider({ children }) {
           }
         }))
     };
-  }, [loggedIn, posts, liked, following, applied, commonResumes, publicResumeIds, feedbackRequests, threads]);
+  }, [loggedIn, composeRequested, posts, liked, following, applied, commonResumes, publicResumeIds, feedbackRequests, threads]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }

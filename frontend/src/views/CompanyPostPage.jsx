@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Avatar from '../components/common/Avatar.jsx';
 import Badge from '../components/common/Badge.jsx';
@@ -15,7 +17,7 @@ const NEW_QUESTION_LIMIT = 500;
 
 // 회사 계정: 공고 작성 (특화 공고면 요구 문항 편집)
 export default function CompanyPostPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [type, setType] = useState('special');
   const [title, setTitle] = useState('프론트엔드 인턴 (React · TypeScript)');
   const [questions, setQuestions] = useState([
@@ -77,7 +79,7 @@ export default function CompanyPostPage() {
 
           <div className="row" style={{ justifyContent: 'flex-end' }}>
             <Button variant="outline" className="company-post__action">임시 저장</Button>
-            <Button className="company-post__action" onClick={() => navigate('/')}>피드에 게시</Button>
+            <Button className="company-post__action" onClick={() => router.push('/')}>피드에 게시</Button>
           </div>
         </div>
       </MainColumn>

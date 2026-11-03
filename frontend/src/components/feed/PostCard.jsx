@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useAppState } from '../../context/AppStateContext.jsx';
 import { SHARER_BADGES, JOBS } from '../../data/mock.js';
 import Avatar from '../common/Avatar.jsx';
@@ -44,11 +44,11 @@ export default function PostCard({ post }) {
         {post.evidence && <Evidence text={post.evidence} />}
         {job && <JobCard job={job} compact meta={post.jobMeta} sub={post.jobSub} />}
         {post.type === 'question' && (
-          <Link to={threadLink} className="post-card__question-link">답변 {post.replies}개 보기</Link>
+          <Link href={threadLink} className="post-card__question-link">답변 {post.replies}개 보기</Link>
         )}
 
         <div className="post-card__actions">
-          <Link to={threadLink} className="post-card__action" aria-label="답글">
+          <Link href={threadLink} className="post-card__action" aria-label="답글">
             <Icon name="msg" size={18} />{REPLY_LABEL[post.type] || '댓글'} {post.replies}
           </Link>
           <button type="button" className="post-card__action" aria-label="리포스트">

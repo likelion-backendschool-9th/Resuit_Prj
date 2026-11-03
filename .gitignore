@@ -1,6 +1,8 @@
 # frontend
 
 node_modules
+.next
+next-env.d.ts
 dist
 .DS_Store
 *.log

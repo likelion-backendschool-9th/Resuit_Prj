@@ -1,5 +1,6 @@
+'use client';
+
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import { useAppState } from '../context/AppStateContext.jsx';
 import { TECH_TAGS } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
@@ -18,16 +19,17 @@ const TABS = [
 const TECH_FILTERS = [{ id: 'all', label: '전체' }, ...TECH_TAGS.map((t) => ({ id: t, label: `#${t}` }))];
 
 export default function FeedPage() {
-  const { posts, following, me } = useAppState();
+  const { posts, following, me, composeRequested, clearComposeRequest } = useAppState();
   const [tab, setTab] = useState('all');
   const [techFilter, setTechFilter] = useState('all');
   const composerRef = useRef(null);
-  const location = useLocation();
 
   // 왼쪽 메뉴 "게시하기"로 들어오면 글쓰기 칸에 포커스
   useEffect(() => {
-    if (location.state?.compose) composerRef.current?.focus();
-  }, [location.state]);
+    if (!composeRequested) return;
+    composerRef.current?.focus();
+    clearComposeRequest();
+  }, [composeRequested, clearComposeRequest]);
 
   const visible = posts.filter((p) => {
     if (tab === 'all') return true;

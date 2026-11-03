@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import './Button.css';
 
 // variant: primary | outline | accent-outline | dark | ghost
@@ -6,7 +6,7 @@ import './Button.css';
 export default function Button({ variant = 'primary', size = 'md', block = false, to, className = '', children, ...rest }) {
   const cls = `btn btn--${variant} btn--${size}${block ? ' btn--block' : ''} ${className}`.trim();
   if (to) {
-    return <Link to={to} className={cls} {...rest}>{children}</Link>;
+    return <Link href={to} className={cls} {...rest}>{children}</Link>;
   }
   return <button type="button" className={cls} {...rest}>{children}</button>;
 }

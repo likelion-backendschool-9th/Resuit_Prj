@@ -10,10 +10,10 @@ docker compose up db
 
 단순 docker compose up만 쓰면 프론트 백도 다 올라갑니다.
 
-# Resuit 웹 (React 프로토타입)
+# Resuit 웹 (Next.js 프로토타입)
 
 이력서 피드백 SNS **Resuit**의 프론트엔드 프로토타입입니다.
-React 19 + Vite 8 + React Router 7로 만들었고, Tailwind는 쓰지 않았습니다. 스타일은 일반 CSS 파일과 CSS 변수(디자인 토큰)로 작성했습니다.
+Next.js 16(App Router) + React 19로 만들었고, Tailwind는 쓰지 않았습니다. 스타일은 일반 CSS 파일과 CSS 변수(디자인 토큰)로 작성했습니다.
 지금은 `frontend/src/data/mock.js`의 예시 데이터로 동작하며, 백엔드 API가 준비되면 이 부분만 교체하면 됩니다.
 
 ## 실행
@@ -22,13 +22,19 @@ React 19 + Vite 8 + React Router 7로 만들었고, Tailwind는 쓰지 않았습
 cd frontend
 npm install
 npm run dev        # http://localhost:5173
-npm run build      # dist/ 에 정적 파일 생성
-npm run preview    # 빌드 결과 미리보기
+npm run build      # 운영용 빌드 (.next/)
+npm start          # 빌드 결과 실행 (port 5173)
 ```
 
-Node.js 20.19 이상이 필요합니다.
+Node.js 20.9 이상이 필요합니다.
 
-프론트엔드 소스, Vite 설정, 의존성 및 패키지 스크립트는 모두 `frontend/`에 있습니다. 백엔드가 추가되면 백엔드 설정과 의존성도 별도의 `backend/`에 둡니다.
+Docker로 실행 중이라면 의존성이 바뀌었을 때 옛 `node_modules` 볼륨을 새로 만들어야 합니다.
+
+```bash
+docker compose up -d --build -V
+```
+
+프론트엔드 소스, Next.js 설정, 의존성 및 패키지 스크립트는 모두 `frontend/`에 있습니다. 백엔드가 추가되면 백엔드 설정과 의존성도 별도의 `backend/`에 둡니다.
 
 ## 폴더 구조
 
@@ -36,11 +42,13 @@ Node.js 20.19 이상이 필요합니다.
 frontend/
 ├─ package.json
 ├─ package-lock.json
-├─ index.html
-├─ vite.config.js
+├─ next.config.mjs
+├─ jsconfig.json                  `@/` 경로 별칭
+├─ public/feed/                   피드 예시 사진 · 영상
 └─ src/
-   ├─ main.jsx                    진입점 (Provider · Router 연결)
-   ├─ App.jsx                     라우트 정의
+   ├─ app/                        라우트 정의 (layout · page · metadata)
+   │  └─ (service)/               왼쪽 메뉴가 있는 3단 레이아웃 페이지 묶음
+   ├─ views/                      화면 단위 컴포넌트 (아래 표)
    ├─ styles/
    │  ├─ tokens.css               색 · 반경 · 폰트 토큰 (라이트/다크)
    │  └─ global.css               기본 스타일 + 공통 유틸 클래스
@@ -48,14 +56,13 @@ frontend/
    ├─ context/
    │  ├─ ThemeContext.jsx         다크 모드 상태
    │  └─ AppStateContext.jsx      화면 간 공유 상태 (로그인 · 피드 · 팔로우 · 지원 · 피드백 요청 · 답변)
-   ├─ components/
+   └─ components/
    │  ├─ layout/                  AppLayout(3단) · LeftNav · SettingsMenu
    │  ├─ common/                  Icon · Avatar · Badge · Button · Tabs · Chip · FollowButton · SearchBox · ThemeToggle
    │  ├─ feed/                    Composer(글쓰기) · PostCard · PostEmbeds(태그/블로그/레포/근거)
    │  ├─ jobs/                    JobCard
    │  ├─ feedback/                FeedbackRequestCard
    │  └─ profile/                 ContributionGraph(GitHub 잔디)
-   └─ pages/                      화면 단위 컴포넌트 (아래 표)
 ```
 
 컴포넌트마다 같은 이름의 `.css` 파일이 옆에 있습니다. 클래스 이름은 `컴포넌트__요소`, 상태는 `is-active`/`is-on` 형태로 씁니다.
@@ -67,11 +74,11 @@ frontend/
 | `/onboarding` | OnboardingPage | GitHub 로그인 → 대표 레포 선택 → 블로그 RSS 연결. 로그아웃하면 이 화면으로 옴 |
 | `/` | FeedPage | 상단 탭 고정(추천 · 팔로잉 · 기술 정보 · 질문), 글쓰기(일반 · 기술 정보 · 질문 + 코드 첨부), 사진 · 영상 · 코드 블록 글, 좋아요, 팔로우, 오른쪽은 검색만 |
 | `/jobs` | JobsPage | 전체 · 일반 · 특화 공고. 카드에서 공고 상세로 이동 |
-| `/jobs/:id` | JobDetailPage | 특화: 요구 문항 확인, 작성 방식(공통 이력서 기반 / 처음부터) 선택. 일반: 공통 이력서를 골라 지원 · 지원 취소 |
+| `/jobs/[id]` | JobDetailPage | 특화: 요구 문항 확인, 작성 방식(공통 이력서 기반 / 처음부터) 선택. 일반: 공통 이력서를 골라 지원 · 지원 취소 |
 | `/resumes/edit` | ResumeEditPage | 특화 이력서 작성. `?job=1&mode=base` 또는 `mode=blank` |
 | `/resumes` | ResumesPage | 이력서 › 내 이력서. 공통 이력서 여러 개 추가 · 이름 변경 · 삭제. "피드백 요청" 시 피드백 게시판에 실제로 올라감 |
 | `/feedback` | FeedbackPage | 이력서 › 피드백. 섹션을 골라 피드백 작성, 내 요청의 피드백 채택 |
-| `/threads/:id` | ThreadPage | 질문 스레드, 답변 작성, 도움돼요 |
+| `/threads/[id]` | ThreadPage | 질문 스레드, 답변 작성, 도움돼요 |
 | `/profile` | ProfilePage | GitHub 잔디, 프로필 꾸미기(위젯 켜기/끄기), 공개 이력서 설정(최대 3개), 공유자 배지, 리뷰어 인증 배지 진행 현황 |
 | `/company/post` | CompanyPostPage | 일반 · 특화 공고 작성, 요구 문항 추가 · 수정 · 삭제 |
 | `/talent` | TalentSearchPage | 기업 회원 전용 인재 찾기. 분야별 조회는 무료, 배지 · 기술 · 경력 · 활동 근거 · 지역 필터는 기업 Pro(체험) |
@@ -88,7 +95,8 @@ frontend/
 - **메뉴**: `frontend/src/components/layout/LeftNav.jsx` 위쪽의 `ITEMS_TOP`, `RESUME_CHILDREN`, `ITEMS_BOTTOM` 배열을 고칩니다.
 - **예시 데이터**: `frontend/src/data/mock.js`
 - **공유 상태와 이후 API 연동**: `frontend/src/context/AppStateContext.jsx`. 각 함수(`addPost`, `toggleFollow`, `applyJob`, `toggleResumeRequest`, `addFeedback` 등)를 API 호출로 바꾸면 됩니다.
-- **라우터**: `HashRouter`를 써서 GitHub Pages 같은 정적 호스팅에서도 새로고침이 됩니다. 서버 배포로 바꾸면 `BrowserRouter`로 교체하세요. 그래서 화면 안 이동에 `href="#id"`를 쓰면 라우트로 해석되니, 스크롤은 `scrollIntoView`를 쓰세요.
+- **라우트 추가**: `src/views/`에 화면을 만들고(`'use client'`), `src/app/(service)/주소/page.jsx`에서 불러옵니다. 검색 결과와 링크 미리보기에 나올 제목은 이 파일의 `metadata`로 정합니다.
+- **렌더링**: 첫 화면은 서버에서 HTML로 만들어집니다. 렌더링 중에 `window`, `localStorage` 등을 읽으면 오류가 나니 `useEffect`에서 읽으세요.
 
 ## 백엔드(3계층) 연동 시 참고
 
