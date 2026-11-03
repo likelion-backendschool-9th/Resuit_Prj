@@ -1,50 +1,53 @@
 package com.newlecture.resuit.entity;
 
-import java.time.Instant;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+import java.io.Serializable;
+import java.time.*;
+import java.util.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "user_badge", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "badge_id" }))
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "user_badge")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserBadge {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @EmbeddedId
+    private UserBadgeId id;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "user_id", nullable = false)
-  private User user;
+    @MapsId("userId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "badge_id", nullable = false)
-  private Badge badge;
+    @MapsId("badgeId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "badge_id", nullable = false)
+    private Badge badge;
 
-  @Column(name = "awarded_at", nullable = false, updatable = false)
-  private Instant awardedAt;
+    @CreatedDate
+    @Column(name = "acquired_at", nullable = false, updatable = false)
+    private LocalDateTime acquiredAt;
 
-  public UserBadge(User user, Badge badge) {
-    this.user = user;
-    this.badge = badge;
-  }
+    @Column(name = "is_eligible", nullable = false)
+    private boolean isEligible;
 
-  @PrePersist
-  void onCreate() {
-    awardedAt = Instant.now();
-  }
+    @Column(name = "continuous_since")
+    private LocalDateTime continuousSince;
+
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
+
+    public UserBadge(User user, Badge badge) {
+        this.id = new UserBadgeId(user.getId(), badge.getId());
+        this.user = user;
+        this.badge = badge;
+        this.isEligible = true;
+    }
 }

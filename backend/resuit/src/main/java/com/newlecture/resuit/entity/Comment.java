@@ -1,70 +1,44 @@
 package com.newlecture.resuit.entity;
 
-import java.time.Instant;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+import java.io.Serializable;
+import java.time.*;
+import java.util.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "comments")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Comment {
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+public class Comment extends BaseTimeEntity {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "post_id", nullable = false)
-  private Post post;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "author_id", nullable = false)
-  private User author;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "parent_comment_id")
-  private Comment parentComment;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private Comment parent;
 
-  @Lob
-  @Column(nullable = false)
-  private String body;
+    @Column(name = "content", nullable = false, columnDefinition = "text")
+    private String content;
 
-  @Column(length = 100)
-  private String section;
-
-  @Column(nullable = false)
-  private boolean accepted;
-
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt;
-
-  public Comment(Post post, User author, Comment parentComment, String body, String section) {
-    if (parentComment != null && parentComment.getPost() != post) {
-      throw new IllegalArgumentException("A reply must belong to the same post");
-    }
-    this.post = post;
-    this.author = author;
-    this.parentComment = parentComment;
-    this.body = body;
-    this.section = section;
-  }
-
-  @PrePersist
-  void onCreate() {
-    createdAt = Instant.now();
-  }
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

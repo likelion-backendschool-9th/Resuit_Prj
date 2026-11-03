@@ -1,45 +1,62 @@
 package com.newlecture.resuit.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+import java.io.Serializable;
+import java.time.*;
+import java.util.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User {
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+public class User extends BaseTimeEntity {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
+    private UUID id;
 
-  @Column(nullable = false, length = 100)
-  private String name;
+    @Column(name = "username", nullable = false, length = 50)
+    private String username;
 
-  @Column(nullable = false, unique = true, length = 50)
-  private String handle;
+    @Column(name = "email", length = 255)
+    private String email;
 
-  @Column(name = "avatar_color", length = 20)
-  private String avatarColor;
+    @Column(name = "password", length = 255)
+    private String password;
 
-  @Column(name = "github_username", length = 100)
-  private String githubUsername;
+    @Column(name = "role", nullable = false, length = 20)
+    private String role;
 
-  @Column(name = "is_company", nullable = false)
-  private boolean company;
+    @Column(name = "nickname", length = 50)
+    private String nickname;
 
-  public User(String name, String handle, String avatarColor, String githubUsername, boolean company) {
-    this.name = name;
-    this.handle = handle;
-    this.avatarColor = avatarColor;
-    this.githubUsername = githubUsername;
-    this.company = company;
-  }
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
+    @Column(name = "self_introduction", columnDefinition = "text")
+    private String selfIntroduction;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "widgets", columnDefinition = "jsonb")
+    private Map<String, Object> widgets;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pinned_common_resume_id")
+    private CommonResume pinnedCommonResume;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "displayed_badge_id")
+    private Badge displayedBadge;
+
+    @Column(name = "subscription")
+    private Boolean subscription;
 }
