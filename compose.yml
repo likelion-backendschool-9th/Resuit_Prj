@@ -29,6 +29,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
+      # 테이블 자동 생성. .env 에 DDL_AUTO 가 없으면 none 이라 배포가 서버 DB 구조를 바꾸지 않는다.
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO:-none}
     depends_on:
       db:
         condition: service_healthy
