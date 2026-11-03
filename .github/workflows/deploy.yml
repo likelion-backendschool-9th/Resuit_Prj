@@ -72,7 +72,7 @@ jobs:
             -e "ssh $SSH_OPTS" \
             ./ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
 
-      - name: Build and restart development services
+      - name: Build and restart services
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -81,5 +81,5 @@ jobs:
         run: |
           set -euo pipefail
           ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" "cd '$DEPLOY_PATH' && \
-            docker compose --env-file .env -f compose.yml -f compose.override.yml up -d --build --remove-orphans && \
-            docker compose --env-file .env -f compose.yml -f compose.override.yml ps"
+            docker compose --env-file .env -f compose.yml up -d --build --remove-orphans && \
+            docker compose --env-file .env -f compose.yml ps"
