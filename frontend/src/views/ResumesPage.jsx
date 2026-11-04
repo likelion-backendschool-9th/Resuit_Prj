@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppState } from '../context/AppStateContext.jsx';
-import { SPECIAL_RESUMES } from '../data/mock.js';
-import { getCommonResumes, createCommonResume, updateCommonResume, deleteCommonResume } from '../services/resumes.js';
+import { getCommonResumes, createCommonResume, updateCommonResume, deleteCommonResume, getTargetResumes } from '../services/resumes.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Tabs from '../components/common/Tabs.jsx';
 import Avatar from '../components/common/Avatar.jsx';
@@ -14,7 +13,7 @@ import Icon from '../components/common/Icon.jsx';
 import './ResumesPage.css';
 
 const TABS = [{ id: 'all', label: '전체' }, { id: 'common', label: '공통' }, { id: 'special', label: '특화' }];
-const STATUS = { writing: { label: '작성 중', tone: 'special' }, submitted: { label: '제출 완료', tone: 'accent' } };
+const STATUS = { WRITING: { label: '작성 중', tone: 'special' }, SUBMITTED: { label: '제출 완료', tone: 'accent' } };
 const MAX_NAME = 40;
 const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
 const SECTION_LABEL = { BASIC: '기본 정보', SKILLS: '기술 스택', PROJECTS: '프로젝트', AWARDS: '수상', INTRODUCTION: '자기소개' };
@@ -46,8 +45,11 @@ export default function ResumesPage() {
   const [retry, setRetry] = useState(0);
   const [renaming, setRenaming] = useState(null);
   const [draftName, setDraftName] = useState('');
-  const writing = SPECIAL_RESUMES.filter((r) => r.status === 'writing').length;
-  const submitted = SPECIAL_RESUMES.filter((r) => r.status === 'submitted').length;
+  const [targetResumes, setTargetResumes] = useState([]);
+  const [targetLoading, setTargetLoading] = useState(true);
+  const [targetError, setTargetError] = useState('');
+  const writing = targetResumes.filter((r) => r.status === 'WRITING').length;
+  const submitted = targetResumes.filter((r) => r.status === 'SUBMITTED').length;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -57,6 +59,12 @@ export default function ResumesPage() {
       .then(setCommonResumes)
       .catch((err) => { if (!controller.signal.aborted) setError(err.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    setTargetLoading(true);
+    setTargetError('');
+    getTargetResumes(controller.signal)
+      .then(setTargetResumes)
+      .catch((err) => { if (!controller.signal.aborted) setTargetError(err.message); })
+      .finally(() => { if (!controller.signal.aborted) setTargetLoading(false); });
     return () => controller.abort();
   }, [retry]);
 
@@ -183,12 +191,15 @@ export default function ResumesPage() {
         {tab !== 'common' && (
           <section className="section">
             <h2 className="section-label">특화 이력서 · 공고별로 작성</h2>
-            {SPECIAL_RESUMES.map((r) => (
-              <Link key={r.id} href={`/resumes/edit?job=${r.jobId || 1}&mode=base`} className="resume-row">
-                <Avatar initial={r.initial} color="co3" company />
+            {targetLoading ? <div className="empty" role="status">특화 이력서를 불러오는 중이에요.</div>
+              : targetError ? <div className="empty" role="alert"><p>{targetError}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>다시 시도</Button></div>
+              : targetResumes.length === 0 ? <div className="empty">아직 특화 이력서가 없어요. 특화 공고에서 작성을 시작해 보세요.</div>
+              : targetResumes.map((r) => (
+              <Link key={r.id} href={`/resumes/edit?id=${r.id}`} className="resume-row">
+                <Avatar initial={(r.companyName || '?').slice(0, 1)} color="co3" company />
                 <div className="grow" style={{ flexBasis: 220 }}>
-                  <div className="bold" style={{ fontSize: 16 }}>{r.company} · {r.role}</div>
-                  <div className="small muted">{r.base} · 요구 문항 {r.questions}개 · {r.updated}</div>
+                  <div className="bold" style={{ fontSize: 16 }}>{r.companyName} · {r.jobTitle}</div>
+                  <div className="small muted">{r.commonResumeId ? '공통 이력서 기반' : '처음부터 작성'} · 요구 문항 {r.questionCount}개 · {updatedText(r)}</div>
                 </div>
                 <Badge tone={STATUS[r.status].tone} size="md">{STATUS[r.status].label}</Badge>
               </Link>
