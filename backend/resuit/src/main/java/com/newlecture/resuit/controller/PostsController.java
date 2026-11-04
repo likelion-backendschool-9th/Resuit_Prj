@@ -20,6 +20,7 @@ import com.newlecture.resuit.dto.CommentResponse;
 import com.newlecture.resuit.dto.DeleteCommentRequest;
 import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
+import com.newlecture.resuit.dto.PostLikeRequest;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.dto.UpdatePostRequest;
 import com.newlecture.resuit.dto.UpdateCommentRequest;
@@ -96,11 +97,17 @@ public class PostsController {
 	}
 
 	@PostMapping("/{id}/likes")
-	public void likePost(@PathVariable Long id) {
+	public void likePost(
+			@PathVariable Long id,
+			@RequestBody PostLikeRequest request) {
+		postService.likePost(id, request);
 	}
 
 	@DeleteMapping("/{id}/likes")
-	public void unlikePost(@PathVariable Long id) {
+	public void unlikePost(
+			@PathVariable Long id,
+			@RequestBody PostLikeRequest request) {
+		postService.unlikePost(id, request);
 	}
 
 	/*

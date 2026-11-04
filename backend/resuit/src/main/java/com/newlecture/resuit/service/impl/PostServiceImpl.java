@@ -8,9 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.newlecture.resuit.dto.CreatePostRequest;
 import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
+import com.newlecture.resuit.dto.PostLikeRequest;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.dto.UpdatePostRequest;
 import com.newlecture.resuit.entity.Post;
+import com.newlecture.resuit.entity.PostLike;
+import com.newlecture.resuit.entity.PostLikeId;
+import com.newlecture.resuit.repository.PostLikeRepository;
 import com.newlecture.resuit.repository.PostRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.PostService;
@@ -22,12 +26,15 @@ public class PostServiceImpl implements PostService {
 
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
+	private final PostLikeRepository postLikeRepository;
 
 	public PostServiceImpl(
 			PostRepository postRepository,
-			UserRepository userRepository) {
+			UserRepository userRepository,
+			PostLikeRepository postLikeRepository) {
 		this.postRepository = postRepository;
 		this.userRepository = userRepository;
+		this.postLikeRepository = postLikeRepository;
 	}
 
 	@Override
@@ -81,6 +88,27 @@ public class PostServiceImpl implements PostService {
 		var post = findPost(id);
 		validateOwner(post, request.userId());
 		post.delete();
+	}
+
+	@Override
+	@Transactional
+	public void likePost(Long postId, PostLikeRequest request) {
+		var post = findPost(postId);
+		var user = userRepository.findById(request.userId())
+				.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + request.userId()));
+				
+		var likeId = new PostLikeId(post.getId(), user.getId());
+		if (!postLikeRepository.existsById(likeId)) {
+			postLikeRepository.save(new PostLike(post, user));
+		}
+	}
+
+	@Override
+	@Transactional
+	public void unlikePost(Long postId, PostLikeRequest request) {
+		var post = findPost(postId);
+		var likeId = new PostLikeId(post.getId(), request.userId());
+		postLikeRepository.deleteById(likeId);
 	}
 
 	/*

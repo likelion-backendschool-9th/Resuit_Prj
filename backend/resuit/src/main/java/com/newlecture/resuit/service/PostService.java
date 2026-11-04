@@ -7,6 +7,7 @@ import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.dto.CreatePostRequest;
 import com.newlecture.resuit.dto.DeletePostRequest;
+import com.newlecture.resuit.dto.PostLikeRequest;
 import com.newlecture.resuit.dto.UpdatePostRequest;
 
 public interface PostService {
@@ -20,4 +21,8 @@ public interface PostService {
 	PostDetailResponse updatePost(Long id, UpdatePostRequest request);
 
 	void deletePost(Long id, DeletePostRequest request);
+
+	void likePost(Long postId, PostLikeRequest request);
+
+	void unlikePost(Long postId, PostLikeRequest request);
 }
