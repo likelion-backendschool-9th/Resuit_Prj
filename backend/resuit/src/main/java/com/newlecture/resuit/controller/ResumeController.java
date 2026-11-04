@@ -65,8 +65,9 @@ public class ResumeController {
 
 	@DeleteMapping("/feedback-requests/{requestId}")
 	public ResponseEntity<Void> cancelCommonResumeFeedback(
-			@PathVariable Long requestId) {
-		return ResponseEntity.ok().build();
+			@PathVariable Long requestId, Principal principal) {
+		feedbackRequestService.cancel(requestId, username(principal));
+		return ResponseEntity.noContent().build();
 	}
 
 	@GetMapping("/resumes/{id}")

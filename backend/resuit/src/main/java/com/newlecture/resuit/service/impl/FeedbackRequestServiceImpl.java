@@ -18,6 +18,8 @@ import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
 import com.newlecture.resuit.service.FeedbackRequestService;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -76,6 +78,17 @@ public class FeedbackRequestServiceImpl implements FeedbackRequestService {
         sections.saveAll(sectionTypes.stream()
             .map(type -> FeedbackRequestSection.builder().request(saved).sectionType(type).build()).toList());
         return FeedbackRequestResponse.of(saved, sectionTypes);
+    }
+
+    // 행을 지우지 않고 취소 시각만 남긴다. 이미 달린 피드백 댓글은 그대로 둔다. 두 번 취소해도 결과는 같다.
+    @Override
+    @Transactional
+    public void cancel(Long requestId, String username) {
+        var user = currentUser(username);
+        if (requestId == null || requestId <= 0) throw new FeedbackRequestNotFoundException();
+        var request = requests.findById(requestId).orElseThrow(FeedbackRequestNotFoundException::new);
+        if (!request.getUser().getId().equals(user.getId())) throw new FeedbackRequestForbiddenException();
+        request.cancel(LocalDateTime.now().truncatedTo(ChronoUnit.MICROS));
     }
 
     private User currentUser(String username) {
