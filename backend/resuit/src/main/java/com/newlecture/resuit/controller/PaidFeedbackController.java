@@ -1,5 +1,6 @@
 package com.newlecture.resuit.controller;
 
+import java.security.Principal;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,8 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.newlecture.resuit.dto.CreditBalanceResponse;
+import com.newlecture.resuit.dto.CreditTransactionResponse;
 import com.newlecture.resuit.dto.MentorDetailResponse;
 import com.newlecture.resuit.dto.MentorSummary;
+import com.newlecture.resuit.service.CreditService;
 import com.newlecture.resuit.service.MentorService;
 
 @RestController
@@ -23,9 +27,13 @@ import com.newlecture.resuit.service.MentorService;
 public class PaidFeedbackController {
 
 	private final MentorService mentorService;
+	private final CreditService creditService;
 
-	public PaidFeedbackController(MentorService mentorService) {
+	public PaidFeedbackController(
+			MentorService mentorService,
+			CreditService creditService) {
 		this.mentorService = mentorService;
+		this.creditService = creditService;
 	}
 
 	@GetMapping("/mentors")
@@ -65,13 +73,16 @@ public class PaidFeedbackController {
 	}
 
 	@GetMapping("/credits/balance")
-	public ResponseEntity<Void> getCreditBalance() {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<CreditBalanceResponse> getCreditBalance(Principal principal) {
+		return ResponseEntity.ok(creditService.getBalance(principal.getName()));
 	}
 
 	@GetMapping("/credits/transactions")
-	public ResponseEntity<Void> getCreditTransactions() {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<Page<CreditTransactionResponse>> getCreditTransactions(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size,
+			Principal principal) {
+		return ResponseEntity.ok(creditService.getTransactions(principal.getName(), PageRequest.of(page, size)));
 	}
 
 	@PostMapping("/credit-payments")
