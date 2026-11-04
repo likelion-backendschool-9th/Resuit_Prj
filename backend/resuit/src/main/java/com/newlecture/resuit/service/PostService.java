@@ -1,5 +1,7 @@
 package com.newlecture.resuit.service;
 
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -25,4 +27,12 @@ public interface PostService {
 	void likePost(Long postId, PostLikeRequest request);
 
 	void unlikePost(Long postId, PostLikeRequest request);
+
+	Page<PostTimelineResponse> getRecommendedFeed(Pageable pageable);
+
+	Page<PostTimelineResponse> getFollowingFeed(UUID userId, Pageable pageable);
+
+	Page<PostTimelineResponse> getTechFeed(Pageable pageable);
+
+	Page<PostTimelineResponse> getQuestionFeed(Pageable pageable);
 }

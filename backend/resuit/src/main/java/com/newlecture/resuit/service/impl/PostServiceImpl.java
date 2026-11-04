@@ -1,5 +1,8 @@
 package com.newlecture.resuit.service.impl;
 
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import com.newlecture.resuit.entity.PostLike;
 import com.newlecture.resuit.entity.PostLikeId;
 import com.newlecture.resuit.repository.PostLikeRepository;
 import com.newlecture.resuit.repository.PostRepository;
+import com.newlecture.resuit.repository.FollowRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.PostService;
 import java.util.Objects;
@@ -27,14 +31,17 @@ public class PostServiceImpl implements PostService {
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
 	private final PostLikeRepository postLikeRepository;
+	private final FollowRepository followRepository;
 
 	public PostServiceImpl(
 			PostRepository postRepository,
 			UserRepository userRepository,
-			PostLikeRepository postLikeRepository) {
+			PostLikeRepository postLikeRepository,
+			FollowRepository followRepository) {
 		this.postRepository = postRepository;
 		this.userRepository = userRepository;
 		this.postLikeRepository = postLikeRepository;
+		this.followRepository = followRepository;
 	}
 
 	@Override
@@ -111,6 +118,37 @@ public class PostServiceImpl implements PostService {
 		postLikeRepository.deleteById(likeId);
 	}
 
+	@Override
+	public Page<PostTimelineResponse> getRecommendedFeed(Pageable pageable) {
+		return getTimeline(pageable);
+	}
+
+	@Override
+	public Page<PostTimelineResponse> getFollowingFeed(UUID userId, Pageable pageable) {
+		if (!userRepository.existsById(userId)) {
+			throw new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId);
+		}
+		List<UUID> followingIds = followRepository.findByIdFollowerId(userId).stream()
+				.map(follow -> follow.getFollowing().getId())
+				.toList();
+		if (followingIds.isEmpty()) {
+			return Page.empty(pageable);
+		}
+		return postRepository.findByUser_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(
+						followingIds, pageable)
+				.map(PostTimelineResponse::from);
+	}
+
+	@Override
+	public Page<PostTimelineResponse> getTechFeed(Pageable pageable) {
+		return getFeedByType("TECH", pageable);
+	}
+
+	@Override
+	public Page<PostTimelineResponse> getQuestionFeed(Pageable pageable) {
+		return getFeedByType("QUESTION", pageable);
+	}
+
 	/*
 	findPost 사용처
 	- updatePost
@@ -130,6 +168,11 @@ public class PostServiceImpl implements PostService {
 		if (!Objects.equals(post.getUser().getId(), userId)) {
 			throw new IllegalArgumentException("게시글을 수정하거나 삭제할 권한이 없습니다.");
 		}
+	}
+
+	private Page<PostTimelineResponse> getFeedByType(String type, Pageable pageable) {
+		return postRepository.findByTypeAndDeletedAtIsNullOrderByCreatedAtDesc(type, pageable)
+				.map(PostTimelineResponse::from);
 	}
 
 }

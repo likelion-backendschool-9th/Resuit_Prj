@@ -1,6 +1,7 @@
 package com.newlecture.resuit.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -114,19 +115,32 @@ public class PostsController {
 	* 피드 및 이미지, 영상 업로드쪽은 아직 어떻게 할지 정해지지않아. posts와 일단 같이 관리
 	*/
 	@GetMapping(value = "/feeds", params = "tab=recommend")
-	public void getRecommendedFeed() {
+	public Page<PostTimelineResponse> getRecommendedFeed(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return postService.getRecommendedFeed(PageRequest.of(page, size));
 	}
 
 	@GetMapping(value = "/feeds", params = "tab=following")
-	public void getFollowingFeed() {
+	public Page<PostTimelineResponse> getFollowingFeed(
+			@RequestParam UUID userId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return postService.getFollowingFeed(userId, PageRequest.of(page, size));
 	}
 
 	@GetMapping(value = "/feeds", params = "tab=tech")
-	public void getTechFeed() {
+	public Page<PostTimelineResponse> getTechFeed(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return postService.getTechFeed(PageRequest.of(page, size));
 	}
 
 	@GetMapping(value = "/feeds", params = "tab=question")
-	public void getQuestionFeed() {
+	public Page<PostTimelineResponse> getQuestionFeed(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return postService.getQuestionFeed(PageRequest.of(page, size));
 	}
 
 	@PostMapping("/uploads")
