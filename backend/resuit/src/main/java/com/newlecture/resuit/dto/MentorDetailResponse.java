@@ -35,6 +35,7 @@ public record MentorDetailResponse(
 				reviewHistory);
 	}
 
+	// 유료 피드백 내용은 요청자와 현직자만 볼 수 있어 공개 프로필에는 건수만 담는다.
 	public record ReviewHistory(
 			long completedPaidFeedbackCount,
 			long publicReviewCount,
