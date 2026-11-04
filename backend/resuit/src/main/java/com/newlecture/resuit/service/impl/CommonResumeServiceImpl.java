@@ -91,6 +91,13 @@ public class CommonResumeServiceImpl implements CommonResumeService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public CommonResumeDetailResponse getMyResume(Long resumeId, String username) {
+        var user = currentUser(username);
+        return CommonResumeDetailResponse.from(ownedResume(resumeId, user));
+    }
+
     private static Map<Long, Long> toMap(List<CommonResumeRepository.CountRow> rows) {
         return rows.stream().collect(Collectors.toMap(CommonResumeRepository.CountRow::getResumeId,
             CommonResumeRepository.CountRow::getCount));

@@ -11,6 +11,7 @@ public interface CommonResumeService {
     CommonResumeDetailResponse create(String username, CommonResumeRequest request);
     CommonResumeDetailResponse update(CommonResumeUpdateCommand command);
     void delete(Long resumeId, String username);
+    CommonResumeDetailResponse getMyResume(Long resumeId, String username);
 
     public static class UnauthenticatedUserException extends RuntimeException {}
     public static class ResumeNotFoundException extends RuntimeException {}
