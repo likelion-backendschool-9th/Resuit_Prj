@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.newlecture.resuit.dto.CreatePostRequest;
+import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
+import com.newlecture.resuit.dto.UpdatePostRequest;
 import com.newlecture.resuit.service.PostService;
 
 @RestController
@@ -40,11 +42,17 @@ public class PostsController {
 	}
 
 	@PatchMapping("/{id}")
-	public void updatePost(@PathVariable Long id) {
+	public PostDetailResponse updatePost(
+			@PathVariable Long id,
+			@RequestBody UpdatePostRequest request) {
+		return postService.updatePost(id, request);
 	}
 
 	@DeleteMapping("/{id}")
-	public void deletePost(@PathVariable Long id) {
+	public void deletePost(
+			@PathVariable Long id,
+			@RequestBody DeletePostRequest request) {
+		postService.deletePost(id, request);
 	}
 
 	@GetMapping("/{id}")

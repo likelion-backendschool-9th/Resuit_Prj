@@ -6,12 +6,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.newlecture.resuit.dto.CreatePostRequest;
+import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
+import com.newlecture.resuit.dto.UpdatePostRequest;
 import com.newlecture.resuit.entity.Post;
 import com.newlecture.resuit.repository.PostRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.PostService;
+import java.util.Objects;
 
 @Service
 @Transactional(readOnly = true)
@@ -54,5 +57,48 @@ public class PostServiceImpl implements PostService {
 				.build();
 
 		return PostDetailResponse.from(postRepository.save(post));
+	}
+
+	@Override
+	@Transactional
+	public PostDetailResponse updatePost(Long id, UpdatePostRequest request) {
+		var post = findPost(id);
+		validateOwner(post, request.userId());
+		post.update(
+				request.type(),
+				request.content(),
+				request.imageUrl(),
+				request.videoUrl(),
+				request.repoFullName());
+		return PostDetailResponse.from(post);
+	}
+
+	@Override
+	@Transactional
+	public void deletePost(Long id, DeletePostRequest request) {
+		var post = findPost(id);
+		validateOwner(post, request.userId());
+		post.delete();
+	}
+
+	/*
+	findPost 사용처
+	- updatePost
+	- deletePost
+	*/
+	private Post findPost(Long id) {
+		return postRepository.findByIdAndDeletedAtIsNull(id)
+				.orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다: " + id));
+	}
+
+	/*
+	validateOwner 사용처
+	- updatePost
+	- deletePost
+	*/
+	private void validateOwner(Post post, java.util.UUID userId) {
+		if (!Objects.equals(post.getUser().getId(), userId)) {
+			throw new IllegalArgumentException("게시글을 수정하거나 삭제할 권한이 없습니다.");
+		}
 	}
 }
