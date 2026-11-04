@@ -141,8 +141,8 @@ public class ResumeController {
 	}
 
 	@GetMapping("/target-resumes/{resumeId}")
-	public ResponseEntity<Void> getTargetResume(@PathVariable Long resumeId) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<TargetResumeDetailResponse> getTargetResume(@PathVariable Long resumeId, Principal principal) {
+		return ResponseEntity.ok(targetResumeService.getMyResume(resumeId, username(principal)));
 	}
 
 	private static String username(Principal principal) {

@@ -120,6 +120,14 @@ public class TargetResumeServiceImpl implements TargetResumeService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public TargetResumeDetailResponse getMyResume(Long resumeId, String username) {
+        var user = currentUser(username);
+        var resume = ownedResume(resumeId, user);
+        return TargetResumeDetailResponse.of(resume, resumes.findQuestions(resume.getJob().getId()), isSubmitted(resume, user));
+    }
+
     private static void validateAnswers(Object answers, List<JobQuestion> questions) {
         if (answers == null) return;
         if (!(answers instanceof List<?> list)) throw new InvalidResumeException("답변 목록 형식이 올바르지 않아요.");
