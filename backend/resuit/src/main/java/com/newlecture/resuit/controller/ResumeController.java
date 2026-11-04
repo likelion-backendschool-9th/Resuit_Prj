@@ -8,6 +8,8 @@ import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
+import com.newlecture.resuit.dto.resume.TargetResumeCreateRequest;
+import com.newlecture.resuit.dto.resume.TargetResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeSummary;
 import com.newlecture.resuit.service.CommonResumeService;
 import com.newlecture.resuit.service.TargetResumeService;
@@ -116,9 +118,10 @@ public class ResumeController {
 	}
 
 	@PostMapping("/target-resumes")
-	public ResponseEntity<Void> createTargetResume(
-			@RequestBody(required = false) Map<String, Object> resumeRequest) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<TargetResumeDetailResponse> createTargetResume(
+			@RequestBody(required = false) TargetResumeCreateRequest resumeRequest, Principal principal) {
+		return ResponseEntity.status(HttpStatus.CREATED)
+			.body(targetResumeService.create(username(principal), resumeRequest));
 	}
 
 	@PatchMapping("/target-resumes/{t_resumeId}")
