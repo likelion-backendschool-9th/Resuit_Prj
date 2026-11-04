@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.newlecture.resuit.dto.CreatePostRequest;
 import com.newlecture.resuit.dto.CreateCommentRequest;
 import com.newlecture.resuit.dto.CommentResponse;
+import com.newlecture.resuit.dto.DeleteCommentRequest;
 import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.dto.UpdatePostRequest;
+import com.newlecture.resuit.dto.UpdateCommentRequest;
 import com.newlecture.resuit.service.CommentService;
 import com.newlecture.resuit.service.PostService;
 
@@ -75,11 +77,17 @@ public class PostsController {
 	}
 
 	@PatchMapping("/{id}/comments")
-	public void updateComment(@PathVariable Long id) {
+	public CommentResponse updateComment(
+			@PathVariable Long id,
+			@RequestBody UpdateCommentRequest request) {
+		return commentService.updateComment(id, request);
 	}
 
 	@DeleteMapping("/{id}/comments")
-	public void deleteComment(@PathVariable Long id) {
+	public void deleteComment(
+			@PathVariable Long id,
+			@RequestBody DeleteCommentRequest request) {
+		commentService.deleteComment(id, request);
 	}
 
 	@GetMapping("/{id}/comments")

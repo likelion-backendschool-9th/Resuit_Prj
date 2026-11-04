@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.newlecture.resuit.dto.CommentResponse;
 import com.newlecture.resuit.dto.CreateCommentRequest;
+import com.newlecture.resuit.dto.DeleteCommentRequest;
+import com.newlecture.resuit.dto.UpdateCommentRequest;
 import com.newlecture.resuit.entity.Comment;
 import com.newlecture.resuit.repository.CommentRepository;
 import com.newlecture.resuit.repository.PostRepository;
@@ -85,9 +87,38 @@ public class CommentServiceImpl implements CommentService {
 		return CommentResponse.from(commentRepository.save(comment), List.of());
 	}
 
+	@Override
+	@Transactional
+	public CommentResponse updateComment(Long commentId, UpdateCommentRequest request) {
+		var comment = findComment(commentId);
+		validateOwner(comment, request.userId());
+		comment.updateContent(request.content());
+		return CommentResponse.from(comment, List.of());
+	}
+
+	@Override
+	@Transactional
+	public void deleteComment(Long commentId, DeleteCommentRequest request) {
+		var comment = findComment(commentId);
+		validateOwner(comment, request.userId());
+		comment.delete();
+	}
+
 	private com.newlecture.resuit.entity.Post findPost(Long id) {
 		return postRepository.findByIdAndDeletedAtIsNull(id)
 				.orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다: " + id));
+	}
+
+	private Comment findComment(Long id) {
+		return commentRepository.findById(id)
+				.filter(comment -> comment.getDeletedAt() == null)
+				.orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다: " + id));
+	}
+
+	private void validateOwner(Comment comment, java.util.UUID userId) {
+		if (!Objects.equals(comment.getUser().getId(), userId)) {
+			throw new IllegalArgumentException("댓글을 수정하거나 삭제할 권한이 없습니다.");
+		}
 	}
 
 	private static final class CommentNode {
