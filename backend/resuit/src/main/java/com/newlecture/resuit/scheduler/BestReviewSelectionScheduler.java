@@ -1,5 +1,6 @@
-package com.newlecture.resuit.service;
+package com.newlecture.resuit.scheduler;
 
+import com.newlecture.resuit.service.BestReviewSelectionService;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.DayOfWeek;
