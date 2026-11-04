@@ -8,6 +8,7 @@ import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
+import com.newlecture.resuit.dto.resume.TargetResumeSummary;
 import com.newlecture.resuit.service.CommonResumeService;
 import com.newlecture.resuit.service.TargetResumeService;
 import lombok.RequiredArgsConstructor;
@@ -110,8 +111,8 @@ public class ResumeController {
 	}
 
 	@GetMapping("/target-resumes")
-	public ResponseEntity<Void> getTargetResumes() {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<List<TargetResumeSummary>> getTargetResumes(Principal principal) {
+		return ResponseEntity.ok(targetResumeService.getMyResumes(username(principal)));
 	}
 
 	@PostMapping("/target-resumes")
