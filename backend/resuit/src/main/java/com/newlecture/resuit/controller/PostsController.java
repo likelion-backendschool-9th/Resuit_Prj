@@ -8,9 +8,11 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.newlecture.resuit.dto.CreatePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.service.PostService;
@@ -33,7 +35,8 @@ public class PostsController {
 	}
 
 	@PostMapping("/")
-	public void createPost() {
+	public PostDetailResponse createPost(@RequestBody CreatePostRequest request) {
+		return postService.createPost(request);
 	}
 
 	@PatchMapping("/{id}")
