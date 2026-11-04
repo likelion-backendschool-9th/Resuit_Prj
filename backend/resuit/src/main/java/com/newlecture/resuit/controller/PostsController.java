@@ -2,9 +2,13 @@ package com.newlecture.resuit.controller;
 
 import java.util.List;
 import java.util.UUID;
+import java.security.Principal;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -22,9 +26,10 @@ import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.dto.UpdatePostRequest;
 import com.newlecture.resuit.dto.UpdateCommentRequest;
+import com.newlecture.resuit.dto.MediaUploadResponse;
 import com.newlecture.resuit.service.CommentService;
+import com.newlecture.resuit.service.MediaService;
 import com.newlecture.resuit.service.PostService;
-import java.security.Principal;
 
 @RestController
 @RequestMapping ("/api/v1/posts")
@@ -32,10 +37,12 @@ public class PostsController {
 
 	private final PostService postService;
 	private final CommentService commentService;
+	private final MediaService mediaService;
 
-	public PostsController(PostService postService, CommentService commentService) {
+	public PostsController(PostService postService, CommentService commentService, MediaService mediaService) {
 		this.postService = postService;
 		this.commentService = commentService;
+		this.mediaService = mediaService;
 	}
 
 	@GetMapping
@@ -144,7 +151,17 @@ public class PostsController {
 		return postService.getQuestionFeed(PageRequest.of(page, size));
 	}
 
-	@PostMapping("/uploads")
-	public void uploadMedia() {
+	@PostMapping(value = "/uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public MediaUploadResponse uploadMedia(
+			@RequestParam("file") MultipartFile file,
+			Principal principal) {
+		return mediaService.upload(file, principal.getName());
+	}
+
+	@DeleteMapping("/uploads")
+	public void discardMedia(
+			@RequestParam("path") String path,
+			Principal principal) {
+		mediaService.discard(path, principal.getName());
 	}
 }

@@ -12,6 +12,8 @@ spring:
 
 # 실제 값은 환경 변수로 공급한다. 미설정 상태에서는 발송 성공을 반환하지 않는다.
 resuit:
+  media:
+    root: ${RESUIT_MEDIA_ROOT:src/main/media}
   verification:
     code-secret: ${VERIFICATION_CODE_SECRET:}
     mail-from: ${VERIFICATION_MAIL_FROM:}

@@ -20,6 +20,7 @@ import com.newlecture.resuit.repository.PostRepository;
 import com.newlecture.resuit.repository.FollowRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.PostService;
+import com.newlecture.resuit.service.MediaService;
 import java.util.Objects;
 
 @Service
@@ -30,16 +31,19 @@ public class PostServiceImpl implements PostService {
 	private final UserRepository userRepository;
 	private final PostLikeRepository postLikeRepository;
 	private final FollowRepository followRepository;
+	private final MediaService mediaService;
 
 	public PostServiceImpl(
 			PostRepository postRepository,
 			UserRepository userRepository,
 			PostLikeRepository postLikeRepository,
-			FollowRepository followRepository) {
+			FollowRepository followRepository,
+			MediaService mediaService) {
 		this.postRepository = postRepository;
 		this.userRepository = userRepository;
 		this.postLikeRepository = postLikeRepository;
 		this.followRepository = followRepository;
+		this.mediaService = mediaService;
 	}
 
 	@Override
@@ -59,13 +63,15 @@ public class PostServiceImpl implements PostService {
 	@Transactional
 	public PostDetailResponse createPost(CreatePostRequest request, String username) {
 		var user = findUser(username);
+		var imagePath = mediaService.finalizeForPost(request.imageUrl(), user.getId(), "IMAGE");
+		var videoPath = mediaService.finalizeForPost(request.videoUrl(), user.getId(), "VIDEO");
 
 		var post = Post.builder()
 				.user(user)
 				.type(request.type())
 				.content(request.content())
-				.imageUrl(request.imageUrl())
-				.videoUrl(request.videoUrl())
+				.imageUrl(imagePath == null ? null : "/media/" + imagePath)
+				.videoUrl(videoPath == null ? null : "/media/" + videoPath)
 				.repoFullName(request.repoFullName())
 				.build();
 
