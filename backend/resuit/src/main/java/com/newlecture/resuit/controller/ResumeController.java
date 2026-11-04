@@ -7,6 +7,7 @@ import java.util.Map;
 import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
+import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
 import com.newlecture.resuit.service.CommonResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -88,10 +89,11 @@ public class ResumeController {
 	}
 
 	@PatchMapping("/common-resumes/{c_resumeId}")
-	public ResponseEntity<Void> updateCommonResume(
+	public ResponseEntity<CommonResumeDetailResponse> updateCommonResume(
 			@PathVariable Long c_resumeId,
-			@RequestBody(required = false) Map<String, Object> resumeRequest) {
-		return ResponseEntity.ok().build();
+			@RequestBody(required = false) CommonResumeRequest resumeRequest, Principal principal) {
+		return ResponseEntity.ok(commonResumeService.update(
+			new CommonResumeUpdateCommand(c_resumeId, username(principal), resumeRequest)));
 	}
 
 	@DeleteMapping("/common-resumes/{c_resumeId}")

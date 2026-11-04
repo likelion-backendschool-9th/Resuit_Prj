@@ -3,6 +3,7 @@ package com.newlecture.resuit.service.impl;
 import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
+import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
 import com.newlecture.resuit.entity.CommonResume;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommonResumeRepository;
@@ -56,6 +57,22 @@ public class CommonResumeServiceImpl implements CommonResumeService {
             .content(request.content() == null ? new LinkedHashMap<>() : request.content())
             .build();
         return CommonResumeDetailResponse.from(resumes.save(resume));
+    }
+
+    // PATCH라서 보내지 않은(null) 값은 그대로 둔다. 분야를 빈 문자열로 보내면 분야를 지운다.
+    @Override
+    @Transactional
+    public CommonResumeDetailResponse update(CommonResumeUpdateCommand command) {
+        var user = currentUser(command.username());
+        var resume = ownedResume(command.resumeId(), user);
+        var request = command.request();
+        if (request == null) throw new InvalidResumeException("이력서 정보가 없어요.");
+        resume.update(
+            request.title() == null ? resume.getTitle() : validTitle(request.title()),
+            request.field() == null ? resume.getField() : validField(request.field()),
+            request.content() == null ? resume.getContent() : request.content());
+        resumes.flush();
+        return CommonResumeDetailResponse.from(resume);
     }
 
     private static Map<Long, Long> toMap(List<CommonResumeRepository.CountRow> rows) {
