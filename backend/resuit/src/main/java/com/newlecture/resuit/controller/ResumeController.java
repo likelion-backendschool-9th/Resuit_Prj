@@ -4,6 +4,8 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
+import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
+import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.service.CommonResumeService;
 import lombok.RequiredArgsConstructor;
@@ -79,9 +81,10 @@ public class ResumeController {
 	}
 
 	@PostMapping("/common-resumes")
-	public ResponseEntity<Void> createCommonResume(
-			@RequestBody(required = false) Map<String, Object> resumeRequest) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<CommonResumeDetailResponse> createCommonResume(
+			@RequestBody(required = false) CommonResumeRequest resumeRequest, Principal principal) {
+		return ResponseEntity.status(HttpStatus.CREATED)
+			.body(commonResumeService.create(username(principal), resumeRequest));
 	}
 
 	@PatchMapping("/common-resumes/{c_resumeId}")

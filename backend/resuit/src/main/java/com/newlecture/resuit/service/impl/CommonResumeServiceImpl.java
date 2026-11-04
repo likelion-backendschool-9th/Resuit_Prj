@@ -1,5 +1,7 @@
 package com.newlecture.resuit.service.impl;
 
+import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
+import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.entity.CommonResume;
 import com.newlecture.resuit.entity.User;
@@ -11,6 +13,7 @@ import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenExceptio
 import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -39,6 +42,20 @@ public class CommonResumeServiceImpl implements CommonResumeService {
             .map(resume -> CommonResumeSummary.of(resume,
                 feedbackCounts.getOrDefault(resume.getId(), 0L), targetCounts.getOrDefault(resume.getId(), 0L)))
             .toList();
+    }
+
+    @Override
+    @Transactional
+    public CommonResumeDetailResponse create(String username, CommonResumeRequest request) {
+        var user = currentUser(username);
+        if (request == null) throw new InvalidResumeException("이력서 정보가 없어요.");
+        var resume = CommonResume.builder()
+            .user(user)
+            .title(validTitle(request.title()))
+            .field(validField(request.field()))
+            .content(request.content() == null ? new LinkedHashMap<>() : request.content())
+            .build();
+        return CommonResumeDetailResponse.from(resumes.save(resume));
     }
 
     private static Map<Long, Long> toMap(List<CommonResumeRepository.CountRow> rows) {
