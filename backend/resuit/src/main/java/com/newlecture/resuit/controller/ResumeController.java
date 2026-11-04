@@ -9,6 +9,7 @@ import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
 import com.newlecture.resuit.service.CommonResumeService;
+import com.newlecture.resuit.service.TargetResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ResumeController {
 
 	private final CommonResumeService commonResumeService;
+	private final TargetResumeService targetResumeService;
 
 	@GetMapping("/resumes")
 	public ResponseEntity<Void> getAllResumes() {
@@ -169,5 +171,23 @@ public class ResumeController {
 	@ExceptionHandler(CommonResumeService.InvalidResumeException.class)
 	public ResponseEntity<ResumeErrorResponse> invalidResume(CommonResumeService.InvalidResumeException e) {
 		return ResponseEntity.badRequest().body(new ResumeErrorResponse("INVALID_RESUME", e.getMessage()));
+	}
+
+	@ExceptionHandler(TargetResumeService.JobNotFoundException.class)
+	public ResponseEntity<ResumeErrorResponse> jobNotFound() {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+			.body(new ResumeErrorResponse("JOB_NOT_FOUND", "공고를 찾을 수 없습니다."));
+	}
+
+	@ExceptionHandler(TargetResumeService.NotSpecialJobException.class)
+	public ResponseEntity<ResumeErrorResponse> notSpecialJob() {
+		return ResponseEntity.badRequest()
+			.body(new ResumeErrorResponse("NOT_SPECIAL_JOB", "특화 공고에만 특화 이력서를 만들 수 있습니다."));
+	}
+
+	@ExceptionHandler(TargetResumeService.TargetResumeExistsException.class)
+	public ResponseEntity<ResumeErrorResponse> targetResumeExists() {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(new ResumeErrorResponse("TARGET_RESUME_EXISTS", "이 공고의 특화 이력서가 이미 있습니다."));
 	}
 }
