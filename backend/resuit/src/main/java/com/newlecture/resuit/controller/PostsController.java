@@ -1,5 +1,7 @@
 package com.newlecture.resuit.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -8,9 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 
+import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.service.PostService;
 
@@ -44,7 +45,8 @@ public class PostsController {
 	}
 
 	@GetMapping("/{id}")
-	public void getPost(@PathVariable Long id) {
+	public PostDetailResponse getPostDetail(@PathVariable Long id) {
+		return postService.getPostDetail(id);
 	}
 
 	@PostMapping("/{id}/comments")
