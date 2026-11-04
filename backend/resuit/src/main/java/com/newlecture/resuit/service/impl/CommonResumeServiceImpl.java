@@ -41,9 +41,12 @@ public class CommonResumeServiceImpl implements CommonResumeService {
         var user = currentUser(username);
         Map<Long, Long> feedbackCounts = toMap(resumes.countFeedbackByUser(user.getId()));
         Map<Long, Long> targetCounts = toMap(resumes.countTargetResumesByUser(user.getId()));
+        Map<Long, Long> activeRequests = resumes.findActiveFeedbackRequests(user.getId()).stream().collect(
+            Collectors.toMap(CommonResumeRepository.ActiveRequestRow::getResumeId,
+                CommonResumeRepository.ActiveRequestRow::getRequestId, (first, second) -> first));
         return resumes.findByUserIdOrderByIdAsc(user.getId()).stream()
-            .map(resume -> CommonResumeSummary.of(resume,
-                feedbackCounts.getOrDefault(resume.getId(), 0L), targetCounts.getOrDefault(resume.getId(), 0L)))
+            .map(resume -> CommonResumeSummary.of(resume, feedbackCounts.getOrDefault(resume.getId(), 0L),
+                targetCounts.getOrDefault(resume.getId(), 0L), activeRequests.get(resume.getId())))
             .toList();
     }
 

@@ -16,15 +16,17 @@ public record CommonResumeSummary(
     List<Section> sections,
     long feedbackCount,
     long targetResumeCount,
+    Long feedbackRequestId,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {
     // type: BASIC, SKILLS, PROJECTS, AWARDS, INTRODUCTION (docs/database-design.md 이력서 항목)
     public record Section(String type, int count) {}
 
-    public static CommonResumeSummary of(CommonResume resume, long feedbackCount, long targetResumeCount) {
+    // feedbackRequestId: 진행 중인(취소하지 않은) 피드백 요청. 없으면 null
+    public static CommonResumeSummary of(CommonResume resume, long feedbackCount, long targetResumeCount, Long feedbackRequestId) {
         return new CommonResumeSummary(resume.getId(), resume.getTitle(), resume.getField(), resume.isPublic(),
-            sectionsOf(resume.getContent()), feedbackCount, targetResumeCount,
+            sectionsOf(resume.getContent()), feedbackCount, targetResumeCount, feedbackRequestId,
             resume.getCreatedAt(), resume.getUpdatedAt());
     }
 

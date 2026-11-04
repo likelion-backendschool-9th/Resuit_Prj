@@ -29,8 +29,26 @@ public interface CommonResumeRepository extends JpaRepository<CommonResume, Long
         """)
     List<CountRow> countTargetResumesByUser(@Param("userId") UUID userId);
 
+    // 취소하지 않은 피드백 요청. 이력서 하나에 진행 중인 요청은 하나만 둔다.
+    @Query("""
+        SELECT COUNT(r) > 0 FROM FeedbackRequest r
+        WHERE r.commonResume.id = :resumeId AND r.deletedAt IS NULL
+        """)
+    boolean hasActiveFeedbackRequest(@Param("resumeId") Long resumeId);
+
+    @Query("""
+        SELECT r.commonResume.id AS resumeId, r.id AS requestId FROM FeedbackRequest r
+        WHERE r.user.id = :userId AND r.commonResume IS NOT NULL AND r.deletedAt IS NULL
+        """)
+    List<ActiveRequestRow> findActiveFeedbackRequests(@Param("userId") UUID userId);
+
     interface CountRow {
         Long getResumeId();
         long getCount();
+    }
+
+    interface ActiveRequestRow {
+        Long getResumeId();
+        Long getRequestId();
     }
 }

@@ -41,6 +41,12 @@ public interface TargetResumeRepository extends JpaRepository<TargetResume, Long
         """)
     List<Long> findSubmittedIds(@Param("userId") UUID userId);
 
+    @Query("""
+        SELECT COUNT(r) > 0 FROM FeedbackRequest r
+        WHERE r.targetResume.id = :resumeId AND r.deletedAt IS NULL
+        """)
+    boolean hasActiveFeedbackRequest(@Param("resumeId") Long resumeId);
+
     interface QuestionCountRow {
         Long getJobId();
         long getCount();

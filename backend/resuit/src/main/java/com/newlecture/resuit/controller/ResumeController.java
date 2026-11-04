@@ -4,6 +4,8 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
+import com.newlecture.resuit.dto.feedback.FeedbackRequestCreateRequest;
+import com.newlecture.resuit.dto.feedback.FeedbackRequestResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
@@ -15,6 +17,7 @@ import com.newlecture.resuit.dto.resume.TargetResumeSummary;
 import com.newlecture.resuit.dto.resume.TargetResumeUpdateCommand;
 import com.newlecture.resuit.dto.resume.TargetResumeUpdateRequest;
 import com.newlecture.resuit.service.CommonResumeService;
+import com.newlecture.resuit.service.FeedbackRequestService;
 import com.newlecture.resuit.service.ResumeService;
 import com.newlecture.resuit.service.TargetResumeService;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ResumeController {
 
 	private final ResumeService resumeService;
+	private final FeedbackRequestService feedbackRequestService;
 	private final CommonResumeService commonResumeService;
 	private final TargetResumeService targetResumeService;
 
@@ -53,9 +57,10 @@ public class ResumeController {
 	}
 
 	@PostMapping("/feedback-requests")
-	public ResponseEntity<Void> createFeedbackRequest(
-			@RequestBody(required = false) Map<String, Object> feedbackRequest) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<FeedbackRequestResponse> createFeedbackRequest(
+			@RequestBody(required = false) FeedbackRequestCreateRequest feedbackRequest, Principal principal) {
+		return ResponseEntity.status(HttpStatus.CREATED)
+			.body(feedbackRequestService.create(username(principal), feedbackRequest));
 	}
 
 	@DeleteMapping("/feedback-requests/{requestId}")
@@ -194,6 +199,24 @@ public class ResumeController {
 	public ResponseEntity<ResumeErrorResponse> notSpecialJob() {
 		return ResponseEntity.badRequest()
 			.body(new ResumeErrorResponse("NOT_SPECIAL_JOB", "특화 공고에만 특화 이력서를 만들 수 있습니다."));
+	}
+
+	@ExceptionHandler(FeedbackRequestService.FeedbackRequestNotFoundException.class)
+	public ResponseEntity<ResumeErrorResponse> feedbackRequestNotFound() {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+			.body(new ResumeErrorResponse("FEEDBACK_REQUEST_NOT_FOUND", "피드백 요청을 찾을 수 없습니다."));
+	}
+
+	@ExceptionHandler(FeedbackRequestService.FeedbackRequestForbiddenException.class)
+	public ResponseEntity<ResumeErrorResponse> feedbackRequestForbidden() {
+		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+			.body(new ResumeErrorResponse("FEEDBACK_REQUEST_FORBIDDEN", "본인 피드백 요청만 취소할 수 있습니다."));
+	}
+
+	@ExceptionHandler(FeedbackRequestService.FeedbackRequestExistsException.class)
+	public ResponseEntity<ResumeErrorResponse> feedbackRequestExists() {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(new ResumeErrorResponse("FEEDBACK_REQUEST_EXISTS", "이 이력서는 이미 피드백을 요청했습니다."));
 	}
 
 	@ExceptionHandler(TargetResumeService.TargetResumeExistsException.class)
