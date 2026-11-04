@@ -3,7 +3,9 @@ package com.newlecture.resuit.service.impl;
 import com.newlecture.resuit.dto.resume.TargetResumeCreateRequest;
 import com.newlecture.resuit.dto.resume.TargetResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeSummary;
+import com.newlecture.resuit.dto.resume.TargetResumeUpdateCommand;
 import com.newlecture.resuit.entity.CommonResume;
+import com.newlecture.resuit.entity.JobQuestion;
 import com.newlecture.resuit.entity.TargetResume;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommonResumeRepository;
@@ -83,6 +85,41 @@ public class TargetResumeServiceImpl implements TargetResumeService {
             .content(content)
             .build();
         return TargetResumeDetailResponse.of(resumes.save(resume), resumes.findQuestions(job.getId()), false);
+    }
+
+    // PATCH라서 보내지 않은(null) 값은 그대로 둔다. 답변은 이 공고의 문항에만, 글자 수 제한 안에서 받는다.
+    @Override
+    @Transactional
+    public TargetResumeDetailResponse update(TargetResumeUpdateCommand command) {
+        var user = currentUser(command.username());
+        var resume = ownedResume(command.resumeId(), user);
+        var request = command.request();
+        if (request == null) throw new InvalidResumeException("이력서 정보가 없어요.");
+        var questions = resumes.findQuestions(resume.getJob().getId());
+        if (request.content() != null) validateAnswers(request.content().get("answers"), questions);
+        resume.update(
+            request.title() == null ? resume.getTitle() : validTitle(request.title()),
+            request.content() == null ? resume.getContent() : request.content());
+        resumes.flush();
+        return TargetResumeDetailResponse.of(resume, questions, isSubmitted(resume, user));
+    }
+
+    private static void validateAnswers(Object answers, List<JobQuestion> questions) {
+        if (answers == null) return;
+        if (!(answers instanceof List<?> list)) throw new InvalidResumeException("답변 목록 형식이 올바르지 않아요.");
+        Map<Long, JobQuestion> byId = questions.stream().collect(Collectors.toMap(JobQuestion::getId, q -> q));
+        for (Object item : list) {
+            if (!(item instanceof Map<?, ?> answer) || !(answer.get("questionId") instanceof Number id)) {
+                throw new InvalidResumeException("답변마다 questionId가 있어야 해요.");
+            }
+            var question = byId.get(id.longValue());
+            if (question == null) throw new InvalidResumeException("이 공고에 없는 문항의 답변이 있어요.");
+            var text = answer.get("answer");
+            if (text != null && !(text instanceof String)) throw new InvalidResumeException("답변은 글자여야 해요.");
+            if (text instanceof String s && question.getCharLimit() != null && s.length() > question.getCharLimit()) {
+                throw new InvalidResumeException("문항 " + question.getOrderNo() + "의 답변은 " + question.getCharLimit() + "자까지 쓸 수 있어요.");
+            }
+        }
     }
 
     // JSON 내용을 깊게 복사한다. 공통 이력서와 같은 목록 객체를 나눠 쓰지 않게 하려고.

@@ -11,6 +11,8 @@ import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
 import com.newlecture.resuit.dto.resume.TargetResumeCreateRequest;
 import com.newlecture.resuit.dto.resume.TargetResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeSummary;
+import com.newlecture.resuit.dto.resume.TargetResumeUpdateCommand;
+import com.newlecture.resuit.dto.resume.TargetResumeUpdateRequest;
 import com.newlecture.resuit.service.CommonResumeService;
 import com.newlecture.resuit.service.TargetResumeService;
 import lombok.RequiredArgsConstructor;
@@ -125,10 +127,11 @@ public class ResumeController {
 	}
 
 	@PatchMapping("/target-resumes/{t_resumeId}")
-	public ResponseEntity<Void> updateTargetResume(
+	public ResponseEntity<TargetResumeDetailResponse> updateTargetResume(
 			@PathVariable Long t_resumeId,
-			@RequestBody(required = false) Map<String, Object> resumeRequest) {
-		return ResponseEntity.ok().build();
+			@RequestBody(required = false) TargetResumeUpdateRequest resumeRequest, Principal principal) {
+		return ResponseEntity.ok(targetResumeService.update(
+			new TargetResumeUpdateCommand(t_resumeId, username(principal), resumeRequest)));
 	}
 
 	@DeleteMapping("/target-resumes/{t_resumeId}")
