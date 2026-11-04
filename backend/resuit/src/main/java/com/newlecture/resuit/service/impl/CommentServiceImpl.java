@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.newlecture.resuit.dto.CommentResponse;
 import com.newlecture.resuit.dto.CreateCommentRequest;
-import com.newlecture.resuit.dto.DeleteCommentRequest;
 import com.newlecture.resuit.dto.UpdateCommentRequest;
 import com.newlecture.resuit.entity.Comment;
 import com.newlecture.resuit.repository.CommentRepository;
@@ -61,10 +60,9 @@ public class CommentServiceImpl implements CommentService {
 
 	@Override
 	@Transactional
-	public CommentResponse createComment(Long postId, CreateCommentRequest request) {
+	public CommentResponse createComment(Long postId, CreateCommentRequest request, String username) {
 		var post = findPost(postId);
-		var user = userRepository.findById(request.userId())
-				.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + request.userId()));
+		var user = findUser(username);
 		Comment parent = null;
 
 		if (request.parentId() != null) {
@@ -89,18 +87,18 @@ public class CommentServiceImpl implements CommentService {
 
 	@Override
 	@Transactional
-	public CommentResponse updateComment(Long commentId, UpdateCommentRequest request) {
+	public CommentResponse updateComment(Long commentId, UpdateCommentRequest request, String username) {
 		var comment = findComment(commentId);
-		validateOwner(comment, request.userId());
+		validateOwner(comment, findUser(username).getId());
 		comment.updateContent(request.content());
 		return CommentResponse.from(comment, List.of());
 	}
 
 	@Override
 	@Transactional
-	public void deleteComment(Long commentId, DeleteCommentRequest request) {
+	public void deleteComment(Long commentId, String username) {
 		var comment = findComment(commentId);
-		validateOwner(comment, request.userId());
+		validateOwner(comment, findUser(username).getId());
 		comment.delete();
 	}
 
@@ -113,6 +111,14 @@ public class CommentServiceImpl implements CommentService {
 		return commentRepository.findById(id)
 				.filter(comment -> comment.getDeletedAt() == null)
 				.orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다: " + id));
+	}
+
+	private com.newlecture.resuit.entity.User findUser(String username) {
+		if (username == null || username.isBlank()) {
+			throw new IllegalArgumentException("로그인이 필요합니다.");
+		}
+		return userRepository.findByUsername(username)
+				.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username));
 	}
 
 	private void validateOwner(Comment comment, java.util.UUID userId) {

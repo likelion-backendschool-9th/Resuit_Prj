@@ -8,8 +8,6 @@ import org.springframework.data.domain.Pageable;
 import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.dto.CreatePostRequest;
-import com.newlecture.resuit.dto.DeletePostRequest;
-import com.newlecture.resuit.dto.PostLikeRequest;
 import com.newlecture.resuit.dto.UpdatePostRequest;
 
 public interface PostService {
@@ -18,15 +16,15 @@ public interface PostService {
 
 	PostDetailResponse getPostDetail(Long id);
 
-	PostDetailResponse createPost(CreatePostRequest request);
+	PostDetailResponse createPost(CreatePostRequest request, String username);
 
-	PostDetailResponse updatePost(Long id, UpdatePostRequest request);
+	PostDetailResponse updatePost(Long id, UpdatePostRequest request, String username);
 
-	void deletePost(Long id, DeletePostRequest request);
+	void deletePost(Long id, String username);
 
-	void likePost(Long postId, PostLikeRequest request);
+	void likePost(Long postId, String username);
 
-	void unlikePost(Long postId, PostLikeRequest request);
+	void unlikePost(Long postId, String username);
 
 	Page<PostTimelineResponse> getRecommendedFeed(Pageable pageable);
 

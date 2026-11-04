@@ -18,15 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.newlecture.resuit.dto.CreatePostRequest;
 import com.newlecture.resuit.dto.CreateCommentRequest;
 import com.newlecture.resuit.dto.CommentResponse;
-import com.newlecture.resuit.dto.DeleteCommentRequest;
-import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
-import com.newlecture.resuit.dto.PostLikeRequest;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.dto.UpdatePostRequest;
 import com.newlecture.resuit.dto.UpdateCommentRequest;
 import com.newlecture.resuit.service.CommentService;
 import com.newlecture.resuit.service.PostService;
+import java.security.Principal;
 
 @RestController
 @RequestMapping ("/api/v1/posts")
@@ -48,22 +46,23 @@ public class PostsController {
 	}
 
 	@PostMapping("/")
-	public PostDetailResponse createPost(@RequestBody CreatePostRequest request) {
-		return postService.createPost(request);
+	public PostDetailResponse createPost(@RequestBody CreatePostRequest request, Principal principal) {
+		return postService.createPost(request, principal.getName());
 	}
 
 	@PatchMapping("/{id}")
 	public PostDetailResponse updatePost(
 			@PathVariable Long id,
-			@RequestBody UpdatePostRequest request) {
-		return postService.updatePost(id, request);
+			@RequestBody UpdatePostRequest request,
+			Principal principal) {
+		return postService.updatePost(id, request, principal.getName());
 	}
 
 	@DeleteMapping("/{id}")
 	public void deletePost(
 			@PathVariable Long id,
-			@RequestBody DeletePostRequest request) {
-		postService.deletePost(id, request);
+			Principal principal) {
+		postService.deletePost(id, principal.getName());
 	}
 
 	@GetMapping("/{id}")
@@ -74,22 +73,24 @@ public class PostsController {
 	@PostMapping("/{id}/comments")
 	public CommentResponse createComment(
 			@PathVariable Long id,
-			@RequestBody CreateCommentRequest request) {
-		return commentService.createComment(id, request);
+			@RequestBody CreateCommentRequest request,
+			Principal principal) {
+		return commentService.createComment(id, request, principal.getName());
 	}
 
 	@PatchMapping("/{id}/comments")
 	public CommentResponse updateComment(
 			@PathVariable Long id,
-			@RequestBody UpdateCommentRequest request) {
-		return commentService.updateComment(id, request);
+			@RequestBody UpdateCommentRequest request,
+			Principal principal) {
+		return commentService.updateComment(id, request, principal.getName());
 	}
 
 	@DeleteMapping("/{id}/comments")
 	public void deleteComment(
 			@PathVariable Long id,
-			@RequestBody DeleteCommentRequest request) {
-		commentService.deleteComment(id, request);
+			Principal principal) {
+		commentService.deleteComment(id, principal.getName());
 	}
 
 	@GetMapping("/{id}/comments")
@@ -100,15 +101,15 @@ public class PostsController {
 	@PostMapping("/{id}/likes")
 	public void likePost(
 			@PathVariable Long id,
-			@RequestBody PostLikeRequest request) {
-		postService.likePost(id, request);
+			Principal principal) {
+		postService.likePost(id, principal.getName());
 	}
 
 	@DeleteMapping("/{id}/likes")
 	public void unlikePost(
 			@PathVariable Long id,
-			@RequestBody PostLikeRequest request) {
-		postService.unlikePost(id, request);
+			Principal principal) {
+		postService.unlikePost(id, principal.getName());
 	}
 
 	/*
