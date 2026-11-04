@@ -31,6 +31,7 @@ export default function ProfilePage() {
         <div className="profile__banner" aria-hidden="true" />
         <div className="profile__head">
           <div className="profile__head-row">
+            <Button to="/profile/verification" variant="outline">기업 이메일 인증</Button>
             <div className="profile__avatar"><Avatar initial={me.initial} color={me.av} size={120} /></div>
             <Button variant="outline" aria-pressed={editing} onClick={() => setEditing((v) => !v)}>{editing ? '꾸미기 완료' : '프로필 꾸미기'}</Button>
           </div>

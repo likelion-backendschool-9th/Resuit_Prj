@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useMemo, useState } from 'react';
-import { ME, POSTS, FEEDBACK_REQUESTS, COMMON_RESUMES, PUBLIC_RESUME_IDS, THREADS } from '../data/mock.js';
+import { getAuthSession, logoutSession } from '../services/auth.js';
+import { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import { POSTS, FEEDBACK_REQUESTS, COMMON_RESUMES, PUBLIC_RESUME_IDS, THREADS } from '../data/mock.js';
 
 // 여러 화면이 함께 쓰는 상태. 실제 서비스에서는 서버 API + 캐시(React Query 등)로 대체한다.
 const AppStateContext = createContext(null);
@@ -12,7 +13,20 @@ const nextId = () => ++seq;
 const feedbackCardId = (resumeId) => `resume-${resumeId}`;
 
 export function AppStateProvider({ children }) {
-  const [loggedIn, setLoggedIn] = useState(true);
+  const [session, setSession] = useState(null);
+  const [authError, setAuthError] = useState('');
+  useEffect(() => {
+    const abort = new AbortController();
+    getAuthSession({ signal: abort.signal }).then(setSession).catch((error) => {
+      if (!abort.signal.aborted) setAuthError(error.message);
+    });
+    return () => abort.abort();
+  }, []);
+  const loggedIn = session?.authenticated === true;
+  const member = session?.user;
+  const me = member ? { name: member.nickname || member.username, handle: member.username,
+    initial: (member.nickname || member.username).slice(0, 1), av: 'av1', github: '' }
+    : { name: '게스트', handle: '', initial: '?', av: 'av1', github: '' };
   const [composeRequested, setComposeRequested] = useState(false);
   const [posts, setPosts] = useState(POSTS);
   const [liked, setLiked] = useState({});
@@ -28,10 +42,15 @@ export function AppStateProvider({ children }) {
       setFeedbackRequests((list) => list.filter((r) => r.id !== feedbackCardId(resumeId)));
 
     return {
-      me: ME,
+      me,
+      authLoading: session === null && !authError,
+      authError,
+      authProviders: session?.providers || [],
       loggedIn,
-      login: () => setLoggedIn(true),
-      logout: () => setLoggedIn(false),
+      logout: async () => {
+        await logoutSession();
+        setSession(await getAuthSession());
+      },
 
       // 왼쪽 메뉴 "게시하기": 피드의 글쓰기 칸으로 포커스를 보낸다
       composeRequested,
@@ -42,7 +61,7 @@ export function AppStateProvider({ children }) {
       posts,
       addPost: ({ type, body, tags = [], source = '', code = null }) =>
         setPosts((list) => [
-          { id: nextId(), type, author: ME.name, handle: ME.handle, initial: ME.initial, av: ME.av, time: '방금', body, tags, source, code, replies: 0, reposts: 0, likes: 0 },
+          { id: nextId(), type, author: me.name, handle: me.handle, initial: me.initial, av: me.av, time: '방금', body, tags, source, code, replies: 0, reposts: 0, likes: 0 },
           ...list
         ]),
       liked,
@@ -85,7 +104,7 @@ export function AppStateProvider({ children }) {
             ? list.filter((r) => r.id !== feedbackCardId(resume.id))
             : [
                 {
-                  id: feedbackCardId(resume.id), mine: true, author: ME.name, handle: ME.handle, initial: ME.initial, av: ME.av, time: '방금', field: resume.field,
+                  id: feedbackCardId(resume.id), mine: true, author: me.name, handle: me.handle, initial: me.initial, av: me.av, time: '방금', field: resume.field,
                   resumeType: '공통 이력서', resumeTitle: resume.name, sections: resume.sections,
                   message: '이 이력서를 봐주세요.', focus: [], feedbacks: []
                 },
@@ -96,7 +115,7 @@ export function AppStateProvider({ children }) {
         setFeedbackRequests((list) =>
           list.map((r) =>
             r.id === requestId
-              ? { ...r, feedbacks: [...r.feedbacks, { id: `f${nextId()}`, author: ME.name, initial: ME.initial, av: ME.av, section, time: '방금', text }] }
+              ? { ...r, feedbacks: [...r.feedbacks, { id: `f${nextId()}`, author: me.name, initial: me.initial, av: me.av, section, time: '방금', text }] }
               : r
           )
         ),
@@ -110,11 +129,11 @@ export function AppStateProvider({ children }) {
           ...m,
           [threadId]: {
             ...m[threadId],
-            answers: [...m[threadId].answers, { id: nextId(), author: ME.name, handle: ME.handle, initial: ME.initial, av: ME.av, time: '방금', likes: 0, body }]
+            answers: [...m[threadId].answers, { id: nextId(), author: me.name, handle: me.handle, initial: me.initial, av: me.av, time: '방금', likes: 0, body }]
           }
         }))
     };
-  }, [loggedIn, composeRequested, posts, liked, following, applied, commonResumes, publicResumeIds, feedbackRequests, threads]);
+  }, [session, authError, loggedIn, composeRequested, posts, liked, following, applied, commonResumes, publicResumeIds, feedbackRequests, threads]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }

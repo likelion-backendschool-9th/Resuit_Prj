@@ -2,7 +2,7 @@
 
 ## 로컬 PostgreSQL 데이터베이스 준비
 
-루트 `.env` 파일을 준비한 후 다음 명령어를 실행합니다.
+루트 `.env.example`을 `.env`로 복사하고 개인 DB 값을 입력한 후 다음 명령어를 실행합니다. 기존 DB 볼륨이 있으면 처음 설정한 계정·비밀번호가 유지됩니다.
 
 ```bash
 docker compose up db
@@ -14,7 +14,7 @@ docker compose up db
 
 이력서 피드백 SNS **Resuit**의 프론트엔드 프로토타입입니다.
 Next.js 16(App Router) + React 19로 만들었고, Tailwind는 쓰지 않았습니다. 스타일은 일반 CSS 파일과 CSS 변수(디자인 토큰)로 작성했습니다.
-지금은 `frontend/src/data/mock.js`의 예시 데이터로 동작하며, 백엔드 API가 준비되면 이 부분만 교체하면 됩니다.
+기존 피드·이력서 등은 `frontend/src/data/mock.js`의 예시 데이터로 동작합니다. 베스트 리뷰·명예의 전당은 백엔드 API와 PostgreSQL을 사용하며, 좋아요·채택·기업 이메일 인증도 서버 API에 연결되어 있습니다. 소셜 로그인 코드는 구현되어 있으며 실제 제공자 앱 키와 메일 발송 설정이 필요합니다.
 
 ## 실행
 
@@ -107,3 +107,28 @@ frontend/
 - **피드백 요청**: `resume_feedback_request(resume_id, message, focus_sections, field)` 테이블로 처리해요.
 - **GitHub**: OAuth 토큰으로 GraphQL `contributionsCollection`(잔디)과 REST 레포 목록을 가져와요.
 - **블로그**: `data/mock.js`의 `RSS_RULES` 주소 규칙대로 스케줄러가 주기적으로 수집해요.
+
+
+## 기업 인증·베스트 리뷰 연동
+
+구현 범위, 로그인·피드백·메일 담당자와의 계약, 개인 DB 실행 주소와 남은 작업은 [담당 기능 연동 현황](docs/api/implementation-status.md)을 참고하세요. 상세 API는 [리뷰](docs/api/review-likes.md)와 [기업 이메일 인증](docs/api/company-verification.md)에 있습니다.
+
+
+## 개인 DB와 프론트·백엔드 개별 실행
+
+기존 테이블이 준비된 개인 DB에서 다음 명령을 사용합니다. 스크립트는 루트 `.env`를 읽고 비밀값을 출력하지 않습니다.
+
+```bash
+# 프로젝트 루트: DB만 실행 (다른 프로젝트의 80 포트와 충돌 방지)
+docker compose up -d --build db
+# 기존 테이블에 담당 기능 migration 적용
+bash scripts/migrate-local-db.sh
+# 터미널 1: 스키마 검증 후 백엔드 실행
+bash scripts/dev-backend.sh
+# 터미널 2: 실제 API 프록시를 사용하는 프론트 실행
+bash scripts/dev-frontend.sh
+```
+
+기본 주소는 프론트 http://localhost:5174, 백엔드 http://localhost:8081입니다. DB가 완전히 비어 있으면 먼저 [개인 DB 초기화 안내](docs/api/local-development.md)를 따르세요. 공용 DB에 초기화 절차를 실행하지 않습니다.
+
+Google·GitHub·네이버 로그인 앱 등록은 [소셜 로그인 안내](docs/api/social-login.md)를 참고하세요.

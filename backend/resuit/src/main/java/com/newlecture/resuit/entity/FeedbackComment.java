@@ -48,4 +48,10 @@ public class FeedbackComment extends BaseTimeEntity {
 
     @Column(name = "adopted_at")
     private LocalDateTime adoptedAt;
+    public void accept(LocalDateTime now) {
+        if (!isAdopted) {
+            isAdopted = true;
+            adoptedAt = java.util.Objects.requireNonNull(now);
+        }
+    }
 }
