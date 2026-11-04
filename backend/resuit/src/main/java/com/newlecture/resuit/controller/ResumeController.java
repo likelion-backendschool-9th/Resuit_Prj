@@ -8,12 +8,14 @@ import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
+import com.newlecture.resuit.dto.resume.ResumeListResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeCreateRequest;
 import com.newlecture.resuit.dto.resume.TargetResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeSummary;
 import com.newlecture.resuit.dto.resume.TargetResumeUpdateCommand;
 import com.newlecture.resuit.dto.resume.TargetResumeUpdateRequest;
 import com.newlecture.resuit.service.CommonResumeService;
+import com.newlecture.resuit.service.ResumeService;
 import com.newlecture.resuit.service.TargetResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,12 +36,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 public class ResumeController {
 
+	private final ResumeService resumeService;
 	private final CommonResumeService commonResumeService;
 	private final TargetResumeService targetResumeService;
 
 	@GetMapping("/resumes")
-	public ResponseEntity<Void> getAllResumes() {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<ResumeListResponse> getAllResumes(Principal principal) {
+		return ResponseEntity.ok(resumeService.getMyResumes(username(principal)));
 	}
 
 	@GetMapping("/feedback-requests")
