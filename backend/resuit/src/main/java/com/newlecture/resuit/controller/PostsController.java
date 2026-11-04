@@ -52,7 +52,7 @@ public class PostsController {
 		return postService.getTimeline(PageRequest.of(page, size));
 	}
 
-	@PostMapping("/")
+	@PostMapping("")
 	public PostDetailResponse createPost(@RequestBody CreatePostRequest request, Principal principal) {
 		return postService.createPost(request, principal.getName());
 	}
