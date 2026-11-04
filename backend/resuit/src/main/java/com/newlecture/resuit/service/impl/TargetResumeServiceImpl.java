@@ -13,6 +13,7 @@ import com.newlecture.resuit.repository.TargetResumeRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CommonResumeService.InvalidResumeException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenException;
+import com.newlecture.resuit.service.CommonResumeService.ResumeInUseException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
 import com.newlecture.resuit.service.TargetResumeService;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,6 +104,20 @@ public class TargetResumeServiceImpl implements TargetResumeService {
             request.content() == null ? resume.getContent() : request.content());
         resumes.flush();
         return TargetResumeDetailResponse.of(resume, questions, isSubmitted(resume, user));
+    }
+
+    // 지원·피드백 요청·유료 피드백이 이 이력서를 가리키면 DB의 FK가 삭제를 막는다.
+    @Override
+    @Transactional
+    public void delete(Long resumeId, String username) {
+        var user = currentUser(username);
+        var resume = ownedResume(resumeId, user);
+        try {
+            resumes.delete(resume);
+            resumes.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new ResumeInUseException();
+        }
     }
 
     private static void validateAnswers(Object answers, List<JobQuestion> questions) {

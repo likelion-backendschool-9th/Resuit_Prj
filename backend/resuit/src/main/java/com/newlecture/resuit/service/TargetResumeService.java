@@ -11,6 +11,7 @@ public interface TargetResumeService {
     List<TargetResumeSummary> getMyResumes(String username);
     TargetResumeDetailResponse create(String username, TargetResumeCreateRequest request);
     TargetResumeDetailResponse update(TargetResumeUpdateCommand command);
+    void delete(Long resumeId, String username);
 
     public static class JobNotFoundException extends RuntimeException {}
     public static class NotSpecialJobException extends RuntimeException {}
