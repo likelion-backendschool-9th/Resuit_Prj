@@ -17,7 +17,9 @@ const ITEMS_TOP = [
 ];
 const RESUME_CHILDREN = [
   { to: '/resumes', label: '내 이력서' },
-  { to: '/feedback', label: '피드백' }
+  { to: '/feedback', label: '피드백' },
+  { to: '/reviews/best', label: '베스트 리뷰' },
+  { to: '/reviews/hall-of-fame', label: '명예의 전당' }
 ];
 const ITEMS_BOTTOM = [
   { to: '/threads/1', icon: 'bell', label: '알림' },

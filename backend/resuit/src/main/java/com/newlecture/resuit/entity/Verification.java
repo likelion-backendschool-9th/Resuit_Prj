@@ -42,4 +42,11 @@ public class Verification extends BaseCreatedEntity {
 
     @Column(name = "verified_at")
     private LocalDateTime verifiedAt;
+    @Builder.Default
+    @Column(name = "failed_attempts", nullable = false)
+    private int failedAttempts = 0;
+
+    public void recordFailure() { failedAttempts++; }
+    public void verify(LocalDateTime now) { verifiedAt = now; }
+    public void expire(LocalDateTime now) { expiresAt = now; }
 }

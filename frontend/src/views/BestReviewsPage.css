@@ -1,0 +1,2 @@
+.reviews__notice { color: var(--danger); margin: 0 20px; }
+.reviews__pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 20px; }
