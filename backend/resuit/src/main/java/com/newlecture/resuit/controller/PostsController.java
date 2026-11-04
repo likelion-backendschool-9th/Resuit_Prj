@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.newlecture.resuit.dto.CreatePostRequest;
+import com.newlecture.resuit.dto.CreateCommentRequest;
 import com.newlecture.resuit.dto.CommentResponse;
 import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
@@ -64,7 +65,10 @@ public class PostsController {
 	}
 
 	@PostMapping("/{id}/comments")
-	public void createComment(@PathVariable Long id) {
+	public CommentResponse createComment(
+			@PathVariable Long id,
+			@RequestBody CreateCommentRequest request) {
+		return postService.createComment(id, request);
 	}
 
 	@PatchMapping("/{id}/comments")

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.newlecture.resuit.dto.CreatePostRequest;
+import com.newlecture.resuit.dto.CreateCommentRequest;
 import com.newlecture.resuit.dto.CommentResponse;
 import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
@@ -114,6 +115,34 @@ public class PostServiceImpl implements PostService {
 			}
 		}
 		return roots.stream().map(CommentNode::toResponse).toList();
+	}
+
+	@Override
+	@Transactional
+	public CommentResponse createComment(Long postId, CreateCommentRequest request) {
+		var post = findPost(postId);
+		var user = userRepository.findById(request.userId())
+				.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + request.userId()));
+		Comment parent = null;
+
+		if (request.parentId() != null) {
+			parent = commentRepository.findById(request.parentId())
+					.filter(comment -> comment.getDeletedAt() == null)
+					.orElseThrow(() -> new IllegalArgumentException(
+							"부모 댓글을 찾을 수 없습니다: " + request.parentId()));
+			if (!Objects.equals(parent.getPost().getId(), post.getId())) {
+				throw new IllegalArgumentException("부모 댓글이 해당 게시글에 속하지 않습니다.");
+			}
+		}
+
+		var comment = Comment.builder()
+				.post(post)
+				.user(user)
+				.parent(parent)
+				.content(request.content())
+				.build();
+
+		return CommentResponse.from(commentRepository.save(comment), List.of());
 	}
 
 	/*
