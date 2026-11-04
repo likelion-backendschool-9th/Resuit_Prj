@@ -1,5 +1,6 @@
 package com.newlecture.resuit.service.impl;
 
+import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.entity.CommonResume;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommonResumeRepository;
@@ -10,10 +11,14 @@ import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenExceptio
 import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +28,23 @@ public class CommonResumeServiceImpl implements CommonResumeService {
 
     private final CommonResumeRepository resumes;
     private final UserRepository users;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CommonResumeSummary> getMyResumes(String username) {
+        var user = currentUser(username);
+        Map<Long, Long> feedbackCounts = toMap(resumes.countFeedbackByUser(user.getId()));
+        Map<Long, Long> targetCounts = toMap(resumes.countTargetResumesByUser(user.getId()));
+        return resumes.findByUserIdOrderByIdAsc(user.getId()).stream()
+            .map(resume -> CommonResumeSummary.of(resume,
+                feedbackCounts.getOrDefault(resume.getId(), 0L), targetCounts.getOrDefault(resume.getId(), 0L)))
+            .toList();
+    }
+
+    private static Map<Long, Long> toMap(List<CommonResumeRepository.CountRow> rows) {
+        return rows.stream().collect(Collectors.toMap(CommonResumeRepository.CountRow::getResumeId,
+            CommonResumeRepository.CountRow::getCount));
+    }
 
     private User currentUser(String username) {
         if (username == null || username.isBlank()) throw new UnauthenticatedUserException();

@@ -1,7 +1,10 @@
 package com.newlecture.resuit.controller;
 
+import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
+import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.service.CommonResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -71,8 +74,8 @@ public class ResumeController {
 	}
 
 	@GetMapping("/common-resumes")
-	public ResponseEntity<Void> getCommonResumes() {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<List<CommonResumeSummary>> getCommonResumes(Principal principal) {
+		return ResponseEntity.ok(commonResumeService.getMyResumes(username(principal)));
 	}
 
 	@PostMapping("/common-resumes")
@@ -124,6 +127,10 @@ public class ResumeController {
 	@GetMapping("/target-resumes/{resumeId}")
 	public ResponseEntity<Void> getTargetResume(@PathVariable Long resumeId) {
 		return ResponseEntity.ok().build();
+	}
+
+	private static String username(Principal principal) {
+		return principal == null ? null : principal.getName();
 	}
 
 	public record ResumeErrorResponse(String code, String message) {}
