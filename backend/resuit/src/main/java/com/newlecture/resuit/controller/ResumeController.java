@@ -97,8 +97,9 @@ public class ResumeController {
 	}
 
 	@DeleteMapping("/common-resumes/{c_resumeId}")
-	public ResponseEntity<Void> deleteCommonResume(@PathVariable Long c_resumeId) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<Void> deleteCommonResume(@PathVariable Long c_resumeId, Principal principal) {
+		commonResumeService.delete(c_resumeId, username(principal));
+		return ResponseEntity.noContent().build();
 	}
 
 	@GetMapping("/common-resumes/{resumeId}")

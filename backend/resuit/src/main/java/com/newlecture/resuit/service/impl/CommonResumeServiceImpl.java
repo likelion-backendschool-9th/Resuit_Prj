@@ -11,6 +11,7 @@ import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CommonResumeService;
 import com.newlecture.resuit.service.CommonResumeService.InvalidResumeException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenException;
+import com.newlecture.resuit.service.CommonResumeService.ResumeInUseException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
 
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,6 +75,20 @@ public class CommonResumeServiceImpl implements CommonResumeService {
             request.content() == null ? resume.getContent() : request.content());
         resumes.flush();
         return CommonResumeDetailResponse.from(resume);
+    }
+
+    // 지원·피드백 요청·특화 이력서·대표 이력서가 이 이력서를 가리키면 DB의 FK가 삭제를 막는다.
+    @Override
+    @Transactional
+    public void delete(Long resumeId, String username) {
+        var user = currentUser(username);
+        var resume = ownedResume(resumeId, user);
+        try {
+            resumes.delete(resume);
+            resumes.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new ResumeInUseException();
+        }
     }
 
     private static Map<Long, Long> toMap(List<CommonResumeRepository.CountRow> rows) {

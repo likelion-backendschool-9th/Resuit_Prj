@@ -10,6 +10,7 @@ public interface CommonResumeService {
     List<CommonResumeSummary> getMyResumes(String username);
     CommonResumeDetailResponse create(String username, CommonResumeRequest request);
     CommonResumeDetailResponse update(CommonResumeUpdateCommand command);
+    void delete(Long resumeId, String username);
 
     public static class UnauthenticatedUserException extends RuntimeException {}
     public static class ResumeNotFoundException extends RuntimeException {}
