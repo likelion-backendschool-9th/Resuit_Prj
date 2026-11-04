@@ -1,15 +1,11 @@
 package com.newlecture.resuit.service;
 
-import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.dto.CreatePostRequest;
-import com.newlecture.resuit.dto.CreateCommentRequest;
-import com.newlecture.resuit.dto.CommentResponse;
 import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.UpdatePostRequest;
 
@@ -24,8 +20,4 @@ public interface PostService {
 	PostDetailResponse updatePost(Long id, UpdatePostRequest request);
 
 	void deletePost(Long id, DeletePostRequest request);
-
-	List<CommentResponse> getComments(Long postId);
-
-	CommentResponse createComment(Long postId, CreateCommentRequest request);
 }

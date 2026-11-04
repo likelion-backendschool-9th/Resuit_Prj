@@ -21,6 +21,7 @@ import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.dto.UpdatePostRequest;
+import com.newlecture.resuit.service.CommentService;
 import com.newlecture.resuit.service.PostService;
 
 @RestController
@@ -28,9 +29,11 @@ import com.newlecture.resuit.service.PostService;
 public class PostsController {
 
 	private final PostService postService;
+	private final CommentService commentService;
 
-	public PostsController(PostService postService) {
+	public PostsController(PostService postService, CommentService commentService) {
 		this.postService = postService;
+		this.commentService = commentService;
 	}
 
 	@GetMapping
@@ -68,7 +71,7 @@ public class PostsController {
 	public CommentResponse createComment(
 			@PathVariable Long id,
 			@RequestBody CreateCommentRequest request) {
-		return postService.createComment(id, request);
+		return commentService.createComment(id, request);
 	}
 
 	@PatchMapping("/{id}/comments")
@@ -81,7 +84,7 @@ public class PostsController {
 
 	@GetMapping("/{id}/comments")
 	public List<CommentResponse> getComments(@PathVariable Long id) {
-		return postService.getComments(id);
+		return commentService.getComments(id);
 	}
 
 	@PostMapping("/{id}/likes")
