@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useAppState } from '../context/AppStateContext.jsx';
-import { getCommonResumes, createCommonResume, updateCommonResume, deleteCommonResume, getTargetResumes } from '../services/resumes.js';
+import { getAllResumes, createCommonResume, updateCommonResume, deleteCommonResume } from '../services/resumes.js';
+import { createFeedbackRequest, cancelFeedbackRequest } from '../services/feedbackRequests.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Tabs from '../components/common/Tabs.jsx';
 import Avatar from '../components/common/Avatar.jsx';
@@ -35,7 +35,6 @@ function updatedText(resume) {
 }
 
 export default function ResumesPage() {
-  const { isResumeRequested, toggleResumeRequest } = useAppState();
   const [tab, setTab] = useState('all');
   const [commonResumes, setCommonResumes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,25 +45,18 @@ export default function ResumesPage() {
   const [renaming, setRenaming] = useState(null);
   const [draftName, setDraftName] = useState('');
   const [targetResumes, setTargetResumes] = useState([]);
-  const [targetLoading, setTargetLoading] = useState(true);
-  const [targetError, setTargetError] = useState('');
   const writing = targetResumes.filter((r) => r.status === 'WRITING').length;
   const submitted = targetResumes.filter((r) => r.status === 'SUBMITTED').length;
 
+  // 공통·특화 목록을 대표 API 하나로 받는다 (WBS 3.1)
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     setError('');
-    getCommonResumes(controller.signal)
-      .then(setCommonResumes)
+    getAllResumes(controller.signal)
+      .then((all) => { setCommonResumes(all.commonResumes); setTargetResumes(all.targetResumes); })
       .catch((err) => { if (!controller.signal.aborted) setError(err.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    setTargetLoading(true);
-    setTargetError('');
-    getTargetResumes(controller.signal)
-      .then(setTargetResumes)
-      .catch((err) => { if (!controller.signal.aborted) setTargetError(err.message); })
-      .finally(() => { if (!controller.signal.aborted) setTargetLoading(false); });
     return () => controller.abort();
   }, [retry]);
 
@@ -101,8 +93,13 @@ export default function ResumesPage() {
     await deleteCommonResume(id);
     setCommonResumes((list) => list.filter((r) => r.id !== id));
   });
-  // 피드백 요청은 아직 목업 상태를 쓴다 (3.2·3.3 연결 전)
-  const asRequestCard = (r) => ({ id: r.id, name: r.title, field: FIELD_LABEL[r.field] || '', sections: sectionText(r.sections) });
+  // 피드백 요청(3.2)과 취소(3.3). 진행 중인 요청 ID로 요청 상태를 판단한다
+  const toggleRequest = (r) => run(r.id, async () => {
+    let requestId = null;
+    if (r.feedbackRequestId) await cancelFeedbackRequest(r.feedbackRequestId);
+    else requestId = (await createFeedbackRequest({ commonResumeId: r.id })).id;
+    setCommonResumes((list) => list.map((x) => (x.id === r.id ? { ...x, feedbackRequestId: requestId } : x)));
+  });
 
   return (
     <>
@@ -125,7 +122,7 @@ export default function ResumesPage() {
               : error ? <div className="empty" role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>다시 시도</Button></div>
               : commonResumes.length === 0 ? <div className="empty">아직 공통 이력서가 없어요. 새 공통 이력서를 만들어 보세요.</div>
               : commonResumes.map((r) => {
-              const requested = isResumeRequested(r.id);
+              const requested = !!r.feedbackRequestId;
               const isPublic = r.isPublic;
               const busy = pending === r.id;
               return (
@@ -163,7 +160,7 @@ export default function ResumesPage() {
                     </div>
                     <div className="row-wrap">
                       <Button variant="outline" size="mid" to="/resumes/edit?job=1&mode=base">편집</Button>
-                      <Button variant={requested ? 'outline' : 'primary'} size="mid" aria-pressed={requested} onClick={() => toggleResumeRequest(asRequestCard(r))}>
+                      <Button variant={requested ? 'outline' : 'primary'} size="mid" aria-pressed={requested} onClick={() => toggleRequest(r)} disabled={busy}>
                         {requested ? '요청 취소' : '피드백 요청'}
                       </Button>
                       <IconButton label={`「${r.title}」 삭제`} className="common-resume__remove" onClick={() => removeCommon(r.id)} disabled={busy}><Icon name="trash" size={16} /></IconButton>
@@ -191,8 +188,8 @@ export default function ResumesPage() {
         {tab !== 'common' && (
           <section className="section">
             <h2 className="section-label">특화 이력서 · 공고별로 작성</h2>
-            {targetLoading ? <div className="empty" role="status">특화 이력서를 불러오는 중이에요.</div>
-              : targetError ? <div className="empty" role="alert"><p>{targetError}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>다시 시도</Button></div>
+            {loading ? <div className="empty" role="status">특화 이력서를 불러오는 중이에요.</div>
+              : error ? <div className="empty" role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>다시 시도</Button></div>
               : targetResumes.length === 0 ? <div className="empty">아직 특화 이력서가 없어요. 특화 공고에서 작성을 시작해 보세요.</div>
               : targetResumes.map((r) => (
               <Link key={r.id} href={`/resumes/edit?id=${r.id}`} className="resume-row">

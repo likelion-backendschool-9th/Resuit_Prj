@@ -15,6 +15,9 @@ async function request(path, options = {}) {
 
 const json = (method, body) => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
+// 이력서 탭 전체 목록 (WBS 3.1): { commonResumes, targetResumes }
+export const getAllResumes = (signal) => request('/resumes', { signal });
+
 // 공통 이력서 (WBS 3.4 ~ 3.8)
 export const getCommonResumes = (signal) => request('/common-resumes', { signal });
 export const getCommonResume = (id, signal) => request(`/common-resumes/${id}`, { signal });
