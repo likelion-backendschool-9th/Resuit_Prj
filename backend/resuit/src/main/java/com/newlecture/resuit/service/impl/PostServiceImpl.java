@@ -1,16 +1,23 @@
 package com.newlecture.resuit.service.impl;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.newlecture.resuit.dto.CreatePostRequest;
+import com.newlecture.resuit.dto.CommentResponse;
 import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
 import com.newlecture.resuit.dto.UpdatePostRequest;
 import com.newlecture.resuit.entity.Post;
+import com.newlecture.resuit.entity.Comment;
+import com.newlecture.resuit.repository.CommentRepository;
 import com.newlecture.resuit.repository.PostRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.PostService;
@@ -22,10 +29,15 @@ public class PostServiceImpl implements PostService {
 
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
+	private final CommentRepository commentRepository;
 
-	public PostServiceImpl(PostRepository postRepository, UserRepository userRepository) {
+	public PostServiceImpl(
+			PostRepository postRepository,
+			UserRepository userRepository,
+			CommentRepository commentRepository) {
 		this.postRepository = postRepository;
 		this.userRepository = userRepository;
+		this.commentRepository = commentRepository;
 	}
 
 	@Override
@@ -81,6 +93,29 @@ public class PostServiceImpl implements PostService {
 		post.delete();
 	}
 
+	@Override
+	public List<CommentResponse> getComments(Long postId) {
+		findPost(postId);
+
+		List<Comment> comments = commentRepository
+				.findByPost_IdAndDeletedAtIsNullOrderByCreatedAtAsc(postId);
+		Map<Long, CommentNode> nodes = new LinkedHashMap<>();
+		List<CommentNode> roots = new ArrayList<>();
+
+		for (Comment comment : comments) {
+			nodes.put(comment.getId(), new CommentNode(comment));
+		}
+		for (Comment comment : comments) {
+			CommentNode node = nodes.get(comment.getId());
+			if (comment.getParent() == null || !nodes.containsKey(comment.getParent().getId())) {
+				roots.add(node);
+			} else {
+				nodes.get(comment.getParent().getId()).replies.add(node);
+			}
+		}
+		return roots.stream().map(CommentNode::toResponse).toList();
+	}
+
 	/*
 	findPost 사용처
 	- updatePost
@@ -99,6 +134,19 @@ public class PostServiceImpl implements PostService {
 	private void validateOwner(Post post, java.util.UUID userId) {
 		if (!Objects.equals(post.getUser().getId(), userId)) {
 			throw new IllegalArgumentException("게시글을 수정하거나 삭제할 권한이 없습니다.");
+		}
+	}
+
+	private static final class CommentNode {
+		private final Comment comment;
+		private final List<CommentNode> replies = new ArrayList<>();
+
+		private CommentNode(Comment comment) {
+			this.comment = comment;
+		}
+
+		private CommentResponse toResponse() {
+			return CommentResponse.from(comment, replies.stream().map(CommentNode::toResponse).toList());
 		}
 	}
 }

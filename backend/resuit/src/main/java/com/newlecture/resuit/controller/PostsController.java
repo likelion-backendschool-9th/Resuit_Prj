@@ -1,5 +1,7 @@
 package com.newlecture.resuit.controller;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.newlecture.resuit.dto.CreatePostRequest;
+import com.newlecture.resuit.dto.CommentResponse;
 import com.newlecture.resuit.dto.DeletePostRequest;
 import com.newlecture.resuit.dto.PostDetailResponse;
 import com.newlecture.resuit.dto.PostTimelineResponse;
@@ -73,7 +76,8 @@ public class PostsController {
 	}
 
 	@GetMapping("/{id}/comments")
-	public void getComments(@PathVariable Long id) {
+	public List<CommentResponse> getComments(@PathVariable Long id) {
+		return postService.getComments(id);
 	}
 
 	@PostMapping("/{id}/likes")
