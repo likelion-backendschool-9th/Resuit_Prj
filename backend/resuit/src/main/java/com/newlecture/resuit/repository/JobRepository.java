@@ -12,4 +12,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 	Page<Job> findByTypeIgnoreCaseAndDeletedAtIsNullOrderByCreatedAtDesc(
 			String type,
 			Pageable pageable);
+
+	java.util.Optional<Job> findByIdAndDeletedAtIsNull(Long id);
 }

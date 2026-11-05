@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.newlecture.resuit.dto.JobResponse;
+import com.newlecture.resuit.dto.JobDetailResponse;
 import com.newlecture.resuit.service.JobService;
 
 @RestController
@@ -36,8 +37,8 @@ public class JobController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<Void> getJob(@PathVariable Long id) {
-		return ResponseEntity.ok().build();
+	public JobDetailResponse getJob(@PathVariable Long id) {
+		return jobService.getJob(id);
 	}
 
 	@PostMapping("/{jobId}/applications")

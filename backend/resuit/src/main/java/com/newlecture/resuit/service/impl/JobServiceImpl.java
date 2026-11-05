@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.newlecture.resuit.dto.JobResponse;
+import com.newlecture.resuit.dto.JobDetailResponse;
 import com.newlecture.resuit.entity.Job;
 import com.newlecture.resuit.repository.JobRepository;
+import com.newlecture.resuit.repository.JobQuestionRepository;
 import com.newlecture.resuit.service.JobService;
 
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class JobServiceImpl implements JobService {
 
 	private final JobRepository jobRepository;
+	private final JobQuestionRepository jobQuestionRepository;
 
 	@Override
 	public Page<JobResponse> getJobs(String type, Pageable pageable) {
@@ -25,5 +28,19 @@ public class JobServiceImpl implements JobService {
 				? jobRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(pageable)
 				: jobRepository.findByTypeIgnoreCaseAndDeletedAtIsNullOrderByCreatedAtDesc(type, pageable);
 		return jobs.map(JobResponse::from);
+	}
+
+	@Override
+	public JobDetailResponse getJob(Long id) {
+		var job = jobRepository.findByIdAndDeletedAtIsNull(id)
+				.orElseThrow(() -> new IllegalArgumentException("공고를 찾을 수 없습니다: " + id));
+		var questions = jobQuestionRepository.findByJob_IdOrderByOrderNoAsc(id).stream()
+				.map(question -> new JobDetailResponse.Question(
+						question.getId(),
+						question.getContent(),
+						question.getCharLimit(),
+						question.getOrderNo()))
+				.toList();
+		return JobDetailResponse.from(job, questions);
 	}
 }
