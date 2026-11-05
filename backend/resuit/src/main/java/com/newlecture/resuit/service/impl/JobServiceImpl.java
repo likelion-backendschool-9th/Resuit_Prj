@@ -1,5 +1,14 @@
 package com.newlecture.resuit.service.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.server.ResponseStatusException;
+import com.newlecture.resuit.dto.CreateJobRequest;
+import com.newlecture.resuit.entity.JobQuestion;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,6 +42,55 @@ public class JobServiceImpl implements JobService {
 	private final CommonResumeRepository commonResumeRepository;
 	private final UserRepository userRepository;
 	private final TargetResumeRepository targetResumeRepository;
+
+    @Override
+    @Transactional
+    public JobDetailResponse createJob(CreateJobRequest request, String username) {
+        var company = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AccessDeniedException("기업 계정이 필요합니다."));
+        if (!"COMPANY".equals(company.getRole())) {
+            throw new AccessDeniedException("기업 계정만 공고를 작성할 수 있습니다.");
+        }
+
+        String type = request.type().toUpperCase(Locale.ROOT);
+        List<CreateJobRequest.Question> questions = request.questions() == null ? List.of() : request.questions();
+        if ("GENERAL".equals(type) && !questions.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "일반 공고에는 요구 문항을 등록할 수 없습니다.");
+        }
+        if ("SPECIAL".equals(type) && questions.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "특화 공고에는 요구 문항이 필요합니다.");
+        }
+
+        var job = jobRepository.save(Job.builder()
+                .company(company)
+                .type(type)
+                .title(request.title().trim())
+                .location(request.location())
+                .employmentType(request.employmentType())
+                .career(request.career())
+                .description(request.description())
+                .requirements(request.requirements())
+                .preferred(request.preferred())
+                .deadline(request.deadline())
+                .status("OPEN")
+                .build());
+
+        List<JobQuestion> entities = new ArrayList<>();
+        for (int index = 0; index < questions.size(); index++) {
+            var question = questions.get(index);
+            entities.add(JobQuestion.builder()
+                    .job(job)
+                    .content(question.content().trim())
+                    .charLimit(question.charLimit())
+                    .orderNo(index + 1)
+                    .build());
+        }
+        var savedQuestions = jobQuestionRepository.saveAll(entities).stream()
+                .map(question -> new JobDetailResponse.Question(question.getId(), question.getContent(),
+                        question.getCharLimit(), question.getOrderNo()))
+                .toList();
+        return JobDetailResponse.from(job, savedQuestions);
+    }
 
 	@Override
 	public Page<JobResponse> getJobs(String type, Pageable pageable) {

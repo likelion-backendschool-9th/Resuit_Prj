@@ -1,6 +1,8 @@
 package com.newlecture.resuit.controller;
 
 import java.util.Map;
+import java.security.Principal;
+import java.net.URI;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.newlecture.resuit.dto.JobResponse;
+import com.newlecture.resuit.dto.CreateJobRequest;
 import com.newlecture.resuit.dto.JobDetailResponse;
 import com.newlecture.resuit.dto.GeneralJobApplicationRequest;
 import com.newlecture.resuit.dto.JobApplicationResponse;
@@ -49,7 +52,7 @@ public class JobController {
 	public JobApplicationResponse applyForJob(
 			@PathVariable Long jobId,
 			@Valid @RequestBody GeneralJobApplicationRequest applicationRequest,
-			java.security.Principal principal) {
+			Principal principal) {
 		return jobService.applyForGeneralJob(jobId, applicationRequest, principal.getName());
 	}
 
@@ -57,22 +60,24 @@ public class JobController {
 	public JobApplicationResponse applyForSpecialJob(
 			@PathVariable Long jobId,
 			@Valid @RequestBody SpecialJobApplicationRequest applicationRequest,
-			java.security.Principal principal) {
+			Principal principal) {
 		return jobService.applyForSpecialJob(jobId, applicationRequest, principal.getName());
 	}
 
 	@DeleteMapping("/{jobId}/applications")
 	public ResponseEntity<Void> cancelApplication(
 			@PathVariable Long jobId,
-			java.security.Principal principal) {
+			Principal principal) {
 		jobService.cancelApplication(jobId, principal.getName());
 		return ResponseEntity.noContent().build();
 	}
 
-	@PostMapping("/")
-	public ResponseEntity<Void> createJob(
-			@RequestBody(required = false) Map<String, Object> jobRequest) {
-		return ResponseEntity.ok().build();
+	@PostMapping
+	public ResponseEntity<JobDetailResponse> createJob(
+			@Valid @RequestBody CreateJobRequest request,
+			Principal principal) {
+		JobDetailResponse response = jobService.createJob(request, principal.getName());
+		return ResponseEntity.created(URI.create("/api/v1/jobs/" + response.id())).body(response);
 	}
 
 	@PatchMapping("/{jobId}")
