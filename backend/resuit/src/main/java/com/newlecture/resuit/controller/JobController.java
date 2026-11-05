@@ -2,6 +2,8 @@ package com.newlecture.resuit.controller;
 
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,17 +15,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.newlecture.resuit.dto.JobResponse;
+import com.newlecture.resuit.service.JobService;
+
 @RestController
 @RequestMapping("/api/v1/jobs")
 public class JobController {
+	private final JobService jobService;
 
-	// 정해진 dto 규격이 없지만 일단 작성해놓음. 참고
-	@GetMapping("/")
-	public ResponseEntity<Void> getJobs(
+	public JobController(JobService jobService) {
+		this.jobService = jobService;
+	}
+
+	@GetMapping
+	public Page<JobResponse> getJobs(
 			@RequestParam(required = false) String type,
-			@RequestParam(required = false) Integer page,
-			@RequestParam(required = false) Integer size) {
-		return ResponseEntity.ok().build();
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return jobService.getJobs(type, PageRequest.of(page, size));
 	}
 
 	@GetMapping("/{id}")
