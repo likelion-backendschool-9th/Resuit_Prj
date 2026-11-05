@@ -92,6 +92,54 @@ public class JobServiceImpl implements JobService {
         return JobDetailResponse.from(job, savedQuestions);
     }
 
+    @Override
+    @Transactional
+    public JobDetailResponse updateJob(Long jobId, CreateJobRequest request, String username) {
+        var company = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AccessDeniedException("기업 계정이 필요합니다."));
+        if (!"COMPANY".equals(company.getRole())) {
+            throw new AccessDeniedException("기업 계정만 공고를 수정할 수 있습니다.");
+        }
+
+        var job = jobRepository.findByIdAndDeletedAtIsNull(jobId)
+                .orElseThrow(() -> new IllegalArgumentException("공고를 찾을 수 없습니다: " + jobId));
+        if (!job.getCompany().getId().equals(company.getId())) {
+            throw new AccessDeniedException("본인이 작성한 공고만 수정할 수 있습니다.");
+        }
+
+        String type = request.type().toUpperCase(Locale.ROOT);
+        List<CreateJobRequest.Question> questions = request.questions() == null ? List.of() : request.questions();
+        validateQuestions(type, questions);
+
+        job.update(
+                type,
+                request.title().trim(),
+                request.location(),
+                request.employmentType(),
+                request.career(),
+                request.description(),
+                request.requirements(),
+                request.preferred(),
+                request.deadline());
+
+        jobQuestionRepository.deleteByJob_Id(jobId);
+        List<JobQuestion> entities = new ArrayList<>();
+        for (int index = 0; index < questions.size(); index++) {
+            var question = questions.get(index);
+            entities.add(JobQuestion.builder()
+                    .job(job)
+                    .content(question.content().trim())
+                    .charLimit(question.charLimit())
+                    .orderNo(index + 1)
+                    .build());
+        }
+        var savedQuestions = jobQuestionRepository.saveAll(entities).stream()
+                .map(question -> new JobDetailResponse.Question(question.getId(), question.getContent(),
+                        question.getCharLimit(), question.getOrderNo()))
+                .toList();
+        return JobDetailResponse.from(job, savedQuestions);
+    }
+
 	@Override
 	public Page<JobResponse> getJobs(String type, Pageable pageable) {
 		Page<Job> jobs = type == null || type.isBlank()
@@ -187,5 +235,14 @@ public class JobServiceImpl implements JobService {
 				.orElseThrow(() -> new IllegalArgumentException("취소할 지원 내역이 없거나 이미 취소한 지원입니다."));
 		application.cancel();
 	}
+
+    private void validateQuestions(String type, List<CreateJobRequest.Question> questions) {
+        if ("GENERAL".equals(type) && !questions.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "일반 공고에는 요구 문항을 등록할 수 없습니다.");
+        }
+        if ("SPECIAL".equals(type) && questions.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "특화 공고에는 요구 문항이 필요합니다.");
+        }
+    }
 
 }

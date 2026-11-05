@@ -8,4 +8,6 @@ import com.newlecture.resuit.entity.JobQuestion;
 
 public interface JobQuestionRepository extends JpaRepository<JobQuestion, Long> {
 	List<JobQuestion> findByJob_IdOrderByOrderNoAsc(Long jobId);
+
+	void deleteByJob_Id(Long jobId);
 }

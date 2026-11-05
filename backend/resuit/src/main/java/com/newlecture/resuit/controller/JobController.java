@@ -1,6 +1,5 @@
 package com.newlecture.resuit.controller;
 
-import java.util.Map;
 import java.security.Principal;
 
 import org.springframework.data.domain.Page;
@@ -82,10 +81,11 @@ public class JobController {
 	}
 
 	@PatchMapping("/{jobId}")
-	public ResponseEntity<Void> updateJob(
+	public ResponseEntity<JobDetailResponse> updateJob(
 			@PathVariable Long jobId,
-			@RequestBody(required = false) Map<String, Object> jobRequest) {
-		return ResponseEntity.ok().build();
+			@Valid @RequestBody CreateJobRequest request,
+			Principal principal) {
+		return ResponseEntity.ok(jobService.updateJob(jobId, request, principal.getName()));
 	}
 
 	@DeleteMapping("/{jobId}")
