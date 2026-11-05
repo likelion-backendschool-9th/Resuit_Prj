@@ -15,7 +15,7 @@ public record JobApplicationResponse(
 		return new JobApplicationResponse(
 				application.getId(),
 				application.getJob().getId(),
-				application.getCommonResume().getId(),
+				application.getCommonResume() == null ? null : application.getCommonResume().getId(),
 				application.getStatus(),
 				application.getAppliedAt());
 	}

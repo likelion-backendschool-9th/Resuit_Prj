@@ -20,6 +20,7 @@ import com.newlecture.resuit.dto.JobResponse;
 import com.newlecture.resuit.dto.JobDetailResponse;
 import com.newlecture.resuit.dto.GeneralJobApplicationRequest;
 import com.newlecture.resuit.dto.JobApplicationResponse;
+import com.newlecture.resuit.dto.SpecialJobApplicationRequest;
 import com.newlecture.resuit.service.JobService;
 
 @RestController
@@ -50,6 +51,14 @@ public class JobController {
 			@Valid @RequestBody GeneralJobApplicationRequest applicationRequest,
 			java.security.Principal principal) {
 		return jobService.applyForGeneralJob(jobId, applicationRequest, principal.getName());
+	}
+
+	@PostMapping("/{jobId}/special-applications")
+	public JobApplicationResponse applyForSpecialJob(
+			@PathVariable Long jobId,
+			@Valid @RequestBody SpecialJobApplicationRequest applicationRequest,
+			java.security.Principal principal) {
+		return jobService.applyForSpecialJob(jobId, applicationRequest, principal.getName());
 	}
 
 	@DeleteMapping("/{jobId}/applications")

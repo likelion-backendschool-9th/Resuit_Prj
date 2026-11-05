@@ -9,10 +9,12 @@ import com.newlecture.resuit.dto.JobResponse;
 import com.newlecture.resuit.dto.JobDetailResponse;
 import com.newlecture.resuit.dto.GeneralJobApplicationRequest;
 import com.newlecture.resuit.dto.JobApplicationResponse;
+import com.newlecture.resuit.dto.SpecialJobApplicationRequest;
 import com.newlecture.resuit.entity.JobApplication;
 import com.newlecture.resuit.repository.CommonResumeRepository;
 import com.newlecture.resuit.repository.JobApplicationRepository;
 import com.newlecture.resuit.repository.UserRepository;
+import com.newlecture.resuit.repository.TargetResumeRepository;
 import com.newlecture.resuit.entity.Job;
 import com.newlecture.resuit.repository.JobRepository;
 import com.newlecture.resuit.repository.JobQuestionRepository;
@@ -30,6 +32,7 @@ public class JobServiceImpl implements JobService {
 	private final JobApplicationRepository jobApplicationRepository;
 	private final CommonResumeRepository commonResumeRepository;
 	private final UserRepository userRepository;
+	private final TargetResumeRepository targetResumeRepository;
 
 	@Override
 	public Page<JobResponse> getJobs(String type, Pageable pageable) {
@@ -76,6 +79,42 @@ public class JobServiceImpl implements JobService {
 				.job(job)
 				.user(user)
 				.commonResume(commonResume)
+				.status("APPLIED")
+				.build();
+		return JobApplicationResponse.from(jobApplicationRepository.save(application));
+	}
+
+	@Override
+	@Transactional
+	public JobApplicationResponse applyForSpecialJob(
+			Long jobId,
+			SpecialJobApplicationRequest request,
+			String username) {
+		var user = userRepository.findByUsername(username)
+				.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username));
+		var job = jobRepository.findByIdAndDeletedAtIsNull(jobId)
+				.orElseThrow(() -> new IllegalArgumentException("공고를 찾을 수 없습니다: " + jobId));
+
+		if (!"SPECIAL".equalsIgnoreCase(job.getType())) {
+			throw new IllegalArgumentException("특화 공고만 특화 지원으로 신청할 수 있습니다.");
+		}
+		if (jobApplicationRepository.existsByJobIdAndUserIdAndCanceledAtIsNull(jobId, user.getId())) {
+			throw new IllegalArgumentException("이미 지원한 공고입니다.");
+		}
+
+		var targetResume = targetResumeRepository.findById(request.targetResumeId())
+				.orElseThrow(() -> new IllegalArgumentException("특화 이력서를 찾을 수 없습니다."));
+		if (!targetResume.getUser().getId().equals(user.getId())) {
+			throw new IllegalArgumentException("본인의 특화 이력서만 제출할 수 있습니다.");
+		}
+		if (!targetResume.getJob().getId().equals(jobId)) {
+			throw new IllegalArgumentException("해당 공고용 특화 이력서가 아닙니다.");
+		}
+
+		var application = JobApplication.builder()
+				.job(job)
+				.user(user)
+				.targetResume(targetResume)
 				.status("APPLIED")
 				.build();
 		return JobApplicationResponse.from(jobApplicationRepository.save(application));
