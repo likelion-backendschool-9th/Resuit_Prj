@@ -1,17 +1,14 @@
 import { notFound } from 'next/navigation';
 import ProfilePage from '@/views/ProfilePage.jsx';
 
-const backend = process.env.RESUIT_BACKEND_ORIGIN || 'http://localhost:8080';
+const backend = process.env.RESUIT_BACKEND_ORIGIN || process.env.BACKEND_URL || 'http://localhost:8080';
 
 async function loadProfile(username) {
-  try {
-    const response = await fetch(`${backend}/api/v1/users/${encodeURIComponent(username)}`,
-      { cache: 'no-store' });
-    if (!response.ok) return null;
-    return response.json();
-  } catch {
-    return null;
-  }
+  const response = await fetch(`${backend}/api/v1/users/${encodeURIComponent(username)}`,
+    { cache: 'no-store' });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`프로필 조회 실패 (${response.status})`);
+  return response.json();
 }
 
 export async function generateMetadata({ params }) {
