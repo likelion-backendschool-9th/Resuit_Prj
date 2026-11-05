@@ -1,15 +1,26 @@
 package com.newlecture.resuit.service;
 
-import com.newlecture.resuit.dto.CommonResumeResponse;
-import com.newlecture.resuit.dto.CreateCommonResumeRequest;
-import com.newlecture.resuit.dto.UpdateCommonResumeRequest;
+import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
+import com.newlecture.resuit.dto.resume.CommonResumeRequest;
+import com.newlecture.resuit.dto.resume.CommonResumeSummary;
+import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
 import java.util.List;
-import java.util.UUID;
 
 public interface CommonResumeService {
-    List<CommonResumeResponse> listMine(UUID userId);
-    CommonResumeResponse getMine(UUID userId, Long resumeId);
-    CommonResumeResponse create(UUID userId, CreateCommonResumeRequest request);
-    CommonResumeResponse update(UUID userId, Long resumeId, UpdateCommonResumeRequest request);
-    void delete(UUID userId, Long resumeId);
+    List<CommonResumeSummary> getMyResumes(String username);
+    CommonResumeDetailResponse create(String username, CommonResumeRequest request);
+    CommonResumeDetailResponse update(CommonResumeUpdateCommand command);
+    void delete(Long resumeId, String username);
+    CommonResumeDetailResponse getMyResume(Long resumeId, String username);
+
+    public static class UnauthenticatedUserException extends RuntimeException {}
+    public static class ResumeNotFoundException extends RuntimeException {}
+    public static class ResumeForbiddenException extends RuntimeException {}
+    public static class ResumeInUseException extends RuntimeException {}
+
+    public static class InvalidResumeException extends RuntimeException {
+        public InvalidResumeException(String message) {
+            super(message);
+        }
+    }
 }

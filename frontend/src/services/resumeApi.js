@@ -1,6 +1,6 @@
 import { getAuthSession } from './auth.js';
 
-const ROOT = '/api/v1/resumes';
+const ROOT = '/api/v1';
 
 async function request(path, { username, ...options } = {}) {
   const method = (options.method || 'GET').toUpperCase();
