@@ -60,3 +60,15 @@ async function mutatePost(path, method, body) {
 export const createPost = (body) => mutatePost('', 'POST', body);
 export const updatePost = (id, body) => mutatePost(`/${encodeURIComponent(id)}`, 'PATCH', body);
 export const deletePost = (id) => mutatePost(`/${encodeURIComponent(id)}`, 'DELETE');
+
+export async function getPostDetail(id, { baseUrl = '' } = {}) {
+  const response = await fetch(`${baseUrl}/api/v1/posts/${encodeURIComponent(id)}`, {
+    cache: 'no-store', credentials: 'same-origin', signal: AbortSignal.timeout(10000),
+  });
+  if (!response.ok) {
+    throw new Error(response.status === 404
+      ? '게시글을 찾을 수 없어요.'
+      : '게시글을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+  }
+  return toPost(await response.json());
+}

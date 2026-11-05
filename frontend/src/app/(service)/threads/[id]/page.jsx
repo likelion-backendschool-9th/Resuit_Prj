@@ -1,16 +1,19 @@
 import ThreadPage from '@/views/ThreadPage.jsx';
+import { getPostDetail } from '@/services/posts.js';
 
-export async function generateMetadata({ params }) {
-  const { id } = await params;
-  return {
-    title: '게시글',
-    description: '질문과 답변',
-    openGraph: { title: '게시글', description: '질문과 답변' },
-    robots: { index: false },
-  };
-}
+export const metadata = {
+  title: '게시글 | Resuit',
+  description: '개발자의 게시글과 이야기를 자세히 확인하세요.',
+};
 
 export default async function Page({ params }) {
   const { id } = await params;
-  return <ThreadPage id={id} />;
+  let post = null;
+  let error = '';
+  try {
+    post = await getPostDetail(id, { baseUrl: process.env.BACKEND_URL || 'http://localhost:8080' });
+  } catch (err) {
+    error = err.message;
+  }
+  return <ThreadPage key={id} initialPost={post} error={error} />;
 }

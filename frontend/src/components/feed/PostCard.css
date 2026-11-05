@@ -37,3 +37,8 @@
 }
 .post-card__action:hover { color: var(--accent-text); }
 .post-card__action.is-liked { color: var(--like); }
+
+.post-card--linked { cursor: pointer; }
+.post-card__detail-link { color: inherit; text-decoration: none; }
+.post-card__detail-link:hover { color: inherit; }
+.post-card__detail-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }

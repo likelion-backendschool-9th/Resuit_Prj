@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import PostOwnerActions from './PostOwnerActions.jsx';
 import { useAppState } from '../../context/AppStateContext.jsx';
 import Avatar from '../common/Avatar.jsx';
@@ -13,14 +14,20 @@ import './PostCard.css';
 const REPLY_LABEL = { question: '답변', repo: '리뷰' };
 
 export default function PostCard({ post, onUpdated, onDeleted }) {
+  const router = useRouter();
   const { me, loggedIn, liked, toggleLike } = useAppState();
   const isLiked = !!liked[post.id];
   const typeBadge = POST_TYPE_BADGE[post.type];
   const job = post.type === 'job' ? post.job : null;
+  const detailLink = post.source === 'api' ? `/threads/${post.id}` : null;
   const threadLink = post.threadId ? `/threads/${post.threadId}` : null;
 
   return (
-    <article className="post-card">
+    <article className={`post-card${detailLink ? ' post-card--linked' : ''}`} onClick={(event) => {
+      if (!detailLink || event.defaultPrevented || event.target.closest('a, button, input, textarea, select, label, form, video')) return;
+      if (window.getSelection()?.toString()) return;
+      router.push(detailLink);
+    }}>
       <Avatar initial={post.initial} color={post.av} company={post.company} src={post.profileImage} />
       <div className="post-card__body">
         <header className="post-card__head">
@@ -34,7 +41,9 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
           )}
         </header>
 
-        {post.body && <p className="post-card__text">{post.body}</p>}
+        {detailLink ? <Link href={detailLink} className="post-card__detail-link" aria-label={`${post.author}님의 게시글 상세 보기`}>
+          <p className="post-card__text">{post.body || '게시글 보기'}</p>
+        </Link> : post.body && <p className="post-card__text">{post.body}</p>}
 
         {post.code && <CodeBlock code={post.code} />}
         {post.image && <PostImage src={post.image} alt={post.imageAlt} />}
