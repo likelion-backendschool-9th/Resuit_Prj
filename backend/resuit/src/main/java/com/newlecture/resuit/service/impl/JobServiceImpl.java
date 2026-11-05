@@ -152,6 +152,23 @@ public class JobServiceImpl implements JobService {
 		return JobDetailResponse.from(job, questions);
 	}
 
+    @Override
+    @Transactional
+    public void deleteJob(Long jobId, String username) {
+        var company = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AccessDeniedException("기업 계정이 필요합니다."));
+        if (!"COMPANY".equals(company.getRole())) {
+            throw new AccessDeniedException("기업 계정만 공고를 삭제할 수 있습니다.");
+        }
+
+        var job = jobRepository.findByIdAndDeletedAtIsNull(jobId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공고를 찾을 수 없습니다: " + jobId));
+        if (!job.getCompany().getId().equals(company.getId())) {
+            throw new AccessDeniedException("본인이 작성한 공고만 삭제할 수 있습니다.");
+        }
+        job.delete();
+    }
+
     private void validateQuestions(String type, List<CreateJobRequest.Question> questions) {
         if ("GENERAL".equals(type) && !questions.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "일반 공고에는 요구 문항을 등록할 수 없습니다.");

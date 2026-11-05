@@ -8,6 +8,7 @@ import com.newlecture.resuit.dto.CreateJobRequest;
 import com.newlecture.resuit.dto.JobDetailResponse;
 
 public interface JobService {
+	void deleteJob(Long jobId, String username);
 	JobDetailResponse createJob(CreateJobRequest request, String username);
 	JobDetailResponse updateJob(Long jobId, CreateJobRequest request, String username);
 	Page<JobResponse> getJobs(String type, Pageable pageable);

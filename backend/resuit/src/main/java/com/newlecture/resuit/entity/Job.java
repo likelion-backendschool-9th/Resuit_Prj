@@ -74,4 +74,11 @@ public class Job extends BaseTimeEntity {
         this.preferred = preferred;
         this.deadline = deadline;
     }
+
+    public void delete() {
+        if (deletedAt == null) {
+            deletedAt = LocalDateTime.now();
+        }
+    }
+
 }
