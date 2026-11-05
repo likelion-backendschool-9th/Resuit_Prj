@@ -1,4 +1,8 @@
 import { forwardRef, useId, useRef, useState } from 'react';
+import { useAppState } from '../../context/AppStateContext.jsx';
+import { MEDIA_ACCEPT } from '../../services/media.js';
+import useMediaAttachments from './useMediaAttachments.js';
+import MediaAttachments from './MediaAttachments.jsx';
 import { TECH_TAGS } from '../../data/constants.js';
 import Button, { IconButton } from '../common/Button.jsx';
 import Icon from '../common/Icon.jsx';
@@ -21,6 +25,9 @@ const MAX_TAGS = 3;
 // 홈 피드 상단 글쓰기. (이력서 피드백 요청은 이력서 › 내 이력서에서 한다)
 const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textareaRef) {
   const inputId = useId();
+  const fileInput = useRef(null);
+  const { loggedIn } = useAppState();
+  const media = useMediaAttachments();
   const pending = useRef(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -33,22 +40,24 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
   const [codeText, setCodeText] = useState('');
 
   const hasCode = codeOpen && codeText.trim().length > 0;
-  const blank = !text.trim() && !hasCode;
+  const blank = !text.trim() && !hasCode && !media.items.length && !post?.image && !post?.video;
 
   const toggleTag = (t) =>
     setTags((list) => (list.includes(t) ? list.filter((x) => x !== t) : list.length < MAX_TAGS ? [...list, t] : list));
 
   const submit = async (event) => {
     event.preventDefault();
-    if (blank || pending.current) return;
+    if (blank || pending.current || media.busy || !media.beginPublish()) return;
     pending.current = true;
     setSaving(true);
     setError('');
     try {
-      await onSave({ type: kind, content: text.trim(), imageUrl: post?.image || null,
-        videoUrl: post?.video || null, repoFullName: post?.repoFullName || null });
+      await onSave({ type: kind, content: text.trim(), imageUrl: post?.image || media.items.find((item) => item.mediaType === 'IMAGE')?.path || null,
+        videoUrl: post?.video || media.items.find((item) => item.mediaType === 'VIDEO')?.path || null, repoFullName: post?.repoFullName || null });
+      media.finishPublish(true);
       if (!post) setText('');
     } catch (err) {
+      media.finishPublish(false);
       setError(err.message || '저장하지 못했어요. 다시 시도해 주세요.');
     } finally {
       pending.current = false;
@@ -110,9 +119,17 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
           </div>
         )}
 
+        {!post && <MediaAttachments media={media} saving={saving} />}
+        <input ref={fileInput} type="file" accept={MEDIA_ACCEPT} hidden onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = '';
+          media.add(file);
+        }} />
         <div className="composer__foot">
           <div className="row" style={{ gap: 4 }}>
-            <IconButton label="이미지 첨부" disabled title="이미지 업로드는 아직 연결되지 않았어요." className="icon-btn--plain icon-btn--sm composer__tool"><Icon name="image" /></IconButton>
+            <IconButton label="이미지 또는 동영상 첨부" disabled={!!post || media.busy || !loggedIn}
+              title={post ? '수정할 때는 기존 첨부를 유지합니다.' : !loggedIn ? '로그인 후 첨부할 수 있어요.' : '이미지·영상 각각 1개, 파일당 최대 50MB'}
+              onClick={() => fileInput.current?.click()} className="icon-btn--plain icon-btn--sm composer__tool"><Icon name="image" /></IconButton>
             <IconButton
               label="코드 블록" disabled title="코드 블록 저장은 아직 지원하지 않아요."
               aria-pressed={codeOpen}
@@ -126,7 +143,7 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
           <div className="row" style={{ gap: 12 }}>
             <span className="small muted">{text.length} / {MAX_LENGTH}</span>
             {onCancel && <Button variant="ghost" onClick={onCancel}>취소</Button>}
-            <Button type="submit" disabled={blank}>{saving ? '저장 중…' : post ? '수정 저장' : '게시'}</Button>
+            <Button type="submit" disabled={blank || media.busy}>{saving ? '저장 중…' : post ? '수정 저장' : '게시'}</Button>
           </div>
         </div>
       </fieldset>
