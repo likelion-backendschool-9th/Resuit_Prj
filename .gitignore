@@ -24,7 +24,7 @@ build/
 *.mv.db
 *.trace.db
 *.h2.db
-backend/resuit/src/main/media/**
+backend/resuit/src/main/media/
 
 ### STS ###
 .apt_generated
