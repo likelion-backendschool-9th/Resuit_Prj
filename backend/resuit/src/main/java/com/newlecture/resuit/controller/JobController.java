@@ -25,14 +25,17 @@ import com.newlecture.resuit.dto.GeneralJobApplicationRequest;
 import com.newlecture.resuit.dto.JobApplicationResponse;
 import com.newlecture.resuit.dto.SpecialJobApplicationRequest;
 import com.newlecture.resuit.service.JobService;
+import com.newlecture.resuit.service.JobApplicationService;
 
 @RestController
 @RequestMapping("/api/v1/jobs")
 public class JobController {
 	private final JobService jobService;
+	private final JobApplicationService jobApplicationService;
 
-	public JobController(JobService jobService) {
+	public JobController(JobService jobService, JobApplicationService jobApplicationService) {
 		this.jobService = jobService;
+		this.jobApplicationService = jobApplicationService;
 	}
 
 	@GetMapping
@@ -53,7 +56,7 @@ public class JobController {
 			@PathVariable Long jobId,
 			@Valid @RequestBody GeneralJobApplicationRequest applicationRequest,
 			Principal principal) {
-		return jobService.applyForGeneralJob(jobId, applicationRequest, principal.getName());
+		return jobApplicationService.applyForGeneralJob(jobId, applicationRequest, principal.getName());
 	}
 
 	@PostMapping("/{jobId}/special-applications")
@@ -61,14 +64,14 @@ public class JobController {
 			@PathVariable Long jobId,
 			@Valid @RequestBody SpecialJobApplicationRequest applicationRequest,
 			Principal principal) {
-		return jobService.applyForSpecialJob(jobId, applicationRequest, principal.getName());
+		return jobApplicationService.applyForSpecialJob(jobId, applicationRequest, principal.getName());
 	}
 
 	@DeleteMapping("/{jobId}/applications")
 	public ResponseEntity<Void> cancelApplication(
 			@PathVariable Long jobId,
 			Principal principal) {
-		jobService.cancelApplication(jobId, principal.getName());
+		jobApplicationService.cancelApplication(jobId, principal.getName());
 		return ResponseEntity.noContent().build();
 	}
 
