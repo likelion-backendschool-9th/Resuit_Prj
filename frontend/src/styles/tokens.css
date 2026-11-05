@@ -5,6 +5,15 @@
    ========================================================= */
 
 :root {
+  --award-other-end: var(--bg-sub);
+  --award-other-ink: var(--text);
+  --award-second-end: #E3F0FB;
+  --award-second-ink: #244C6C;
+  --award-third-end: #EFE8F8;
+  --award-third-ink: #55406F;
+  /* 명예의 전당 1위 카드 */
+  --award-first-start: #C8EC78;
+  --award-first-ink: #283617;
   --bg: #FFFFFF;
   --bg-sub: #F7F9F9;
   --bg-muted: #EEF1F4;
@@ -104,6 +113,14 @@
 }
 
 [data-theme='dark'] {
+  --award-other-end: #344557;
+  --award-other-ink: #DCE7F2;
+  --award-second-end: #C4E5FC;
+  --award-second-ink: #153F63;
+  --award-third-end: #E3D3F8;
+  --award-third-ink: #422563;
+  --award-first-start: #C8EC78;
+  --award-first-ink: #283617;
   --bg: #15202B;
   --bg-sub: #0E1621;
   --bg-muted: #22303C;
