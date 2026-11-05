@@ -29,6 +29,7 @@ export function AppStateProvider({ children }) {
   const member = session?.user;
   const me = member
     ? {
+        id: member.id,
         name: member.nickname || member.username,
         handle: member.username,
         initial: (member.nickname || member.username).slice(0, 1),

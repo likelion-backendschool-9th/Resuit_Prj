@@ -1,55 +1,86 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { getPosts } from '../../services/posts.js';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { getFeed } from '../../services/posts.js';
 
-export default function useTimeline(initialTimeline) {
-  const [timeline, setTimeline] = useState(initialTimeline);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(initialTimeline ? '' : '게시글을 불러오지 못했어요. 다시 시도해 주세요.');
-  const pending = useRef(false);
-  const revision = useRef(0);
+export default function useTimeline(initialTimeline, tab, userId) {
+  const key = tab === 'following' ? `following:${userId || 'guest'}` : tab;
+  const enabled = tab !== 'following' || !!userId;
+  const [entries, setEntries] = useState(() => ({
+    recommend: { timeline: initialTimeline, error: '', loading: false },
+  }));
+  const cache = useRef(entries);
+  const pending = useRef(null);
+  const [revision, setRevision] = useState(0);
+  const update = useCallback((fn) => {
+    cache.current = fn(cache.current);
+    setEntries(cache.current);
+  }, []);
 
-  async function loadMore() {
-    if (pending.current || timeline?.last) return;
-    pending.current = true;
-    const requestRevision = revision.current;
-    setLoading(true);
-    setError('');
+  const load = useCallback(async (reset = false) => {
+    if (!enabled || pending.current) return;
+    const previous = cache.current[key]?.timeline;
+    if (!reset && previous?.last) return;
+    const controller = new AbortController();
+    pending.current = controller;
+    update((all) => ({ ...all, [key]: { ...all[key], loading: true, error: '' } }));
     try {
-      const next = await getPosts({ page: timeline ? timeline.page + 1 : 0 });
-      if (requestRevision !== revision.current) return;
-      setTimeline((previous) => {
-        const posts = new Map((previous?.posts || []).map((post) => [post.id, post]));
-        next.posts.forEach((post) => posts.set(post.id, post));
-        return { ...next, posts: [...posts.values()] };
-      });
-    } catch {
-      setError('게시글을 불러오지 못했어요. 다시 시도해 주세요.');
+      const next = await getFeed({ tab, userId, page: reset ? 0 : (previous?.page ?? -1) + 1, signal: controller.signal });
+      if (controller.signal.aborted) return;
+      const posts = new Map((reset ? [] : previous?.posts || []).map((post) => [post.id, post]));
+      next.posts.forEach((post) => posts.set(post.id, post));
+      update((all) => ({ ...all, [key]: { timeline: { ...next, posts: [...posts.values()] }, loading: false, error: '' } }));
+    } catch (err) {
+      if (!controller.signal.aborted) update((all) => ({ ...all, [key]: { ...all[key], loading: false, error: err.message } }));
     } finally {
-      pending.current = false;
-      setLoading(false);
+      if (pending.current === controller) pending.current = null;
     }
+  }, [enabled, key, tab, userId, update]);
+
+  useEffect(() => {
+    // 처음 여는 탭과 변경된 피드만 조회한다. 최초 추천 목록은 SSR 결과를 사용한다.
+    if (enabled && (!cache.current[key]?.timeline || cache.current[key]?.stale)) load(true);
+    return () => {
+      if (pending.current) {
+        pending.current.abort();
+        pending.current = null;
+        update((all) => ({ ...all, [key]: { ...all[key], loading: false, stale: true } }));
+      }
+    };
+  }, [key, enabled, load, revision, update]);
+
+  function invalidate() {
+    pending.current?.abort();
+    pending.current = null;
+    update((all) => Object.fromEntries(Object.entries(all).map(([entryKey, entry]) =>
+      [entryKey, { ...entry, stale: true, loading: false }])));
+    setRevision((value) => value + 1);
   }
 
   function upsertPost(post) {
-    revision.current += 1;
-    setTimeline((previous) => ({
-      ...(previous || { page: -1, last: false }),
-      posts: previous?.posts.some((item) => item.id === post.id)
-        ? previous.posts.map((item) => item.id === post.id ? post : item)
-        : [post, ...(previous?.posts || [])],
-    }));
+    update((all) => Object.fromEntries(Object.entries(all).map(([entryKey, entry]) => {
+      if (!entry.timeline) return [entryKey, entry];
+      const matches = entryKey === 'recommend' || entryKey === post.type || entryKey.startsWith('following:');
+      const exists = entry.timeline.posts.some((item) => item.id === post.id);
+      const posts = entry.timeline.posts.flatMap((item) => item.id === post.id ? (matches ? [post] : []) : [item]);
+      if (!exists && entryKey === 'recommend') posts.unshift(post);
+      return [entryKey, { ...entry, timeline: { ...entry.timeline, posts } }];
+    })));
+    invalidate();
   }
 
   function removePost(id) {
-    revision.current += 1;
-    setTimeline((previous) => previous && ({ ...previous,
-      // 삭제로 페이지 경계가 당겨지므로 다음 요청에서 한 페이지를 겹쳐 읽는다.
-      page: Math.max(-1, previous.page - 1),
-      posts: previous.posts.filter((post) => post.id !== id),
-    }));
+    update((all) => Object.fromEntries(Object.entries(all).map(([entryKey, entry]) =>
+      [entryKey, entry.timeline ? { ...entry, timeline: { ...entry.timeline, posts: entry.timeline.posts.filter((post) => post.id !== id) } } : entry])));
+    invalidate();
   }
 
-  return { upsertPost, removePost, posts: timeline?.posts || [], hasMore: !timeline?.last, loading, error, loadMore };
+  const entry = entries[key];
+  return {
+    posts: enabled ? entry?.timeline?.posts || [] : [],
+    hasMore: enabled && !entry?.timeline?.last,
+    loading: enabled && (entry?.loading || (!entry?.timeline && !entry?.error)),
+    error: enabled ? entry?.error || '' : '',
+    loadMore: () => load(!!entry?.stale), upsertPost, removePost,
+  };
 }

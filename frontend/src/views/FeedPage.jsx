@@ -13,7 +13,7 @@ import Button from '../components/common/Button.jsx';
 import useTimeline from '../components/feed/useTimeline.js';
 
 const TABS = [
-  { id: 'all', label: '전체' },
+  { id: 'recommend', label: '추천' },
   { id: 'following', label: '팔로잉' },
   { id: 'tech', label: '기술 정보' },
   { id: 'question', label: '질문' }
@@ -21,9 +21,9 @@ const TABS = [
 const TECH_FILTERS = [{ id: 'all', label: '전체' }, ...TECH_TAGS.map((t) => ({ id: t, label: `#${t}` }))];
 
 export default function FeedPage({ initialTimeline }) {
-  const { following, me, composeRequested, clearComposeRequest } = useAppState();
-  const { posts, hasMore, loading, error, loadMore, upsertPost, removePost } = useTimeline(initialTimeline);
-  const [tab, setTab] = useState('all');
+  const { me, loggedIn, authLoading, composeRequested, clearComposeRequest } = useAppState();
+  const [tab, setTab] = useState('recommend');
+  const { posts, hasMore, loading, error, loadMore, upsertPost, removePost } = useTimeline(initialTimeline, tab, loggedIn ? me.id : null);
   const [techFilter, setTechFilter] = useState('all');
   const composerRef = useRef(null);
 
@@ -34,30 +34,34 @@ export default function FeedPage({ initialTimeline }) {
     clearComposeRequest();
   }, [composeRequested, clearComposeRequest]);
 
-  const visible = posts.filter((p) => {
-    if (tab === 'all') return true;
-    if (tab === 'following') return !!following[p.handle] || p.handle === me.handle;
-    if (tab === 'tech') return p.type === 'tech' && (techFilter === 'all' || p.tags?.includes(techFilter));
-    return p.type === tab;
-  });
+  const followingUnavailable = tab === 'following' && !loggedIn;
 
   return (
     <>
       <MainColumn>
         <Tabs items={TABS} value={tab} onChange={setTab} label="피드 보기" sticky />
-        <Composer ref={composerRef} onPosted={(post) => { upsertPost(post); setTab('all'); }} />
+        <Composer ref={composerRef} onPosted={(post) => { upsertPost(post); setTab('recommend'); }} />
         {tab === 'tech' && (
           <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--line)', background: 'var(--bg-sub)' }}>
+            <fieldset disabled className="composer__unsupported" title="기술 태그 필터는 준비 중이에요.">
             <ChipRadioGroup options={TECH_FILTERS} value={techFilter} onChange={setTechFilter} label="기술 태그 필터" tone="tech" size="filter" />
+            </fieldset>
           </div>
         )}
-        {visible.map((p) => <PostCard key={p.id} post={p} onUpdated={upsertPost} onDeleted={removePost} />)}
-        {!visible.length && !error && !loading && (
-          <div className="empty">{hasMore ? '불러온 게시글 중 이 탭에 해당하는 글이 없어요.' : '아직 이 탭에 글이 없어요.'}</div>
+        {followingUnavailable && <div className="empty">
+          {authLoading ? <p role="status">로그인 상태를 확인하고 있어요.</p> : <>
+            <p>팔로잉 피드는 로그인 후 볼 수 있어요.</p>
+            <Button to="/onboarding" variant="outline">로그인</Button>
+          </>}
+        </div>}
+        {posts.map((p) => <PostCard key={p.id} post={p} onUpdated={upsertPost} onDeleted={removePost} />)}
+        {!followingUnavailable && !posts.length && !error && !loading && (
+          <div className="empty">{tab === 'following' ? '팔로우한 사용자의 게시글이 아직 없어요.' : '아직 이 탭에 글이 없어요.'}</div>
         )}
         <div className="empty" aria-live="polite" aria-busy={loading}>
+          {loading && <p role="status">게시글을 불러오는 중…</p>}
           {error && <p role="alert">{error}</p>}
-          {hasMore && (
+          {(hasMore || error) && (
             <Button variant="outline" onClick={loadMore} disabled={loading}>
               {loading ? '불러오는 중…' : error ? '다시 시도' : '게시글 더 보기'}
             </Button>

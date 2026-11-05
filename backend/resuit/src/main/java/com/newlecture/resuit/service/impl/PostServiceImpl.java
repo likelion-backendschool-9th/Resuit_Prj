@@ -181,7 +181,7 @@ public class PostServiceImpl implements PostService {
 	}
 
 	private Page<PostTimelineResponse> getFeedByType(String type, Pageable pageable) {
-		return postRepository.findByTypeAndDeletedAtIsNullOrderByCreatedAtDesc(type, pageable)
+		return postRepository.findByTypeIgnoreCaseAndDeletedAtIsNullOrderByCreatedAtDesc(type, pageable)
 				.map(PostTimelineResponse::from);
 	}
 

@@ -7,7 +7,7 @@ function toPost(post) {
     handle: post.author.username,
     initial: author?.slice(0, 1) || '?',
     profileImage: post.author.profileImageUrl,
-    type: post.type,
+    type: post.type?.toLowerCase(),
     body: post.content,
     image: post.imageUrl,
     imageAlt: `${author}님의 첨부 이미지`,
@@ -57,8 +57,9 @@ async function mutatePost(path, method, body) {
   return method === 'DELETE' ? null : toPost(await response.json());
 }
 
-export const createPost = (body) => mutatePost('', 'POST', body);
-export const updatePost = (id, body) => mutatePost(`/${encodeURIComponent(id)}`, 'PATCH', body);
+const postPayload = (body) => ({ ...body, type: body.type?.toUpperCase() });
+export const createPost = (body) => mutatePost('', 'POST', postPayload(body));
+export const updatePost = (id, body) => mutatePost(`/${encodeURIComponent(id)}`, 'PATCH', postPayload(body));
 export const deletePost = (id) => mutatePost(`/${encodeURIComponent(id)}`, 'DELETE');
 
 export async function getPostDetail(id, { baseUrl = '' } = {}) {
@@ -71,4 +72,21 @@ export async function getPostDetail(id, { baseUrl = '' } = {}) {
       : '게시글을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
   }
   return toPost(await response.json());
+}
+
+
+export async function getFeed({ tab = 'recommend', userId, page = 0, baseUrl = '', signal } = {}) {
+  const query = new URLSearchParams({ tab, page: String(page), size: '20' });
+  if (tab === 'following') {
+    if (!userId) throw new Error('팔로잉 피드는 로그인 후 볼 수 있어요.');
+    query.set('userId', userId);
+  }
+  const timeout = AbortSignal.timeout(10000);
+  const response = await fetch(`${baseUrl}/api/v1/posts/feeds?${query}`, {
+    credentials: 'same-origin', cache: 'no-store',
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+  });
+  if (!response.ok) throw new Error('피드를 불러오지 못했어요. 다시 시도해 주세요.');
+  const data = await response.json();
+  return { posts: data.content.map(toPost), page: data.number, last: data.last };
 }
