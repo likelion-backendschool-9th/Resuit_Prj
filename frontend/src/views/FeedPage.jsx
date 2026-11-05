@@ -9,17 +9,20 @@ import { ChipRadioGroup } from '../components/common/Chip.jsx';
 import SearchBox from '../components/common/SearchBox.jsx';
 import Composer from '../components/feed/Composer.jsx';
 import PostCard from '../components/feed/PostCard.jsx';
+import Button from '../components/common/Button.jsx';
+import useTimeline from '../components/feed/useTimeline.js';
 
 const TABS = [
-  { id: 'all', label: '추천' },
+  { id: 'all', label: '전체' },
   { id: 'following', label: '팔로잉' },
   { id: 'tech', label: '기술 정보' },
   { id: 'question', label: '질문' }
 ];
 const TECH_FILTERS = [{ id: 'all', label: '전체' }, ...TECH_TAGS.map((t) => ({ id: t, label: `#${t}` }))];
 
-export default function FeedPage() {
-  const { posts, following, me, composeRequested, clearComposeRequest } = useAppState();
+export default function FeedPage({ initialTimeline }) {
+  const { following, me, composeRequested, clearComposeRequest } = useAppState();
+  const { posts, hasMore, loading, error, loadMore } = useTimeline(initialTimeline);
   const [tab, setTab] = useState('all');
   const [techFilter, setTechFilter] = useState('all');
   const composerRef = useRef(null);
@@ -48,7 +51,18 @@ export default function FeedPage() {
             <ChipRadioGroup options={TECH_FILTERS} value={techFilter} onChange={setTechFilter} label="기술 태그 필터" tone="tech" size="filter" />
           </div>
         )}
-        {visible.length ? visible.map((p) => <PostCard key={p.id} post={p} />) : <div className="empty">아직 이 탭에 글이 없어요.</div>}
+        {visible.map((p) => <PostCard key={p.id} post={p} />)}
+        {!visible.length && !error && !loading && (
+          <div className="empty">{hasMore ? '불러온 게시글 중 이 탭에 해당하는 글이 없어요.' : '아직 이 탭에 글이 없어요.'}</div>
+        )}
+        <div className="empty" aria-live="polite" aria-busy={loading}>
+          {error && <p role="alert">{error}</p>}
+          {hasMore && (
+            <Button variant="outline" onClick={loadMore} disabled={loading}>
+              {loading ? '불러오는 중…' : error ? '다시 시도' : '게시글 더 보기'}
+            </Button>
+          )}
+        </div>
       </MainColumn>
 
       {/* 검색 아래는 추후 활용 영역 */}

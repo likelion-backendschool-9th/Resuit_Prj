@@ -20,7 +20,7 @@ export default function PostCard({ post }) {
 
   return (
     <article className="post-card">
-      <Avatar initial={post.initial} color={post.av} company={post.company} />
+      <Avatar initial={post.initial} color={post.av} company={post.company} src={post.profileImage} />
       <div className="post-card__body">
         <header className="post-card__head">
           <strong>{post.author}</strong>
@@ -28,7 +28,7 @@ export default function PostCard({ post }) {
           {post.sharerBadge && <Badge tone="sharer">{post.sharerBadge}</Badge>}
           <span className="muted">@{post.handle} · {post.time}</span>
           {typeBadge && <Badge tone={typeBadge.tone}>{typeBadge.label}</Badge>}
-          {post.handle && post.handle !== me.handle && (
+          {post.source !== 'api' && post.handle && post.handle !== me.handle && (
             <FollowButton handle={post.handle} className="post-card__follow" />
           )}
         </header>
@@ -38,16 +38,18 @@ export default function PostCard({ post }) {
         {post.code && <CodeBlock code={post.code} />}
         {post.image && <PostImage src={post.image} alt={post.imageAlt} />}
         {post.video && <PostVideo src={post.video} poster={post.poster} alt={post.imageAlt} duration={post.duration} />}
-        {post.type === 'tech' && <TechTags tags={post.tags} source={post.source} />}
+        {post.type === 'tech' && post.source !== 'api' && <TechTags tags={post.tags} source={post.source} />}
         {post.blog && <BlogEmbed blog={post.blog} />}
         {post.repo && <RepoEmbed repo={post.repo} />}
+        {post.blogPostUrl && <a className="embed" href={post.blogPostUrl} target="_blank" rel="noopener noreferrer">블로그 원문 보기</a>}
+        {post.repoUrl && <a className="embed" href={post.repoUrl} target="_blank" rel="noopener noreferrer">{post.repoFullName}</a>}
         {post.evidence && <Evidence text={post.evidence} />}
         {job && <JobCard job={job} compact meta={post.jobMeta} sub={post.jobSub} />}
         {post.type === 'question' && threadLink && (
           <Link href={threadLink} className="post-card__question-link">답변 {post.replies || 0}개 보기</Link>
         )}
 
-        <div className="post-card__actions">
+        {post.source !== 'api' && <div className="post-card__actions">
           <button type="button" className="post-card__action">
             <Icon name="reply" size={18} />
             <span>{REPLY_LABEL[post.type] || '답글'} {post.replies || 0}</span>
@@ -68,7 +70,7 @@ export default function PostCard({ post }) {
           <button type="button" className="post-card__action" aria-label="공유">
             <Icon name="share" size={18} />
           </button>
-        </div>
+        </div>}
       </div>
     </article>
   );
