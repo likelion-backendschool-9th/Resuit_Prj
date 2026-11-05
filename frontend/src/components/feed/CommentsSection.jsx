@@ -1,16 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { getComments, createComment, updateComment, deleteComment } from '../../services/comments.js';
 import { useAppState } from '../../context/AppStateContext.jsx';
+import Icon from '../common/Icon.jsx';
 import Avatar from '../common/Avatar.jsx';
 import Button from '../common/Button.jsx';
 import CommentForm from './CommentForm.jsx';
 import './Comments.css';
 
-function CommentItem({ comment, onUpdated, onDeleted }) {
+function CommentItem({ comment, postId, parentHandle, onReplied, onUpdated, onDeleted }) {
   const { me, loggedIn } = useAppState();
   const [editing, setEditing] = useState(false);
+  const [replying, setReplying] = useState(false);
+  const [replySaving, setReplySaving] = useState(false);
+  const replyId = useId();
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
@@ -28,34 +32,56 @@ function CommentItem({ comment, onUpdated, onDeleted }) {
     finally { pending.current = false; setDeleting(false); }
   }
   return <>
-    <article className="comment-item">
+    <article className={`comment-item${replying || comment.replies?.length ? ' comment-item--connected' : ''}`}>
       <Avatar initial={author.slice(0, 1)} src={comment.author.profileImageUrl} size={40} />
       <div className="comment-form__body">
         <header className="comment-item__header"><strong>{author}</strong>
           <span className="small muted">@{comment.author.username} · {comment.createdAt?.replace('T', ' ').slice(0, 16)}</span>
         </header>
-        {editing ? <CommentForm initialContent={comment.content} onCancel={() => setEditing(false)} onSave={async (content) => {
+        {parentHandle && <span className="comment-item__reply-target">@{parentHandle} 님에게 보내는 답글</span>}
+        {editing ? <CommentForm mode="edit" autoFocus initialContent={comment.content} onCancel={() => setEditing(false)} onSave={async (content) => {
           const saved = await updateComment(comment.id, content);
           onUpdated(saved);
           setEditing(false);
         }} /> : <p className="comment-item__text">{comment.content}</p>}
+        {!editing && <div className="comment-item__reply-actions">
+          <button type="button" className="comment-item__reply-button" aria-label={`${author}님에게 답글 달기`}
+            aria-expanded={replying} aria-controls={replying ? replyId : undefined} disabled={deleting || replySaving}
+            onClick={() => { setReplying((value) => !value); setConfirming(false); }}>
+            <Icon name="msg" size={18} /><span>{comment.replies?.length || '답글'}</span>
+          </button>
+        </div>}
         {!editing && loggedIn && me.handle === comment.author.username && <div className="comment-item__controls">
           {confirming ? <>
             <span className="small">댓글을 삭제할까요?</span>
             <Button variant="outline" size="sm" disabled={deleting} onClick={remove}>{deleting ? '삭제 중…' : '삭제 확인'}</Button>
             <Button variant="ghost" size="sm" disabled={deleting} onClick={() => { setConfirming(false); setError(''); }}>취소</Button>
           </> : <>
-            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>수정</Button>
-            <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>삭제</Button>
+            <Button variant="ghost" size="sm" disabled={replySaving} onClick={() => { setReplying(false); setEditing(true); }}>수정</Button>
+            <Button variant="ghost" size="sm" disabled={replySaving} onClick={() => { setReplying(false); setConfirming(true); }}>삭제</Button>
           </>}
         </div>}
         {error && <p role="alert">{error}</p>}
       </div>
     </article>
+    {replying && <div id={replyId} className="comment-item__reply-composer">
+      <CommentForm handle={comment.author.username} autoFocus onBusyChange={setReplySaving}
+        onCancel={() => setReplying(false)} onSave={async (content) => {
+          const saved = await createComment(postId, content, comment.id);
+          onReplied(comment.id, saved);
+          setReplying(false);
+        }} />
+    </div>}
     {comment.replies?.length > 0 && <div className="comment-item__replies">
-      {comment.replies.map((reply) => <CommentItem key={reply.id} comment={reply} onUpdated={onUpdated} onDeleted={onDeleted} />)}
+      {comment.replies.map((reply) => <CommentItem key={reply.id} comment={reply} postId={postId} parentHandle={comment.author.username} onReplied={onReplied} onUpdated={onUpdated} onDeleted={onDeleted} />)}
     </div>}
   </>;
+}
+
+function addReply(items, parentId, saved) {
+  return items.map((item) => item.id === parentId
+    ? { ...item, replies: [...(item.replies || []), saved] }
+    : { ...item, replies: addReply(item.replies || [], parentId, saved) });
 }
 
 function editTree(items, saved) {
@@ -83,6 +109,7 @@ export default function CommentsSection({ post }) {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [post.id, retry]);
+  const onReplied = useCallback((parentId, saved) => setComments((items) => addReply(items, parentId, saved)), []);
   const onUpdated = useCallback((saved) => setComments((items) => editTree(items, saved)), []);
   const onDeleted = useCallback((id) => setComments((items) => removeFromTree(items, id)), []);
   return <>
@@ -95,7 +122,7 @@ export default function CommentsSection({ post }) {
       {loading && <p className="empty" role="status">댓글을 불러오는 중…</p>}
       {error && <div className="empty"><p role="alert">{error}</p><Button variant="outline" onClick={() => setRetry((value) => value + 1)}>다시 시도</Button></div>}
       {!loading && !error && comments.length === 0 && <p className="empty">첫 댓글을 남겨보세요.</p>}
-      {comments.map((comment) => <CommentItem key={comment.id} comment={comment} onUpdated={onUpdated} onDeleted={onDeleted} />)}
+      {comments.map((comment) => <CommentItem key={comment.id} comment={comment} postId={post.id} onReplied={onReplied} onUpdated={onUpdated} onDeleted={onDeleted} />)}
     </section>
   </>;
 }

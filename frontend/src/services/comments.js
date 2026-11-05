@@ -14,7 +14,7 @@ async function request(id, method = 'GET', body, signal) {
 }
 
 export const getComments = (postId, signal) => request(postId, 'GET', undefined, signal);
-export const createComment = (postId, content) => request(postId, 'POST', { content, parentId: null });
+export const createComment = (postId, content, parentId = null) => request(postId, 'POST', { content, parentId });
 // 현재 백엔드 계약: PATCH/DELETE의 경로 id는 게시글이 아닌 댓글 ID다.
 export const updateComment = (commentId, content) => request(commentId, 'PATCH', { content });
 export const deleteComment = (commentId) => request(commentId, 'DELETE');

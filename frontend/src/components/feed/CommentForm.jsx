@@ -6,7 +6,7 @@ import Button from '../common/Button.jsx';
 import Avatar from '../common/Avatar.jsx';
 import './Comments.css';
 
-export default function CommentForm({ handle, initialContent = '', onSave, onCancel, inputId, disabled = false, onBusyChange }) {
+export default function CommentForm({ handle, initialContent = '', onSave, onCancel, inputId, disabled = false, onBusyChange, mode = 'create', autoFocus = false }) {
   const { me, loggedIn, authLoading } = useAppState();
   const generatedId = useId();
   const id = inputId || generatedId;
@@ -37,8 +37,8 @@ export default function CommentForm({ handle, initialContent = '', onSave, onCan
   return <form className="comment-form" onSubmit={submit} aria-busy={saving}>
     <Avatar initial={me.initial} color={me.av} size={40} />
     <div className="comment-form__body">
-      <label htmlFor={id} className="small muted">{onCancel ? '댓글 수정' : `@${handle} 님에게 답글 남기기`}</label>
-      <textarea id={id} rows={3} className="comment-form__input" placeholder="답글을 남겨보세요."
+      <label htmlFor={id} className="small muted">{mode === 'edit' ? '댓글 수정' : `@${handle} 님에게 답글 남기기`}</label>
+      <textarea autoFocus={autoFocus} id={id} rows={3} className="comment-form__input" placeholder="답글을 남겨보세요."
         value={content} disabled={saving || !loggedIn || disabled} onChange={(event) => setContent(event.target.value)} />
       {error && <p role="alert">{error}</p>}
       <div className="comment-form__footer">
@@ -46,7 +46,7 @@ export default function CommentForm({ handle, initialContent = '', onSave, onCan
           ? <Button to="/onboarding" variant="outline" size="sm">로그인하고 댓글 달기</Button>
           : <>
             {onCancel && <Button variant="ghost" disabled={saving} onClick={onCancel}>취소</Button>}
-            <Button type="submit" disabled={saving || disabled || !content.trim()}>{saving ? '저장 중…' : onCancel ? '수정 저장' : '답글'}</Button>
+            <Button type="submit" disabled={saving || disabled || !content.trim()}>{saving ? '저장 중…' : mode === 'edit' ? '수정 저장' : '답글'}</Button>
           </>}
       </div>
     </div>

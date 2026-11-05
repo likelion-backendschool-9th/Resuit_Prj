@@ -14,3 +14,33 @@
 .comment-modal__header h2 { font-size: 18px; }
 .comment-modal__post { display: flex; gap: 12px; padding: 16px 20px; }
 .comment-modal__text { max-height: 180px; overflow: auto; }
+
+.comment-item { position: relative; }
+.comment-item--connected::after {
+  content: '';
+  position: absolute;
+  top: 68px;
+  bottom: 0;
+  left: 39px;
+  width: 2px;
+  background: var(--line-strong);
+}
+.comment-item__reply-target { color: var(--accent-text); font-size: 13px; }
+.comment-item__reply-actions { display: flex; align-items: center; }
+.comment-item__reply-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  margin-left: -10px;
+  border: 0;
+  border-radius: var(--radius);
+  color: var(--text-sub);
+  background: none;
+  font-size: 13px;
+}
+.comment-item__reply-button:hover:not(:disabled),
+.comment-item__reply-button[aria-expanded='true'] { color: var(--accent-text); background: var(--accent-bg); }
+.comment-item__reply-composer { padding-left: 20px; }
+.comment-item__reply-composer .comment-form { background: var(--bg-sub); }
