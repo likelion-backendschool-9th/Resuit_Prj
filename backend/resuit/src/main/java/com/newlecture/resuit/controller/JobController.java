@@ -62,8 +62,11 @@ public class JobController {
 	}
 
 	@DeleteMapping("/{jobId}/applications")
-	public ResponseEntity<Void> cancelApplication(@PathVariable Long jobId) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<Void> cancelApplication(
+			@PathVariable Long jobId,
+			java.security.Principal principal) {
+		jobService.cancelApplication(jobId, principal.getName());
+		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/")

@@ -21,4 +21,5 @@ public interface JobService {
 			Long jobId,
 			SpecialJobApplicationRequest request,
 			String username);
+	void cancelApplication(Long jobId, String username);
 }

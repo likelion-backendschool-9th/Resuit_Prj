@@ -50,4 +50,11 @@ public class JobApplication {
 
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
+    public void cancel() {
+        if (canceledAt != null) {
+            return;
+        }
+        status = "CANCELED";
+        canceledAt = LocalDateTime.now();
+    }
 }

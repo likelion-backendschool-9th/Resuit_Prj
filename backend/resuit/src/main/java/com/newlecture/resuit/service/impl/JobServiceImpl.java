@@ -119,4 +119,15 @@ public class JobServiceImpl implements JobService {
 				.build();
 		return JobApplicationResponse.from(jobApplicationRepository.save(application));
 	}
+
+	@Override
+	@Transactional
+	public void cancelApplication(Long jobId, String username) {
+		var user = userRepository.findByUsername(username)
+				.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username));
+		var application = jobApplicationRepository.findByJobIdAndUserIdAndCanceledAtIsNull(jobId, user.getId())
+				.orElseThrow(() -> new IllegalArgumentException("취소할 지원 내역이 없거나 이미 취소한 지원입니다."));
+		application.cancel();
+	}
+
 }
