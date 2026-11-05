@@ -2,8 +2,10 @@ package com.newlecture.resuit.controller;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Map;
 
+import com.newlecture.resuit.dto.feedback.FeedbackCommentCreateCommand;
+import com.newlecture.resuit.dto.feedback.FeedbackCommentCreateRequest;
+import com.newlecture.resuit.dto.feedback.FeedbackCommentResponse;
 import com.newlecture.resuit.dto.feedback.FeedbackRequestCreateRequest;
 import com.newlecture.resuit.dto.feedback.FeedbackRequestResponse;
 import com.newlecture.resuit.dto.feedback.FeedbackRequestSearchCondition;
@@ -27,9 +29,11 @@ import com.newlecture.resuit.service.FeedbackBoardService;
 import com.newlecture.resuit.service.FeedbackRequestService;
 import com.newlecture.resuit.service.ResumeService;
 import com.newlecture.resuit.service.TargetResumeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -88,15 +92,16 @@ public class ResumeController {
 	}
 
 	@GetMapping("/feedback-requests/{id}/comments")
-	public ResponseEntity<Void> getFeedbackComments(@PathVariable Long id) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<List<FeedbackCommentResponse>> getFeedbackComments(@PathVariable Long id, Principal principal) {
+		return ResponseEntity.ok(feedbackBoardService.getComments(id, username(principal)));
 	}
 
 	@PostMapping("/feedback-requests/{id}/comments")
-	public ResponseEntity<Void> createFeedbackComment(
+	public ResponseEntity<FeedbackCommentResponse> createFeedbackComment(
 			@PathVariable Long id,
-			@RequestBody(required = false) Map<String, Object> commentRequest) {
-		return ResponseEntity.ok().build();
+			@Valid @RequestBody FeedbackCommentCreateRequest commentRequest, Principal principal) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(feedbackBoardService.createComment(
+			new FeedbackCommentCreateCommand(id, username(principal), commentRequest)));
 	}
 
 	@PostMapping("/feedbacks/{feedbackId}/adopt")
@@ -237,5 +242,19 @@ public class ResumeController {
 	public ResponseEntity<ResumeErrorResponse> targetResumeExists() {
 		return ResponseEntity.status(HttpStatus.CONFLICT)
 			.body(new ResumeErrorResponse("TARGET_RESUME_EXISTS", "이 공고의 특화 이력서가 이미 있습니다."));
+	}
+
+	@ExceptionHandler(FeedbackBoardService.FeedbackRequestClosedException.class)
+	public ResponseEntity<ResumeErrorResponse> feedbackRequestClosed() {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(new ResumeErrorResponse("FEEDBACK_REQUEST_CLOSED", "취소된 피드백 요청에는 피드백을 남길 수 없습니다."));
+	}
+
+	// @Valid 요청 DTO 검사에 걸리면 첫 번째 안내 문구를 돌려준다
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ResumeErrorResponse> invalidRequest(MethodArgumentNotValidException e) {
+		var error = e.getBindingResult().getFieldError();
+		return ResponseEntity.badRequest()
+			.body(new ResumeErrorResponse("INVALID_REQUEST", error == null ? "요청 값이 올바르지 않습니다." : error.getDefaultMessage()));
 	}
 }

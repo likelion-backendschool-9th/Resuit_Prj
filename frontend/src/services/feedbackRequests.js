@@ -22,6 +22,14 @@ export const getFeedbackRequests = ({ category, mine } = {}, signal) => {
   return request(query ? `?${query}` : '', { signal });
 };
 
+// 피드백 댓글 목록 (WBS 4.6)
+export const getFeedbackComments = (id, signal) => request(`/${id}/comments`, { signal });
+
+// 피드백 댓글 작성 (WBS 4.7). section: 요청한 이력서 항목. null이면 이력서 전체
+export const createFeedbackComment = (id, body) => request(`/${id}/comments`, {
+  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+});
+
 // 피드백 요청 (WBS 3.2 = 4.2). commonResumeId와 targetResumeId 중 하나만 보낸다.
 // sections: BASIC, SKILLS, PROJECTS, AWARDS, INTRODUCTION, ANSWERS
 export const createFeedbackRequest = (body) => request('', {

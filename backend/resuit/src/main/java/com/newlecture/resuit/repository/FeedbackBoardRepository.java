@@ -1,8 +1,10 @@
 package com.newlecture.resuit.repository;
 
+import com.newlecture.resuit.entity.FeedbackComment;
 import com.newlecture.resuit.entity.FeedbackRequest;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
@@ -36,6 +38,16 @@ public interface FeedbackBoardRepository extends Repository<FeedbackRequest, Lon
         GROUP BY c.feedbackRequest.id
         """)
     List<CommentCountRow> countComments(@Param("requestIds") Collection<Long> requestIds);
+
+    @Query("SELECT r FROM FeedbackRequest r JOIN FETCH r.user WHERE r.id = :id")
+    Optional<FeedbackRequest> findRequest(@Param("id") Long id);
+
+    @Query("""
+        SELECT c FROM FeedbackComment c JOIN FETCH c.user u LEFT JOIN FETCH u.displayedBadge
+        WHERE c.feedbackRequest.id = :requestId
+        ORDER BY c.createdAt, c.commentId
+        """)
+    List<FeedbackComment> findComments(@Param("requestId") Long requestId);
 
     interface SectionRow {
         Long getRequestId();
