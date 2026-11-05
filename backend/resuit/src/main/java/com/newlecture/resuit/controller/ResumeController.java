@@ -13,6 +13,8 @@ import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
 import com.newlecture.resuit.dto.resume.ResumeListResponse;
+import com.newlecture.resuit.dto.resume.ResumePreviewCondition;
+import com.newlecture.resuit.dto.resume.ResumePreviewResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeCreateRequest;
 import com.newlecture.resuit.dto.resume.TargetResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeSummary;
@@ -79,8 +81,10 @@ public class ResumeController {
 	}
 
 	@GetMapping("/resumes/{id}")
-	public ResponseEntity<Void> previewResume(@PathVariable Long id) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<ResumePreviewResponse> previewResume(
+			@PathVariable Long id, @RequestParam(required = false) String type, Principal principal) {
+		return ResponseEntity.ok(feedbackBoardService.getResumePreview(username(principal),
+			new ResumePreviewCondition(id, type)));
 	}
 
 	@GetMapping("/feedback-requests/{id}/comments")

@@ -31,3 +31,6 @@ export const getTargetResume = (id, signal) => request(`/target-resumes/${id}`, 
 export const createTargetResume = (resume) => request('/target-resumes', json('POST', resume));
 export const updateTargetResume = (id, changes) => request(`/target-resumes/${id}`, json('PATCH', changes));
 export const deleteTargetResume = (id) => request(`/target-resumes/${id}`, { method: 'DELETE' });
+
+// 피드백 게시판의 이력서 미리보기 (WBS 4.5). type: COMMON | TARGET
+export const getResumePreview = (type, id, signal) => request(`/resumes/${id}?type=${type}`, { signal });

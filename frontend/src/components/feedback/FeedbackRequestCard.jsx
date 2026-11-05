@@ -5,12 +5,11 @@ import Badge from '../common/Badge.jsx';
 import Button from '../common/Button.jsx';
 import Icon from '../common/Icon.jsx';
 import { ChipRadioGroup } from '../common/Chip.jsx';
+import ResumePreview from './ResumePreview.jsx';
+import { FIELD_LABEL, SECTION_LABEL } from './labels.js';
 import './FeedbackRequestCard.css';
 
 const SECTIONS = ['전체', '학력', '기술 스택', '프로젝트', '자기소개'].map((s) => ({ id: s, label: s }));
-const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
-// 3.2 피드백 요청에서 고르는 이력서 항목
-const SECTION_LABEL = { BASIC: '기본 정보', SKILLS: '기술 스택', PROJECTS: '프로젝트', AWARDS: '수상', INTRODUCTION: '자기소개', ANSWERS: '문항 답변' };
 const AVATAR_COLORS = ['av1', 'av2', 'av3', 'av4', 'av5', 'av6'];
 
 // 같은 사람은 항상 같은 아바타 색이 나오게 username으로 고른다
@@ -32,6 +31,7 @@ function timeText(value) {
 export default function FeedbackRequestCard({ request, defaultOpen = false }) {
   const { addFeedback, adoptFeedback } = useAppState();
   const [open, setOpen] = useState(defaultOpen);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [section, setSection] = useState('전체');
   const [draft, setDraft] = useState('');
   const { author } = request;
@@ -61,13 +61,15 @@ export default function FeedbackRequestCard({ request, defaultOpen = false }) {
           {request.adopted && <Badge tone="accepted">채택 완료</Badge>}
         </header>
 
-        <div className="fb-card__resume">
+        <button type="button" className="fb-card__resume" aria-expanded={previewOpen} onClick={() => setPreviewOpen((v) => !v)}>
           <div className="resume-thumb" aria-hidden="true"><span /><span /><span /><span /></div>
           <div className="grow">
             <div className="xs muted">{resumeType}</div>
             <div className="bold">{request.resumeTitle}</div>
           </div>
-        </div>
+          <span className="fb-card__preview-label small"><Icon name="eye" size={16} />{previewOpen ? '미리보기 닫기' : '이력서 보기'}</span>
+        </button>
+        {previewOpen && <ResumePreview type={request.resumeType} id={request.resumeId} requested={request.sections} />}
 
         {request.content && <p>{request.content}</p>}
         {request.sections.length > 0 && (

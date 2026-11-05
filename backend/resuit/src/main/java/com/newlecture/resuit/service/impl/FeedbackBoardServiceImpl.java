@@ -2,13 +2,19 @@ package com.newlecture.resuit.service.impl;
 
 import com.newlecture.resuit.dto.feedback.FeedbackRequestSearchCondition;
 import com.newlecture.resuit.dto.feedback.FeedbackRequestSummary;
+import com.newlecture.resuit.dto.resume.ResumePreviewCondition;
+import com.newlecture.resuit.dto.resume.ResumePreviewResponse;
 import com.newlecture.resuit.entity.FeedbackRequest;
 import com.newlecture.resuit.entity.User;
+import com.newlecture.resuit.repository.CommonResumeRepository;
 import com.newlecture.resuit.repository.FeedbackBoardRepository;
 import com.newlecture.resuit.repository.FeedbackBoardRepository.CommentCountRow;
 import com.newlecture.resuit.repository.FeedbackBoardRepository.SectionRow;
+import com.newlecture.resuit.repository.TargetResumeRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CommonResumeService.InvalidResumeException;
+import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenException;
+import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
 import com.newlecture.resuit.service.FeedbackBoardService;
 
@@ -28,6 +34,8 @@ public class FeedbackBoardServiceImpl implements FeedbackBoardService {
     private static final Set<String> CATEGORIES = Set.of("FRONTEND", "BACKEND");
 
     private final FeedbackBoardRepository board;
+    private final CommonResumeRepository commonResumes;
+    private final TargetResumeRepository targetResumes;
     private final UserRepository users;
 
     // 4.1 전체, 4.3 분야 필터, 4.4 내 요청. 섹션과 댓글 수는 요청마다 따로 묻지 않고 한 번에 모아 온다.
@@ -53,6 +61,32 @@ public class FeedbackBoardServiceImpl implements FeedbackBoardService {
                 count != null && count.getAdoptedCount() > 0,
                 request.getUser().getId().equals(user.getId()));
         }).toList();
+    }
+
+    // 4.5 미리보기. 남의 이력서는 피드백 요청이 진행 중이거나 공개한 이력서일 때만 보여 준다.
+    @Override
+    @Transactional(readOnly = true)
+    public ResumePreviewResponse getResumePreview(String username, ResumePreviewCondition condition) {
+        var user = currentUser(username);
+        var id = condition.id();
+        var type = condition.type() == null ? "" : condition.type().trim().toUpperCase(Locale.ROOT);
+        if (!type.equals("COMMON") && !type.equals("TARGET")) {
+            throw new InvalidResumeException("이력서 종류(type)는 COMMON 또는 TARGET이어야 해요.");
+        }
+        if (id == null || id <= 0) throw new ResumeNotFoundException();
+
+        if (type.equals("COMMON")) {
+            var resume = commonResumes.findById(id).orElseThrow(ResumeNotFoundException::new);
+            checkVisible(resume.getUser(), user, resume.isPublic() || commonResumes.hasActiveFeedbackRequest(id));
+            return ResumePreviewResponse.from(resume);
+        }
+        var resume = targetResumes.findById(id).orElseThrow(ResumeNotFoundException::new);
+        checkVisible(resume.getUser(), user, targetResumes.hasActiveFeedbackRequest(id));
+        return ResumePreviewResponse.of(resume, targetResumes.findQuestions(resume.getJob().getId()));
+    }
+
+    private static void checkVisible(User owner, User user, boolean shared) {
+        if (!shared && !owner.getId().equals(user.getId())) throw new ResumeForbiddenException();
     }
 
     private User currentUser(String username) {

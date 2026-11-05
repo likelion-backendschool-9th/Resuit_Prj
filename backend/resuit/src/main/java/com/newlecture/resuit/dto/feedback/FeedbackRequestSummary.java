@@ -1,5 +1,6 @@
 package com.newlecture.resuit.dto.feedback;
 
+import com.newlecture.resuit.dto.resume.JobInfo;
 import com.newlecture.resuit.entity.FeedbackRequest;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,7 +33,7 @@ public record FeedbackRequestSummary(
             common != null ? "COMMON" : "TARGET",
             common != null ? common.getId() : target.getId(),
             common != null ? common.getTitle() : target.getTitle(),
-            job == null ? null : job.getCompany().getNickname(),
+            job == null ? null : JobInfo.from(job).companyName(),
             job == null ? null : job.getTitle(),
             request.getContent(), sections, commentCount, adopted, mine, request.getCreatedAt());
     }
