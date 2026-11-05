@@ -49,4 +49,21 @@ public class Post extends BaseTimeEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public void update(
+            String type,
+            String content,
+            String imageUrl,
+            String videoUrl,
+            String repoFullName) {
+        this.type = type;
+        this.content = content;
+        this.imageUrl = imageUrl;
+        this.videoUrl = videoUrl;
+        this.repoFullName = repoFullName;
+    }
+
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }
