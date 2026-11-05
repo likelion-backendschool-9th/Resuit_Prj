@@ -69,7 +69,7 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
         {post.source === 'api' && <>
           <div className="post-card__actions">
             <button type="button" className="post-card__action" aria-label="댓글 작성" onClick={() => { setReplyNotice(''); setReplyOpen(true); }}>
-              <Icon name="msg" size={20} />
+              <Icon name="msg" size={20} /><span>{post.commentCount ?? 0}</span>
             </button>
             <button type="button" className="post-card__action" aria-label="리트윗 준비 중" title="리트윗 준비 중" disabled>
               <Icon name="repeat" size={20} />

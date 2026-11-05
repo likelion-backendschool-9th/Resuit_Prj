@@ -1,6 +1,8 @@
 package com.newlecture.resuit.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -16,6 +18,7 @@ import com.newlecture.resuit.entity.Post;
 import com.newlecture.resuit.entity.PostLike;
 import com.newlecture.resuit.entity.PostLikeId;
 import com.newlecture.resuit.repository.PostLikeRepository;
+import com.newlecture.resuit.repository.CommentRepository;
 import com.newlecture.resuit.repository.PostRepository;
 import com.newlecture.resuit.repository.FollowRepository;
 import com.newlecture.resuit.repository.UserRepository;
@@ -30,6 +33,7 @@ public class PostServiceImpl implements PostService {
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
 	private final PostLikeRepository postLikeRepository;
+	private final CommentRepository commentRepository;
 	private final FollowRepository followRepository;
 	private final MediaService mediaService;
 
@@ -37,11 +41,13 @@ public class PostServiceImpl implements PostService {
 			PostRepository postRepository,
 			UserRepository userRepository,
 			PostLikeRepository postLikeRepository,
+			CommentRepository commentRepository,
 			FollowRepository followRepository,
 			MediaService mediaService) {
 		this.postRepository = postRepository;
 		this.userRepository = userRepository;
 		this.postLikeRepository = postLikeRepository;
+		this.commentRepository = commentRepository;
 		this.followRepository = followRepository;
 		this.mediaService = mediaService;
 	}
@@ -191,12 +197,40 @@ public class PostServiceImpl implements PostService {
     }
 
     private Page<PostTimelineResponse> timeline(Page<Post> posts) {
-        var liked = likedIds(posts.getContent().stream().map(Post::getId).toList());
-        return posts.map(post -> PostTimelineResponse.from(post, liked.contains(post.getId())));
+    	var postIds = posts.getContent().stream().map(Post::getId).toList();
+    	var liked = likedIds(postIds);
+    	var commentCounts = commentCounts(postIds);
+    	var likeCounts = likeCounts(postIds);
+    	return posts.map(post -> PostTimelineResponse.from(
+    			post,
+    			commentCounts.getOrDefault(post.getId(), 0L),
+    			likeCounts.getOrDefault(post.getId(), 0L),
+    			liked.contains(post.getId())));
     }
 
     private PostDetailResponse detail(Post post) {
-        return PostDetailResponse.from(post, likedIds(List.of(post.getId())).contains(post.getId()));
+    	var postId = post.getId();
+    	return PostDetailResponse.from(
+    			post,
+    			commentCounts(List.of(postId)).getOrDefault(postId, 0L),
+    			likeCounts(List.of(postId)).getOrDefault(postId, 0L),
+    			likedIds(List.of(postId)).contains(postId));
+    }
+
+    private Map<Long, Long> commentCounts(List<Long> postIds) {
+    	if (postIds.isEmpty()) {
+    		return Map.of();
+    	}
+    	return commentRepository.countActiveByPostIds(postIds).stream()
+    			.collect(Collectors.toMap(CommentRepository.PostCount::getPostId, CommentRepository.PostCount::getCount));
+    }
+
+    private Map<Long, Long> likeCounts(List<Long> postIds) {
+    	if (postIds.isEmpty()) {
+    		return Map.of();
+    	}
+    	return postLikeRepository.countByPostIds(postIds).stream()
+    			.collect(Collectors.toMap(PostLikeRepository.PostCount::getPostId, PostLikeRepository.PostCount::getCount));
     }
 
 }

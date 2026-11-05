@@ -14,6 +14,7 @@ export default function LikeButton({ post }) {
   const active = loggedIn && (liked[key] ?? post.liked ?? false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
   const pending = useRef(false);
   async function toggle() {
     if (pending.current) return;
@@ -24,6 +25,7 @@ export default function LikeButton({ post }) {
     try {
       await (active ? unlikePost(post.id) : likePost(post.id));
       setPostLiked(key, !active);
+      setLikeCount((count) => Math.max(0, count + (active ? -1 : 1)));
     } catch (err) { setError(err.message); }
     finally { pending.current = false; setBusy(false); }
   }
@@ -34,5 +36,6 @@ export default function LikeButton({ post }) {
       <Icon name="heart" filled={active} size={20} />
     </button>
     {error && <p className="post-like__error" role="alert">{error}</p>}
+    <span className="post-like__count" aria-label={`좋아요 ${likeCount}개`}>{likeCount}</span>
   </div>;
 }

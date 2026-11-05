@@ -18,6 +18,8 @@ function toPost(post) {
       ? `https://github.com/${post.repoFullName.split('/').map(encodeURIComponent).join('/')}`
       : null,
     repoFullName: post.repoFullName,
+    commentCount: post.commentCount ?? 0,
+    likeCount: post.likeCount ?? 0,
     time: post.createdAt?.replace('T', ' ').slice(0, 16) || '',
     source: 'api',
   };

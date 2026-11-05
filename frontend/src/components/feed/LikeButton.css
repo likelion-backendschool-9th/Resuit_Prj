@@ -1,4 +1,5 @@
-.post-like { position: relative; display: inline-flex; }
+.post-like { position: relative; display: inline-flex; align-items: center; }
 .post-like__button { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; color: var(--text-sub); background: none; }
 .post-like__button:hover, .post-like__button.is-liked { color: var(--like); }
+.post-like__count { display: inline-flex; align-items: center; height: 40px; line-height: 1; }
 .post-like__error { position: absolute; z-index: 3; top: 100%; left: 0; width: 200px; padding: 10px; font-size: 13px; color: var(--danger); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
