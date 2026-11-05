@@ -20,8 +20,10 @@ import com.newlecture.resuit.service.ReviewService.ReviewAlreadyAcceptedExceptio
 import com.newlecture.resuit.service.ReviewService.ReviewForbiddenException;
 import com.newlecture.resuit.service.ReviewService.ReviewNotFoundException;
 import com.newlecture.resuit.service.ReviewService.UnauthenticatedUserException;
+import com.newlecture.resuit.service.ReviewerBadgeService;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.UUID;
@@ -38,6 +40,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final UserRepository users;
     private final BestReviewRepository bestReviews;
     private final FeedbackRequestRepository requests;
+    private final ReviewerBadgeService reviewerBadges;
 
     @Override
     @Transactional(readOnly = true)
@@ -85,9 +88,13 @@ public class ReviewServiceImpl implements ReviewService {
         if (!request.getUser().getId().equals(user.getId())) throw new ReviewForbiddenException();
         if (request.getDeletedAt() != null) throw new RequestClosedException();
         var review = comments.findById(reviewId).orElseThrow(ReviewNotFoundException::new);
+        if (review.getParent() != null) throw new ReviewForbiddenException();
         if (!review.isAdopted()) {
             if (comments.existsByFeedbackRequestIdAndIsAdoptedTrue(requestId)) throw new ReviewAlreadyAcceptedException();
-            review.accept(LocalDateTime.now().truncatedTo(ChronoUnit.MICROS));
+            LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul")).truncatedTo(ChronoUnit.MICROS);
+            review.accept(now);
+            comments.flush();
+            reviewerBadges.refreshAfterActivity(review.getUser().getId(), now);
         }
         return new ReviewAcceptResponse(reviewId, review.isAdopted(), review.getAdoptedAt());
     }

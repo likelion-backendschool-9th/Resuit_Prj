@@ -12,7 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "integrations")
+@Table(name = "integrations", uniqueConstraints = @UniqueConstraint(name = "uq_integrations_user_provider", columnNames = {"user_id", "provider"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -49,4 +49,26 @@ public class Integration extends BaseCreatedEntity {
 
     @Column(name = "last_synced_at")
     private LocalDateTime lastSyncedAt;
+
+    public void connectBlog(String platform, String blogId, String rssUrl) {
+        this.platform = platform;
+        this.externalId = blogId;
+        this.rssUrl = rssUrl;
+        this.connected = true;
+    }
+
+    public void connectGithub(String login, String encryptedToken) {
+        this.externalId = login;
+        this.accessToken = encryptedToken;
+        this.connected = true;
+    }
+
+    public void markSynced(LocalDateTime at) {
+        this.lastSyncedAt = at;
+    }
+
+    public void disconnect() {
+        this.connected = false;
+        this.accessToken = null;
+    }
 }

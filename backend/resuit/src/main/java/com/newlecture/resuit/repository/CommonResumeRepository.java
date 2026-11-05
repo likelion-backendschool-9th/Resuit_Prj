@@ -2,6 +2,7 @@ package com.newlecture.resuit.repository;
 
 import com.newlecture.resuit.entity.CommonResume;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,6 +11,12 @@ import org.springframework.data.repository.query.Param;
 public interface CommonResumeRepository extends JpaRepository<CommonResume, Long> {
 
     List<CommonResume> findByUserIdOrderByIdAsc(UUID userId);
+
+    List<CommonResume> findByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    Optional<CommonResume> findByIdAndUserId(Long id, UUID userId);
+
+    Optional<CommonResume> findByIdAndUserIdAndIsPublicTrue(Long id, UUID userId);
 
     // 목록 카드의 "받은 피드백 N개". 취소한 요청에 달린 피드백도 받은 피드백으로 센다.
     @Query("""

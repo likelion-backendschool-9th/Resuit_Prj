@@ -1,29 +1,173 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAppState } from '../context/AppStateContext.jsx';
-import { BADGE_PROGRESS, MAX_PUBLIC_RESUMES, PROFILE_POST } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Avatar from '../components/common/Avatar.jsx';
 import Badge from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
+import FollowButton from '../components/common/FollowButton.jsx';
 import Icon from '../components/common/Icon.jsx';
 import Tabs from '../components/common/Tabs.jsx';
 import ContributionGraph from '../components/profile/ContributionGraph.jsx';
 import PostCard from '../components/feed/PostCard.jsx';
+import useProfileData from '../components/profile/useProfileData.js';
 import './ProfilePage.css';
 
-const TABS = [{ id: 'posts', label: '게시글' }, { id: 'feedback', label: '남긴 피드백' }, { id: 'tech', label: '기술 정보' }];
+const TABS = [
+  { id: 'posts', label: '게시글' },
+  { id: 'feedback', label: '남긴 피드백' },
+  { id: 'tech', label: '기술 정보' },
+];
 
-export default function ProfilePage() {
-  const { me, posts, commonResumes, publicResumeIds, togglePublicResume } = useAppState();
-  const [editing, setEditing] = useState(false);
-  const [widgets, setWidgets] = useState({ grass: true, resumes: true });
-  const [resumeSettingsOpen, setResumeSettingsOpen] = useState(false);
+const MAX_PUBLIC_RESUMES = 3;
+
+/** 오른쪽 보유 배지 미리보기 개수. 나머지는 더 보기로 펼친다. */
+const BADGE_PREVIEW_LIMIT = 3;
+
+const BADGE_STATUS_ORDER = { ACTIVE: 0, GRACE: 1, EXPIRED: 2 };
+
+function statusLabel(status) {
+  if (status === 'ACTIVE') return '활성';
+  if (status === 'GRACE') return '갱신 필요';
+  if (status === 'EXPIRED') return '만료';
+  return status || '진행 중';
+}
+
+function sortOwnedBadges(badges, displayedId) {
+  return [...badges].sort((a, b) => {
+    const aDisplayed = a.id === displayedId ? 0 : 1;
+    const bDisplayed = b.id === displayedId ? 0 : 1;
+    if (aDisplayed !== bDisplayed) return aDisplayed - bDisplayed;
+    const aStatus = BADGE_STATUS_ORDER[a.status] ?? 9;
+    const bStatus = BADGE_STATUS_ORDER[b.status] ?? 9;
+    if (aStatus !== bStatus) return aStatus - bStatus;
+    return String(a.name || '').localeCompare(String(b.name || ''), 'ko');
+  });
+}
+
+export default function ProfilePage({ username, initialProfile = null, startEditing = false }) {
+  const { me, loggedIn, authLoading } = useAppState();
+  const isOwner = !username || username === me.handle;
+  const handle = username || me.handle;
+  const [editing, setEditing] = useState(startEditing);
   const [tab, setTab] = useState('posts');
-  const myPosts = posts.filter((p) => p.handle === me.handle && (tab !== 'tech' || p.type === 'tech'));
-  const publicResumes = publicResumeIds.map((id) => commonResumes.find((r) => r.id === id)).filter(Boolean);
+  const [resumeSettingsOpen, setResumeSettingsOpen] = useState(false);
+  const [badgesExpanded, setBadgesExpanded] = useState(false);
+  const [nicknameDraft, setNicknameDraft] = useState('');
+  const [introDraft, setIntroDraft] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [badgePanels, setBadgePanels] = useState({
+    progress: true,
+    owned: true,
+    history: false,
+  });
+  const data = useProfileData(
+    handle,
+    isOwner,
+    initialProfile,
+    tab,
+    loggedIn ? me.handle : undefined,
+    { ready: !authLoading && (loggedIn || Boolean(username)) },
+  );
+
+  useEffect(() => {
+    if (!editing || !data.profile) return;
+    setNicknameDraft(data.profile.nickname || '');
+    setIntroDraft(data.profile.selfIntroduction || '');
+  }, [editing, data.profile]);
+
+  const toggleBadgePanel = (key) => {
+    setBadgePanels((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const profile = data.profile;
+  const widgets = useMemo(() => {
+    const raw = profile?.widgets;
+    if (Array.isArray(raw)) {
+      return { grass: raw.includes('GRASS'), resumes: raw.includes('PINNED_RESUME') };
+    }
+    if (raw && typeof raw === 'object') {
+      return { grass: raw.grass !== false, resumes: raw.resumes !== false };
+    }
+    return { grass: true, resumes: true };
+  }, [profile]);
+
+  const displayName = profile?.nickname || profile?.username || me.name;
+  const displayHandle = profile?.username || me.handle;
+  const intro = profile?.selfIntroduction
+    || (loggedIn
+      ? '아직 자기소개가 없어요. 프로필 꾸미기에서 소개를 적어 보세요.'
+      : '로그인하면 내 프로필을 볼 수 있어요.');
+  const pinnedResume = profile?.pinnedResume;
+  const ownedBadges = useMemo(
+    () => sortOwnedBadges(profile?.badges || [], profile?.displayedBadge?.id),
+    [profile?.badges, profile?.displayedBadge?.id],
+  );
+  const visibleBadges = badgesExpanded
+    ? ownedBadges
+    : ownedBadges.slice(0, BADGE_PREVIEW_LIMIT);
+  const hiddenBadgeCount = Math.max(0, ownedBadges.length - BADGE_PREVIEW_LIMIT);
+  const badgeHistory = profile?.badgeHistory || [];
+  const progress = data.progress;
+  const apiPosts = tab === 'tech' ? data.techPosts : data.posts;
+  const ownedResumeList = isOwner ? (data.ownedResumes || []) : [];
+  const publicResumes = ownedResumeList.filter((r) => r.isPublic);
+  const badgeMetrics = progress ? [
+    { label: '채택된 피드백', value: progress.adoptedCount, max: 5 },
+    { label: '서로 다른 요청자', value: progress.distinctRequesters, max: 3 },
+    { label: '베스트 리뷰', value: progress.bestReviewCount, max: 1 },
+  ] : [
+    { label: '채택된 피드백', value: 0, max: 5 },
+    { label: '서로 다른 요청자', value: 0, max: 3 },
+    { label: '베스트 리뷰', value: 0, max: 1 },
+  ];
+  const github = data.integrations?.find((item) => item.provider === 'GITHUB');
+  const blog = data.integrations?.find((item) => item.provider === 'BLOG');
+
+  const setWidget = async (key, checked) => {
+    if (!isOwner) return;
+    const next = {
+      grass: key === 'grass' ? checked : widgets.grass,
+      resumes: key === 'resumes' ? checked : widgets.resumes,
+    };
+    try {
+      await data.updateProfile({ widgets: next });
+    } catch {
+      data.setError('위젯 설정을 저장하지 못했습니다.');
+    }
+  };
+
+  const saveProfileBasics = async () => {
+    if (!isOwner) return;
+    setSavingProfile(true);
+    try {
+      await data.updateProfile({
+        nickname: nicknameDraft.trim() || null,
+        selfIntroduction: introDraft.trim(),
+      });
+      data.setError('');
+    } catch {
+      data.setError('프로필을 저장하지 못했습니다.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const toggleResumePublic = async (resume) => {
+    const publicCount = ownedResumeList.filter((r) => r.isPublic).length;
+    if (!resume.isPublic && publicCount >= MAX_PUBLIC_RESUMES) {
+      data.setError(`공개 이력서는 최대 ${MAX_PUBLIC_RESUMES}개까지 가능합니다.`);
+      return;
+    }
+    try {
+      await data.setVisibility(resume.id, !resume.isPublic);
+      data.setError('');
+    } catch {
+      data.setError('이력서 공개 설정을 저장하지 못했습니다.');
+    }
+  };
 
   return (
     <>
@@ -31,32 +175,99 @@ export default function ProfilePage() {
         <div className="profile__banner" aria-hidden="true" />
         <div className="profile__head">
           <div className="profile__head-row">
-            <Button to="/profile/verification" variant="outline">기업 이메일 인증</Button>
-            <div className="profile__avatar"><Avatar initial={me.initial} color={me.av} size={120} /></div>
-            <Button variant="outline" aria-pressed={editing} onClick={() => setEditing((v) => !v)}>{editing ? '꾸미기 완료' : '프로필 꾸미기'}</Button>
+            {isOwner ? (
+              <Button to="/profile/verification" variant="outline">기업 이메일 인증</Button>
+            ) : (
+              <FollowButton
+                handle={displayHandle}
+                initialFollowing={profile?.isFollowing}
+                offVariant="outline"
+                onChanged={(status) => data.patchProfile({
+                  isFollowing: !!status.isFollowing,
+                  followers: status.followerCount ?? profile?.followers,
+                  following: status.followingCount ?? profile?.following,
+                })}
+              />
+            )}
+            <div className="profile__avatar">
+              <Avatar initial={(displayName || '?').slice(0, 1)} color={me.av} size={120} />
+            </div>
+            {isOwner ? (
+              <Button variant="outline" aria-pressed={editing} onClick={() => setEditing((v) => !v)}>
+                {editing ? '꾸미기 완료' : '프로필 꾸미기'}
+              </Button>
+            ) : <span />}
           </div>
-          <div><div style={{ fontSize: 22, fontWeight: 900 }}>{me.name}</div><div className="muted">@{me.handle}</div></div>
-          <p>사용자가 편한 화면을 고민하는 프론트엔드 개발자 지망생. React와 TypeScript를 주로 씁니다.</p>
-          <div className="row-wrap">{['React', 'TypeScript', 'Next.js'].map((s) => <span key={s} className="skill-tag">{s}</span>)}</div>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 900 }}>{displayName}</div>
+            <div className="muted">@{displayHandle}</div>
+          </div>
+          <p>{profile?.selfIntroduction || intro}</p>
           <div className="profile__stats">
-            <span><strong>128</strong> 팔로잉</span><span><strong>96</strong> 팔로워</span>
-            <span><strong>23</strong> 남긴 피드백</span><span><strong>6</strong> 공유한 기술 글</span>
+            <span><strong>{profile?.following ?? 0}</strong> 팔로잉</span>
+            <span><strong>{profile?.followers ?? 0}</strong> 팔로워</span>
+            <span><strong>{profile?.feedbacks ?? 0}</strong> 남긴 피드백</span>
+            <span><strong>{profile?.posts ?? 0}</strong> 게시글</span>
           </div>
-          <div className="profile__sharer">
-            <Badge tone="sharer" size="md">React 공유자</Badge>
-            <span className="small" style={{ color: 'var(--tech)' }}>주로 공유하는 분야 · #React #TypeScript</span>
-          </div>
+          {profile?.displayedBadge && (
+            <div className="profile__sharer">
+              <Badge tone="sharer" size="md">{profile.displayedBadge.name}</Badge>
+              <span className="small" style={{ color: 'var(--tech)' }}>
+                표시 배지 · {statusLabel(profile.displayedBadge.status)}
+              </span>
+            </div>
+          )}
         </div>
 
-        {editing && (
+        {data.loading && <p className="profile__message">프로필을 불러오는 중…</p>}
+        {data.error && <p className="profile__message" role="status">{data.error}</p>}
+
+        {editing && isOwner && (
           <section className="profile__edit">
-            <h2>프로필 위젯</h2>
-            <label className="check profile__edit-item"><input type="checkbox" checked={widgets.grass} onChange={(e) => setWidgets((w) => ({ ...w, grass: e.target.checked }))} /> GitHub 잔디 (GitHub API 연동)</label>
-            <label className="check profile__edit-item">
-              <input type="checkbox" checked={widgets.resumes} onChange={(e) => setWidgets((w) => ({ ...w, resumes: e.target.checked }))} />
-              <span>공개 이력서 보여 주기 <span className="xs muted">(어떤 이력서를 보일지는 아래 "공개 이력서"의 공개 설정에서)</span></span>
+            <h2>기본 정보</h2>
+            <label className="profile__edit-field">
+              닉네임
+              <input
+                value={nicknameDraft}
+                maxLength={50}
+                onChange={(e) => setNicknameDraft(e.target.value)}
+                placeholder="프로필에 보일 이름"
+              />
             </label>
-            <label className="check profile__edit-item muted"><input type="checkbox" disabled /> CLI 도구 활동 (여유 시 추가)</label>
+            <label className="profile__edit-field">
+              자기소개
+              <textarea
+                value={introDraft}
+                maxLength={500}
+                rows={3}
+                onChange={(e) => setIntroDraft(e.target.value)}
+                placeholder="간단한 소개를 적어 보세요"
+              />
+            </label>
+            <Button onClick={saveProfileBasics} disabled={savingProfile}>
+              {savingProfile ? '저장 중…' : '기본 정보 저장'}
+            </Button>
+
+            <div className="profile__setting-divider" />
+            <h2>프로필 위젯</h2>
+            <label className="check profile__edit-item">
+              <input type="checkbox" checked={widgets.grass} onChange={(e) => setWidget('grass', e.target.checked)} />
+              GitHub 잔디 보여 주기
+            </label>
+            <label className="check profile__edit-item">
+              <input type="checkbox" checked={widgets.resumes} onChange={(e) => setWidget('resumes', e.target.checked)} />
+              <span>
+                대표 이력서 보여 주기
+                <span className="xs muted"> (공개/고정은 아래에서)</span>
+              </span>
+            </label>
+
+            <div className="profile__setting-divider" />
+            <h2>대표 레포·블로그</h2>
+            <p className="small muted">
+              대표 레포는 연동 관리에서 GitHub 공개 레포를 최대 3개까지 고를 수 있어요.
+            </p>
+            <Link href="/setting/integrations" className="text-link">연동 관리에서 레포·블로그 설정</Link>
           </section>
         )}
 
@@ -64,118 +275,385 @@ export default function ProfilePage() {
           <section className="card profile__widget">
             <div className="row-wrap" style={{ justifyContent: 'space-between', gap: 12 }}>
               <h2>GitHub 기여 기록</h2>
-              <span className="small muted">github.com/[아이디] · 최근 1년</span>
+              <span className="small muted">
+                {`github.com/${data.contributions?.login || github?.externalId || '[아이디]'}`}
+                {' · 최근 1년'}
+                {typeof data.contributions?.totalContributions === 'number'
+                  ? ` · ${data.contributions.totalContributions}회`
+                  : ''}
+              </span>
             </div>
-            <ContributionGraph />
+            <ContributionGraph weeks={data.contributions?.weeks} />
+            {!data.contributions?.weeks && (
+              <p className="small muted">
+                {loggedIn
+                  ? 'GitHub 기여 기록을 불러오지 못했어요. GitHub로 다시 로그인해 연동을 새로고침해 보세요.'
+                  : 'GitHub로 로그인하면 기여 잔디를 볼 수 있어요.'}
+              </p>
+            )}
           </section>
         )}
 
         {widgets.resumes && (
           <section className="card profile__widget" style={{ gap: 10 }}>
             <div className="row" style={{ justifyContent: 'space-between', gap: 12 }}>
-              <h2>공개 이력서 <span className="small muted" style={{ fontWeight: 400 }}>{publicResumes.length}개</span></h2>
-              <Button
-                variant={resumeSettingsOpen ? 'primary' : 'accent-outline'}
-                size="mid"
-                className="profile__settings-btn"
-                aria-expanded={resumeSettingsOpen}
-                onClick={() => setResumeSettingsOpen((v) => !v)}
-              >
-                <Icon name="eye" size={16} />{resumeSettingsOpen ? '설정 완료' : '공개 설정'}
-              </Button>
+              <h2>
+                대표 이력서{' '}
+                <span className="small muted" style={{ fontWeight: 400 }}>
+                  {pinnedResume ? '1개 고정' : `${publicResumes.length}개 공개`}
+                </span>
+              </h2>
+              {isOwner && (
+                <Button
+                  variant={resumeSettingsOpen ? 'primary' : 'accent-outline'}
+                  size="mid"
+                  className="profile__settings-btn"
+                  aria-expanded={resumeSettingsOpen}
+                  onClick={() => setResumeSettingsOpen((v) => !v)}
+                >
+                  <Icon name="eye" size={16} />{resumeSettingsOpen ? '설정 완료' : '공개 설정'}
+                </Button>
+              )}
             </div>
 
-            {resumeSettingsOpen && (
+            {isOwner && resumeSettingsOpen && (
               <fieldset className="profile__resume-settings">
                 <legend>프로필에 공개할 공통 이력서 (최대 {MAX_PUBLIC_RESUMES}개)</legend>
-                {commonResumes.map((r) => {
-                  const order = publicResumeIds.indexOf(r.id);
-                  const on = order >= 0;
+                {ownedResumeList.length === 0 ? (
+                  <p className="small muted">아직 만든 공통 이력서가 없어요. 이력서 관리에서 추가해 주세요.</p>
+                ) : ownedResumeList.map((r) => {
+                  const title = r.title || r.name;
+                  const on = !!r.isPublic;
+                  const isPinned = pinnedResume?.id === r.id;
+                  const publicOrder = publicResumes.findIndex((item) => item.id === r.id);
                   return (
-                    <label key={r.id} className="check" style={{ gap: 10, fontSize: 14, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={on} disabled={!on && publicResumeIds.length >= MAX_PUBLIC_RESUMES} onChange={() => togglePublicResume(r.id)} />
-                      <span className="grow"><strong>{r.name}</strong> <span className="muted">· {r.field} · {r.updated}</span></span>
-                      <span className={`profile__order${on ? ' is-on' : ''}`}>{on ? order + 1 : ''}</span>
-                    </label>
+                    <div key={r.id} className="profile__owned-item">
+                      <label className="check profile__resume-choice">
+                        <input
+                          type="checkbox"
+                          checked={on}
+                          disabled={!on && publicResumes.length >= MAX_PUBLIC_RESUMES}
+                          onChange={() => toggleResumePublic(r)}
+                        />
+                        <span className="grow">
+                          <strong>{title}</strong>
+                          <span className="muted"> · {r.field}</span>
+                        </span>
+                        <span className={`profile__order${on ? ' is-on' : ''}`}>
+                          {on && publicOrder >= 0 ? publicOrder + 1 : ''}
+                        </span>
+                      </label>
+                      <div className="profile__owned-actions">
+                        <Button
+                          size="sm"
+                          variant={isPinned ? 'primary' : 'outline'}
+                          disabled={!on}
+                          onClick={() => data.pinResume(isPinned ? null : r.id)}
+                        >
+                          {isPinned ? '대표 해제' : '대표로 고정'}
+                        </Button>
+                      </div>
+                    </div>
                   );
                 })}
                 <div className="row-wrap xs muted" style={{ justifyContent: 'space-between' }}>
-                  <span>{publicResumes.length} / {MAX_PUBLIC_RESUMES}개 공개 · 체크한 순서대로 보여요</span>
-                  <Link href="/resumes" className="text-link" style={{ fontSize: 12 }}>이력서 이름 바꾸기 · 새로 만들기</Link>
+                  <span>체크하면 서버에 바로 공개/비공개가 저장됩니다</span>
+                  <Link href="/resumes" className="text-link" style={{ fontSize: 12 }}>이력서 관리</Link>
                 </div>
               </fieldset>
             )}
 
-            {publicResumes.length === 0 && (
-              <div className="profile__no-resume">아직 공개한 이력서가 없어요. "공개 설정"에서 프로필에 보일 이력서를 골라 주세요.</div>
-            )}
-
-            {publicResumes.map((r) => (
-              <div key={r.id} className="profile__resume">
+            {pinnedResume ? (
+              <div className="profile__resume">
                 <div className="resume-thumb" aria-hidden="true"><span /><span /><span /></div>
-                <div className="grow"><div className="bold">{r.name}</div><div className="small muted">{r.field} · {r.sections}</div></div>
+                <div className="grow">
+                  <div className="bold">{pinnedResume.title}</div>
+                  <div className="small muted">{pinnedResume.field}</div>
+                </div>
                 <Link href="/resumes" className="text-link">보기</Link>
               </div>
-            ))}
+            ) : publicResumes.length === 0 ? (
+              <div className="profile__no-resume">아직 공개·고정한 이력서가 없어요.</div>
+            ) : (
+              publicResumes.map((r) => (
+                <div key={r.id} className="profile__resume">
+                  <div className="resume-thumb" aria-hidden="true"><span /><span /><span /></div>
+                  <div className="grow">
+                    <div className="bold">{r.title || r.name}</div>
+                    <div className="small muted">{r.field}</div>
+                  </div>
+                  <Link href="/resumes" className="text-link">보기</Link>
+                </div>
+              ))
+            )}
           </section>
         )}
 
-        <div style={{ marginTop: 16 }}><Tabs items={TABS} value={tab} onChange={setTab} label="프로필 탭" /></div>
-        {tab === 'feedback' && <div className="empty">남긴 피드백은 피드백 게시판과 연결될 예정이에요.</div>}
-        {tab !== 'feedback' && myPosts.map((p) => <PostCard key={p.id} post={p} />)}
-        {tab === 'posts' && (
-          <article className="post-card" style={{ padding: '16px 24px' }}>
-            <Avatar initial={me.initial} color={me.av} />
-            <div className="grow">
-              <div><strong>{me.name}</strong> <span className="muted">@{me.handle} · {PROFILE_POST.time}</span></div>
-              <p style={{ marginTop: 6 }}>{PROFILE_POST.body}</p>
-            </div>
-          </article>
+        <div style={{ marginTop: 16 }}>
+          <Tabs items={TABS} value={tab} onChange={setTab} label="프로필 탭" />
+        </div>
+
+        {tab === 'feedback' && (
+          Array.isArray(data.feedbacks) ? (
+            data.feedbacks.length === 0
+              ? <div className="empty">아직 남긴 피드백이 없어요.</div>
+              : data.feedbacks.map((item) => (
+                <article key={item.id} className="card profile__activity">
+                  <div className="small muted">요청 #{item.feedbackRequestId} · {item.section || '일반'}</div>
+                  <p>{item.content}</p>
+                  {item.adopted && <span className="xs bold" style={{ color: 'var(--accent-text)' }}>채택됨</span>}
+                </article>
+              ))
+          ) : <div className="empty">남긴 피드백은 피드백 게시판과 연결될 예정이에요.</div>
         )}
-        {tab === 'tech' && myPosts.length === 0 && <div className="empty">아직 공유한 기술 글이 없어요. 홈에서 첫 글을 올려 보세요.</div>}
+
+        {tab !== 'feedback' && Array.isArray(apiPosts) && apiPosts.map((p) => (
+          <PostCard
+            key={p.id}
+            post={{
+              id: p.id,
+              author: displayName,
+              handle: displayHandle,
+              initial: (displayName || '?').slice(0, 1),
+              av: me.av,
+              type: p.type,
+              body: p.content,
+              time: p.createdAt,
+              tags: p.tags,
+              replies: p.replies,
+              reposts: p.reposts,
+              likes: p.likes,
+            }}
+          />
+        ))}
+        {tab === 'posts' && Array.isArray(apiPosts) && apiPosts.length === 0 && (
+          <div className="empty">아직 게시글이 없어요.</div>
+        )}
+        {tab === 'tech' && Array.isArray(apiPosts) && apiPosts.length === 0 && (
+          <div className="empty">아직 공유한 기술 글이 없어요.</div>
+        )}
+        {data.hasMore?.[tab] && (
+          <div className="profile__more">
+            <Button variant="outline" onClick={() => data.loadMore(tab)}>더 보기</Button>
+          </div>
+        )}
       </MainColumn>
 
       <RightAside>
         <section className="card profile__badge-card" aria-labelledby="badge-h">
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <h2 id="badge-h">리뷰어 인증 배지</h2>
-            <Badge tone="general">진행 중</Badge>
+            <Badge tone="general">
+              {statusLabel(progress?.reviewerStatus) || '진행 중'}
+            </Badge>
           </div>
           <div className="text-2" style={{ fontSize: 14 }}>
-            목표 <strong style={{ color: 'var(--text)' }}>{BADGE_PROGRESS.goal}</strong> · 다음 평가 <strong style={{ color: 'var(--text)' }}>{BADGE_PROGRESS.nextEval}</strong> ({BADGE_PROGRESS.dday})
+            채택 <strong style={{ color: 'var(--text)' }}>{progress?.adoptedCount ?? 0}</strong>
+            {' · '}서로 다른 요청자 <strong style={{ color: 'var(--text)' }}>{progress?.distinctRequesters ?? 0}</strong>
           </div>
-          {BADGE_PROGRESS.metrics.map((m) => (
-            <div key={m.label} className="stack" style={{ gap: 6 }}>
-              <div className="row small" style={{ justifyContent: 'space-between' }}><span>{m.label}</span><strong>{m.value} / {m.max}{m.unit}</strong></div>
-              <div className="progress" role="progressbar" aria-label={m.label} aria-valuemin={0} aria-valuemax={m.max} aria-valuenow={m.value}>
-                <div style={{ width: `${(m.value / m.max) * 100}%` }} />
-              </div>
+
+          <div className="profile__badge-panels">
+            <div className="profile__badge-panel">
+              <button
+                type="button"
+                className="profile__badge-panel-toggle"
+                aria-expanded={badgePanels.progress}
+                onClick={() => toggleBadgePanel('progress')}
+              >
+                <span>진행</span>
+                <Icon
+                  name="chevronDown"
+                  size={16}
+                  className={`profile__badge-chevron${badgePanels.progress ? ' is-open' : ''}`}
+                />
+              </button>
+              {badgePanels.progress && (
+                <div className="profile__badge-panel-body">
+                  {badgeMetrics.map((m) => (
+                    <div key={m.label} className="stack" style={{ gap: 6 }}>
+                      <div className="row small" style={{ justifyContent: 'space-between' }}>
+                        <span>{m.label}</span>
+                        <strong>{m.value} / {m.max}{m.unit || ''}</strong>
+                      </div>
+                      <div className="progress" role="progressbar" aria-label={m.label} aria-valuemin={0} aria-valuemax={m.max} aria-valuenow={Math.min(m.value, m.max)}>
+                        <div style={{ width: `${Math.min(100, (m.value / m.max) * 100)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                  <p className="small bold" style={{ color: 'var(--accent-text)' }}>
+                    {progress?.reviewerQualified
+                      ? '리뷰어 기준을 충족했어요.'
+                      : '채택·요청자·베스트 리뷰 조건을 채워 주세요.'}
+                  </p>
+                  <div className="profile__badge-note">
+                    최근 2분기 활동을 합산해 분기마다 평가해요. 기준에 못 미치면 1분기 동안 &quot;갱신 필요&quot; 상태로 유예되고, 그동안은 기업 검색 필터에 잡히지 않아요.
+                  </div>
+                </div>
+              )}
             </div>
-          ))}
-          <p className="small bold" style={{ color: 'var(--accent-text)' }}>{BADGE_PROGRESS.remaining}</p>
-          <div className="profile__badge-note">최근 2분기 활동을 합산해 분기마다 평가해요. 기준에 못 미치면 1분기 동안 "갱신 필요" 상태로 유예되고, 그동안은 기업 검색 필터에 잡히지 않아요.</div>
-          <div className="stack" style={{ gap: 4 }}>
-            <span className="xs bold text-2">배지 이력</span>
-            <span className="small muted">아직 받은 배지가 없어요.</span>
+
+            <div className="profile__badge-panel">
+              <button
+                type="button"
+                className="profile__badge-panel-toggle"
+                aria-expanded={badgePanels.owned}
+                onClick={() => toggleBadgePanel('owned')}
+              >
+                <span>
+                  보유
+                  {ownedBadges.length > 0 ? ` · ${ownedBadges.length}` : ''}
+                </span>
+                <Icon
+                  name="chevronDown"
+                  size={16}
+                  className={`profile__badge-chevron${badgePanels.owned ? ' is-open' : ''}`}
+                />
+              </button>
+              {badgePanels.owned && (
+                <div className="profile__badge-panel-body">
+                  {ownedBadges.length === 0 ? (
+                    <span className="small muted">아직 받은 배지가 없어요.</span>
+                  ) : (
+                    <>
+                      <div className="profile__owned-list">
+                        {visibleBadges.map((badge) => (
+                          <div
+                            key={badge.id}
+                            className={`profile__owned-item${badge.status === 'GRACE' ? ' is-grace' : ''}${badge.status === 'EXPIRED' ? ' is-expired' : ''}${profile?.displayedBadge?.id === badge.id ? ' is-displayed' : ''}`}
+                          >
+                            <div className="profile__owned-top">
+                              <span className="profile__owned-name">{badge.name}</span>
+                              <Badge tone="general">{statusLabel(badge.status)}</Badge>
+                            </div>
+                            {isOwner && badge.status === 'ACTIVE' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => data.displayBadge(
+                                  profile?.displayedBadge?.id === badge.id ? null : badge.id,
+                                )}
+                              >
+                                {profile?.displayedBadge?.id === badge.id ? '표시 해제' : '프로필에 표시'}
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {hiddenBadgeCount > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="profile__badge-more"
+                          aria-expanded={badgesExpanded}
+                          onClick={() => setBadgesExpanded((open) => !open)}
+                        >
+                          {badgesExpanded ? '접기' : `더 보기 (${hiddenBadgeCount})`}
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="profile__badge-panel">
+              <button
+                type="button"
+                className="profile__badge-panel-toggle"
+                aria-expanded={badgePanels.history}
+                onClick={() => toggleBadgePanel('history')}
+              >
+                <span>
+                  이력
+                  {badgeHistory.length > 0 ? ` · ${badgeHistory.length}` : ''}
+                </span>
+                <Icon
+                  name="chevronDown"
+                  size={16}
+                  className={`profile__badge-chevron${badgePanels.history ? ' is-open' : ''}`}
+                />
+              </button>
+              {badgePanels.history && (
+                <div className="profile__badge-panel-body">
+                  {badgeHistory.length === 0 ? (
+                    <span className="small muted">아직 이력이 없어요.</span>
+                  ) : (
+                    <div className="profile__history-list">
+                      {badgeHistory.map((item, index) => (
+                        <div key={`${item.badgeId}-${index}`} className="profile__history-item">
+                          <span className="profile__history-name">{item.badgeName}</span>
+                          <span className="profile__history-period">
+                            {item.activeFrom} ~ {item.activeUntil}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+
           <Button variant="accent-outline" to="/feedback">피드백하러 가기</Button>
         </section>
+
         <section className="card" style={{ gap: 8 }}>
           <h2>연동 계정</h2>
-          <div className="linked"><span className="linked__dot" aria-hidden="true" />GitHub 연결됨 · {me.github}</div>
-          <div className="linked"><span className="linked__dot" aria-hidden="true" />벨로그 RSS 연결됨 · @seoyeon</div>
+          <div className="linked">
+            <span className="linked__dot" aria-hidden="true" />
+            {github?.connected
+              ? `GitHub 연결됨 · ${github.externalId}`
+              : (data.contributions?.login
+                ? `GitHub · ${data.contributions.login}`
+                : 'GitHub 미연결')}
+          </div>
+          <div className="linked">
+            <span className="linked__dot" aria-hidden="true" />
+            {blog?.connected ? `블로그 연결됨 · ${blog.platform} · ${blog.externalId}` : '블로그 RSS 미연결'}
+          </div>
           <p className="small muted">기여 기록은 하루 한 번, 블로그 새 글은 RSS로 주기적으로 가져와요.</p>
-          <Link href="/onboarding" className="text-link">연동 관리</Link>
+          <Link href={isOwner ? '/setting/integrations' : '/onboarding'} className="text-link">연동 관리</Link>
         </section>
-        <section className="card">
+
+        <section className="card" style={{ gap: 8 }}>
           <h2>대표 레포</h2>
-          <div><div className="bold">study-match-web</div><div className="small muted">TypeScript · 이력서 프로젝트에 연결됨</div></div>
-          <div><div className="bold">button-kit</div><div className="small muted">TypeScript · 이력서 프로젝트에 연결됨</div></div>
+          {(data.repos || []).length === 0 ? (
+            <>
+              <p className="small muted">아직 고정한 대표 레포가 없어요.</p>
+              {isOwner && (
+                <Link href="/setting/integrations" className="text-link">
+                  연동 관리에서 고르기
+                </Link>
+              )}
+            </>
+          ) : data.repos.map((repo) => (
+            <div key={repo.fullName || repo.id}>
+              <div className="bold">{repo.fullName}</div>
+              <div className="small muted">{repo.language || 'Repository'}</div>
+            </div>
+          ))}
+          {isOwner && (data.repos || []).length > 0 && (
+            <Link href="/setting/integrations" className="text-link">연동 관리에서 변경</Link>
+          )}
         </section>
-        <section className="card">
+
+        <section className="card" style={{ gap: 8 }}>
           <h2>최근 블로그 글</h2>
-          <div><div style={{ fontWeight: 500 }}>디자인 시스템 버튼 컴포넌트를 만들며 배운 것</div><div className="xs bold" style={{ color: 'var(--blog)' }}>벨로그 · 3일 전</div></div>
-          <div><div style={{ fontWeight: 500 }}>무한 스크롤 구현기</div><div className="xs bold" style={{ color: 'var(--blog)' }}>벨로그 · 2주 전</div></div>
+          {(data.blogPosts || []).length === 0 ? (
+            <>
+              <p className="small muted">아직 불러온 블로그 글이 없어요.</p>
+              {isOwner && (
+                <Link href="/setting/integrations" className="text-link">
+                  연동 관리에서 블로그 연결
+                </Link>
+              )}
+            </>
+          ) : data.blogPosts.map((post) => (
+            <div key={post.id}>
+              <div style={{ fontWeight: 500 }}>{post.title}</div>
+              <div className="xs bold" style={{ color: 'var(--blog)' }}>{post.publishedAt || '블로그'}</div>
+            </div>
+          ))}
         </section>
       </RightAside>
     </>

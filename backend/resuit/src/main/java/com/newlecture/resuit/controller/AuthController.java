@@ -27,7 +27,10 @@ public class AuthController {
             .map(user -> new Member(user.getId(), user.getUsername(), user.getNickname())).orElse(null);
         var providers = List.of("google", "github", "naver").stream().map(provider ->
             new Provider(provider, clients.providers().contains(provider), "/api/oauth2/authorization/" + provider)).toList();
+        // local 프로필처럼 CSRF를 끈 경우에는 토큰이 없다.
+        String csrfHeader = csrf == null ? null : csrf.getHeaderName();
+        String csrfToken = csrf == null ? null : csrf.getToken();
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-            .body(new Session(member != null, member, providers, csrf.getHeaderName(), csrf.getToken()));
+            .body(new Session(member != null, member, providers, csrfHeader, csrfToken));
     }
 }

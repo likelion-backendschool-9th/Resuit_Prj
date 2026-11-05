@@ -2,6 +2,8 @@ package com.newlecture.resuit.config;
 
 import com.newlecture.resuit.service.SocialMemberService;
 import java.util.LinkedHashMap;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Configuration;
@@ -11,16 +13,32 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SecurityConfiguration {
     @Bean
-    SecurityFilterChain security(HttpSecurity http, SocialClientConfiguration.Clients clients, SocialMemberService members, LoginRedirectHandler redirects) throws Exception {
+    SecurityFilterChain security(HttpSecurity http, SocialClientConfiguration.Clients clients,
+            SocialMemberService members, LoginRedirectHandler redirects,
+            ObjectProvider<DevHeaderAuthenticationFilter> devHeaderAuth,
+            @Value("${app.dev-header-auth.enabled:false}") boolean headerAuthEnabled) throws Exception {
         http.formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable);
+        if (headerAuthEnabled) {
+            // 로컬 프로필 API는 세션 없이 X-Username으로 호출하므로 CSRF를 끈다.
+            http.csrf(AbstractHttpConfigurer::disable);
+            DevHeaderAuthenticationFilter filter = devHeaderAuth.getIfAvailable();
+            if (filter != null) {
+                http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
+            }
+        }
         http.authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/v1/auth/session", "/api/oauth2/**", "/api/login/**", "/error").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**", "/api/v1/jobs/**", "/api/v1/posts/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**", "/api/v1/jobs/**", "/api/v1/posts/**",
+                    "/api/v1/users/*/tweets", "/api/v1/users/*/feedbacks",
+                    "/api/v1/users/*/github/repos", "/api/v1/users/*/github/contributions",
+                    "/api/v1/users/*/blog-posts").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/users/{username}").permitAll()
             .anyRequest().authenticated());
         // Keep session CSRF protection. The session endpoint exposes a masked token for JS requests.
         http.exceptionHandling(errors -> errors

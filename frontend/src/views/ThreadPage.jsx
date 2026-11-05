@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAppState } from '../context/AppStateContext.jsx';
-import { SHARER_BADGES, SIMILAR_QUESTIONS } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Avatar from '../components/common/Avatar.jsx';
 import Badge from '../components/common/Badge.jsx';
@@ -13,9 +12,24 @@ import '../components/feed/PostCard.css';
 
 export default function ThreadPage({ id }) {
   const { me, threads, addAnswer } = useAppState();
-  const thread = threads[id] || threads[1];
+  const thread = threads[id];
   const [draft, setDraft] = useState('');
   const [helpful, setHelpful] = useState({});
+
+  if (!thread) {
+    return (
+      <>
+        <MainColumn>
+          <div className="page-head">
+            <Link href="/" className="icon-btn icon-btn--plain" aria-label="뒤로"><Icon name="back" /></Link>
+            <h1>게시글</h1>
+          </div>
+          <div className="empty">게시글을 찾을 수 없어요.</div>
+        </MainColumn>
+        <RightAside label="추후 활용 영역" />
+      </>
+    );
+  }
 
   const submit = () => {
     if (!draft.trim()) return;
@@ -38,7 +52,7 @@ export default function ThreadPage({ id }) {
             <Badge tone="question" size="md">질문</Badge>
           </div>
           <p style={{ fontSize: 20 }}>{thread.body}</p>
-          <div className="row-wrap">{thread.tags.map((t) => <span key={t} className="small" style={{ color: 'var(--accent-text)' }}>#{t}</span>)}</div>
+          <div className="row-wrap">{(thread.tags || []).map((t) => <span key={t} className="small" style={{ color: 'var(--accent-text)' }}>#{t}</span>)}</div>
           <div className="muted" style={{ fontSize: 14 }}>{thread.time}</div>
           <div className="row muted" style={{ gap: 20, padding: '12px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', fontSize: 14 }}>
             <span><strong style={{ color: 'var(--text)' }}>{thread.answers.length}</strong> 답변</span>
@@ -67,7 +81,7 @@ export default function ThreadPage({ id }) {
               <div className="post-card__body" style={{ gap: 6 }}>
                 <header className="post-card__head">
                   <strong>{a.author}</strong>
-                  {SHARER_BADGES[a.handle] && <Badge tone="sharer">{SHARER_BADGES[a.handle]}</Badge>}
+                  {a.sharerBadge && <Badge tone="sharer">{a.sharerBadge}</Badge>}
                   <span className="muted">@{a.handle} · {a.time}</span>
                   {a.accepted && <Badge tone="accepted">작성자가 채택</Badge>}
                 </header>
@@ -78,7 +92,7 @@ export default function ThreadPage({ id }) {
                     onClick={() => setHelpful((m) => ({ ...m, [a.id]: !m[a.id] }))}
                     style={on ? { color: 'var(--accent-text)', fontWeight: 700 } : undefined}
                   >
-                    <Icon name="thumb" size={17} />도움돼요 {a.likes + (on ? 1 : 0)}
+                    <Icon name="thumb" size={17} />도움돼요 {(a.likes || 0) + (on ? 1 : 0)}
                   </button>
                   <button type="button" className="post-card__action">답글</button>
                 </div>
@@ -91,17 +105,11 @@ export default function ThreadPage({ id }) {
       <RightAside>
         <section className="card" style={{ gap: 14 }}>
           <h2>비슷한 질문</h2>
-          {SIMILAR_QUESTIONS.map((q) => (
-            <Link key={q.id} href="/threads/1" className="stack" style={{ gap: 2, textDecoration: 'none' }}>
-              <span className="xs bold" style={{ color: 'var(--question)' }}>답변 {q.answers}</span>
-              <span style={{ fontWeight: 500, lineHeight: 1.5 }}>{q.title}</span>
-            </Link>
-          ))}
+          <span className="small muted">아직 비슷한 질문이 없어요.</span>
         </section>
         <section className="card" style={{ gap: 8 }}>
           <h2>질문 작성자</h2>
           <Link href="/profile" className="bold" style={{ textDecoration: 'none' }}>{thread.author} @{thread.handle}</Link>
-          <span className="small muted">컴퓨터공학 4학년 · 백엔드 지망</span>
         </section>
       </RightAside>
     </>

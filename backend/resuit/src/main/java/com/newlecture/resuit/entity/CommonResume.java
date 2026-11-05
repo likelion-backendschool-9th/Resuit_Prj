@@ -2,14 +2,9 @@ package com.newlecture.resuit.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.io.Serializable;
-import java.time.*;
 import java.util.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "common_resumes")
@@ -47,5 +42,9 @@ public class CommonResume extends BaseTimeEntity {
         this.title = Objects.requireNonNull(title);
         this.field = field;
         this.content = Objects.requireNonNull(content);
+    }
+
+    public void setPublic(boolean isPublic) {
+        this.isPublic = isPublic;
     }
 }

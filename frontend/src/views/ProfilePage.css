@@ -31,6 +31,26 @@
 }
 .profile__edit h2 { font-size: 16px; font-weight: 900; }
 .profile__edit-item { min-height: 40px; gap: 10px; font-size: 14px; }
+.profile__edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
+}
+.profile__edit-field input,
+.profile__edit-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  resize: vertical;
+}
 .profile__widget { margin: 16px 24px 0; }
 .profile__widget h2 { font-size: 16px; }
 
@@ -46,6 +66,12 @@
   gap: 4px;
 }
 .profile__resume-settings legend { padding: 0 6px; font-size: 13px; font-weight: 700; }
+.profile__resume-choice { gap: 8px; font-size: 14px; }
+.profile__setting-divider { border-top: 1px solid var(--line); margin: 6px 0; }
+.profile__message { margin: 12px 24px; color: var(--text-sub); font-size: 14px; }
+.profile__activity { margin: 12px 24px; gap: 6px; }
+.profile__activity p { white-space: pre-wrap; }
+.profile__more { padding: 12px 24px; display: flex; justify-content: center; }
 .profile__order { flex: 0 0 22px; height: 22px; }
 .profile__order.is-on {
   border-radius: 50%;
@@ -62,7 +88,133 @@
 .profile__resume .resume-thumb { flex-basis: 44px; height: 54px; padding: 8px 7px; }
 
 .profile__badge-card { border: 2px solid var(--accent); }
-.profile__badge-note { padding: 10px 12px; border-radius: 10px; background: var(--bg-sub); font-size: 12px; line-height: 1.7; color: var(--text-sub); }
+.profile__badge-note { padding: 10px 12px; border-radius: var(--radius); background: var(--bg-sub); font-size: 12px; line-height: 1.7; color: var(--text-sub); }
+
+.profile__badge-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+.profile__badge-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  overflow: hidden;
+}
+.profile__badge-panel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+.profile__badge-panel-toggle:hover {
+  background: var(--bg-muted);
+}
+.profile__badge-chevron {
+  flex-shrink: 0;
+  color: var(--text-sub);
+  transition: transform 0.15s;
+}
+.profile__badge-chevron.is-open {
+  transform: rotate(180deg);
+}
+.profile__badge-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+.profile__badge-more {
+  align-self: stretch;
+}
+.profile__owned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.profile__owned-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.profile__owned-item.is-displayed {
+  border-color: var(--accent-line);
+  background: var(--accent-bg);
+}
+.profile__owned-item.is-grace {
+  border-color: var(--special-line);
+  background: var(--special-soft);
+}
+.profile__owned-item.is-expired {
+  opacity: 0.72;
+  background: var(--bg-sub);
+}
+.profile__owned-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.profile__owned-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.35;
+}
+.profile__owned-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.profile__owned-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.profile__owned-mark {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+.profile__history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.profile__history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sub);
+}
+.profile__history-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.profile__history-period {
+  font-size: 12px;
+  color: var(--text-sub);
+}
 
 .skill-tag { font-size: 13px; padding: 4px 10px; border-radius: var(--radius-sm); background: var(--bg-muted); }
 

@@ -16,7 +16,9 @@ import com.newlecture.resuit.dto.resume.TargetResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeSummary;
 import com.newlecture.resuit.dto.resume.TargetResumeUpdateCommand;
 import com.newlecture.resuit.dto.resume.TargetResumeUpdateRequest;
+import com.newlecture.resuit.dto.AdoptFeedbackResponse;
 import com.newlecture.resuit.service.CommonResumeService;
+import com.newlecture.resuit.service.FeedbackAdoptionService;
 import com.newlecture.resuit.service.FeedbackRequestService;
 import com.newlecture.resuit.service.ResumeService;
 import com.newlecture.resuit.service.TargetResumeService;
@@ -43,6 +45,7 @@ public class ResumeController {
 	private final FeedbackRequestService feedbackRequestService;
 	private final CommonResumeService commonResumeService;
 	private final TargetResumeService targetResumeService;
+	private final FeedbackAdoptionService feedbackAdoptionService;
 
 	@GetMapping("/resumes")
 	public ResponseEntity<ResumeListResponse> getAllResumes(Principal principal) {
@@ -88,8 +91,9 @@ public class ResumeController {
 	}
 
 	@PostMapping("/feedbacks/{feedbackId}/adopt")
-	public ResponseEntity<Void> adoptFeedback(@PathVariable Long feedbackId) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<AdoptFeedbackResponse> adoptFeedback(
+			@PathVariable Long feedbackId, Principal principal) {
+		return ResponseEntity.ok(feedbackAdoptionService.adoptByUsername(feedbackId, username(principal)));
 	}
 
 	@GetMapping("/common-resumes")
