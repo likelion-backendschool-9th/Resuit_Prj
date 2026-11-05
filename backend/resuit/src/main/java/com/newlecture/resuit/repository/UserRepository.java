@@ -22,4 +22,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u WHERE u.username = :username")
     Optional<User> findForVerification(@Param("username") String username);
+
+    // 같은 회원의 크레딧 변경이 한 줄로 처리되도록 회원 행을 잠근다.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<User> findWithLockById(UUID id);
 }
