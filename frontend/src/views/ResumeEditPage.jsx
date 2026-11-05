@@ -3,16 +3,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { COMMON_RESUME, JOBS } from '../data/mock.js';
 import { getCommonResumes, getTargetResumes, getTargetResume, createTargetResume, updateTargetResume, deleteTargetResume } from '../services/resumes.js';
 import Badge from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
 import ThemeToggle from '../components/common/ThemeToggle.jsx';
 import './ResumeEditPage.css';
-
-// 공고 API가 아직 없어서, 서버에 없는 공고로 들어오면 목업 공고로 예시 화면을 보여 준다
-const DEMO_CODES = new Set(['JOB_NOT_FOUND', 'NOT_SPECIAL_JOB']);
 
 // 왼쪽 목차: 누른 섹션을 표시하고 그 위치로 스크롤한다.
 function TocLink({ target, active, onPick, children }) {
@@ -29,7 +25,7 @@ function TocLink({ target, active, onPick, children }) {
 
 const projectKey = (p, i) => p.id || `p${i}`;
 
-// 서버 응답과 목업을 같은 모양으로 맞춘다
+// 서버 응답을 화면에서 사용하는 모양으로 맞춘다
 function fromApi(detail) {
   return {
     id: detail.id,
@@ -42,25 +38,11 @@ function fromApi(detail) {
   };
 }
 
-function fromMock(jobId, mode) {
-  const job = JOBS.find((j) => String(j.id) === jobId && j.type === 'special') || JOBS[0];
-  return {
-    id: null,
-    header: `${job.company} · ${job.role}`,
-    back: { href: `/jobs/${job.id}`, label: '공고로 돌아가기' },
-    blank: mode === 'blank',
-    content: mode === 'blank' ? {} : COMMON_RESUME,
-    questions: job.questions.map((q, i) => ({ key: i, text: q.text, limit: q.limit, placeholder: q.placeholder, hint: q.hint })),
-    answers: {}
-  };
-}
-
 // 특화 이력서 작성.
 // id: 특화 이력서 ID (이어서 쓰기) / jobId + mode: 공고에서 새로 시작 (base: 공통 이력서 불러오기 | blank: 처음부터)
 export default function ResumeEditPage({ id, jobId, mode }) {
   const router = useRouter();
   const [doc, setDoc] = useState(null);
-  const [demoNotice, setDemoNotice] = useState('');
   const [error, setError] = useState('');
   const [answers, setAnswers] = useState({});
   const [picked, setPicked] = useState({});
@@ -76,7 +58,6 @@ export default function ResumeEditPage({ id, jobId, mode }) {
       setAnswers(next.answers);
       setPicked(Object.fromEntries((next.content.projects || []).map((p, i) => [projectKey(p, i), p.selected !== false])));
     };
-    const demo = (message) => { setDemoNotice(message); show(fromMock(jobId, mode)); };
 
     async function load() {
       if (id) {
@@ -84,7 +65,10 @@ export default function ResumeEditPage({ id, jobId, mode }) {
         setSavedLabel('저장된 내용을 불러왔어요');
         return;
       }
-      if (!jobId || !/^\d+$/.test(jobId)) return demo('예시 공고라서 작성한 내용이 저장되지 않아요.');
+      if (!jobId || !/^\d+$/.test(jobId)) {
+        setError('작성할 공고를 찾을 수 없어요.');
+        return;
+      }
       // 이 공고의 특화 이력서가 이미 있으면 그걸 이어서 쓴다
       const existing = (await getTargetResumes(signal)).find((r) => String(r.jobId) === jobId);
       if (existing) return router.replace(`/resumes/edit?id=${existing.id}`);
@@ -95,9 +79,7 @@ export default function ResumeEditPage({ id, jobId, mode }) {
 
     load().catch((err) => {
       if (signal.aborted) return;
-      if (DEMO_CODES.has(err.code)) demo('아직 서버에 없는 예시 공고라서 작성한 내용이 저장되지 않아요.');
-      else if (err.status === 401 && !id) demo('로그인하면 작성한 내용이 저장돼요. 지금은 예시 화면이에요.');
-      else setError(err.message);
+      setError(err.message);
     });
     return () => controller.abort();
   }, [id, jobId, mode, router]);
@@ -179,7 +161,6 @@ export default function ResumeEditPage({ id, jobId, mode }) {
         </nav>
 
         <main className="resume-edit__form">
-          {demoNotice && <div className="resume-edit__note">{demoNotice}</div>}
           {blank && <div className="resume-edit__note">빈 이력서로 시작했어요. 아래 항목을 이 회사에 맞춰 새로 작성해 주세요.</div>}
 
           <section id="basic" className="resume-block">
