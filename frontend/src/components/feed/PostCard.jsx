@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { useState } from 'react';
+import CommentModal from './CommentModal.jsx';
 import { useRouter } from 'next/navigation';
 import PostOwnerActions from './PostOwnerActions.jsx';
 import { useAppState } from '../../context/AppStateContext.jsx';
@@ -15,6 +17,8 @@ const REPLY_LABEL = { question: '답변', repo: '리뷰' };
 
 export default function PostCard({ post, onUpdated, onDeleted }) {
   const router = useRouter();
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyNotice, setReplyNotice] = useState('');
   const { me, loggedIn, liked, toggleLike } = useAppState();
   const isLiked = !!liked[post.id];
   const typeBadge = POST_TYPE_BADGE[post.type];
@@ -62,6 +66,15 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
         {post.source === 'api' && loggedIn && post.handle === me.handle && onUpdated && onDeleted && (
           <PostOwnerActions post={post} onUpdated={onUpdated} onDeleted={onDeleted} />
         )}
+        {post.source === 'api' && <>
+          <div className="post-card__actions">
+            <button type="button" className="post-card__action" aria-label="댓글 작성" onClick={() => { setReplyNotice(''); setReplyOpen(true); }}>
+              <Icon name="reply" size={18} /><span>답글</span>
+            </button>
+          </div>
+          {replyNotice && <span className="small muted" role="status">{replyNotice}</span>}
+          {replyOpen && <CommentModal post={post} onClose={(saved) => { setReplyOpen(false); if (saved === true) setReplyNotice('댓글을 등록했어요. 상세 게시글에서 확인할 수 있어요.'); }} />}
+        </>}
         {post.source !== 'api' && <div className="post-card__actions">
           <button type="button" className="post-card__action">
             <Icon name="reply" size={18} />

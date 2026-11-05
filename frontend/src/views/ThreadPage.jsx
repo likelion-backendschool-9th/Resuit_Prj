@@ -11,6 +11,7 @@ import Button from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
 import SearchBox from '../components/common/SearchBox.jsx';
 import { PostImage, PostVideo } from '../components/feed/PostEmbeds.jsx';
+import CommentsSection from '../components/feed/CommentsSection.jsx';
 import PostOwnerActions from '../components/feed/PostOwnerActions.jsx';
 import './ThreadPage.css';
 
@@ -18,7 +19,6 @@ export default function ThreadPage({ initialPost, error }) {
   const router = useRouter();
   const { me, loggedIn } = useAppState();
   const [updatedPost, setUpdatedPost] = useState(null);
-  const [draft, setDraft] = useState('');
   const [refreshing, startTransition] = useTransition();
   const post = updatedPost || initialPost;
   const badge = post && POST_TYPE_BADGE[post.type];
@@ -58,22 +58,7 @@ export default function ThreadPage({ initialPost, error }) {
             <button className="icon-btn icon-btn--plain" disabled aria-label="좋아요 준비 중" title="좋아요 준비 중"><Icon name="heart" /></button>
           </div>
         </article>
-        <section className="thread-reply" aria-label="댓글 작성">
-          <Avatar initial={me.initial} color={me.av} size={40} />
-          <div className="thread-reply__body">
-            <label htmlFor="thread-reply" className="small muted">@{post.handle} 님에게 답글 남기기</label>
-            <textarea id="thread-reply" rows={3} className="thread-reply__input" placeholder="답글을 남겨보세요."
-              value={draft} onChange={(event) => setDraft(event.target.value)} aria-describedby="thread-reply-status" />
-            <div className="thread-reply__footer">
-              <span id="thread-reply-status" className="small muted">댓글 기능은 준비 중이에요.</span>
-              <Button disabled>답글</Button>
-            </div>
-          </div>
-        </section>
-        <section aria-labelledby="thread-comments-heading">
-          <h2 id="thread-comments-heading" className="thread-comments__heading">댓글</h2>
-          <div className="empty">댓글 기능이 열리면 이곳에서 대화를 이어갈 수 있어요.</div>
-        </section>
+        <CommentsSection key={post.id} post={post} />
       </>}
     </MainColumn>
     <RightAside label="검색 및 추후 활용 영역"><SearchBox /></RightAside>
