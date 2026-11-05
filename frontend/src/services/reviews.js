@@ -13,6 +13,6 @@ async function request(path, options = {}) {
 export const getBestReviews = (period, signal) => request(`/best?period=${period}`, { signal });
 export const setReviewLiked = (id, liked) => request(`/${id}/likes`, { method: liked ? 'POST' : 'DELETE' });
 
-export const getHallOfFame = (page, signal) => request(`/hall-of-fame?page=${page}&size=20`, { signal });
+export const getHallOfFame = (page, signal, size = 20) => request(`/hall-of-fame?page=${page}&size=${size}`, { signal });
 
 export const acceptReview = (id) => request(`/${id}/accept`, { method: 'POST' });

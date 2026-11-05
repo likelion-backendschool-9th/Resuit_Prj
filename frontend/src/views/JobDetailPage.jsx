@@ -16,7 +16,7 @@ export default function JobDetailPage({ id }) {
         </div>
         <div className="empty">공고를 찾을 수 없어요.</div>
       </MainColumn>
-      <RightAside label="추후 활용 영역" />
+      <RightAside showReviews label="베스트 리뷰 및 명예의 전당" />
     </>
   );
 }

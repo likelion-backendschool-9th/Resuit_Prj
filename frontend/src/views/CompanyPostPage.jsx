@@ -84,7 +84,7 @@ export default function CompanyPostPage() {
         </div>
       </MainColumn>
 
-      <RightAside>
+      <RightAside showReviews label="리뷰 추천 및 보조 정보">
         <h2 style={{ fontSize: 17, fontWeight: 900 }}>피드 미리보기</h2>
         <div className="card" style={{ gap: 10, padding: 14 }}>
           <div className="row"><Avatar initial="B" color="co2" size={36} company /><strong style={{ fontSize: 14 }}>블루웨일 스튜디오</strong></div>

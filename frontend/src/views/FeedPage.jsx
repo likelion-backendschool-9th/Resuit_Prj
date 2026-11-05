@@ -52,7 +52,7 @@ export default function FeedPage() {
       </MainColumn>
 
       {/* 검색 아래는 추후 활용 영역 */}
-      <RightAside label="검색 및 추후 활용 영역">
+      <RightAside showReviews label="검색 및 리뷰 추천">
         <SearchBox />
       </RightAside>
     </>
