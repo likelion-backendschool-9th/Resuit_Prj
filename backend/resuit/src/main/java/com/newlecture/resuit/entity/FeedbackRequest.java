@@ -44,4 +44,15 @@ public class FeedbackRequest extends BaseTimeEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    // 3.3 피드백 요청 취소. 행을 지우지 않고 취소 시각만 남긴다. 이미 취소했으면 그대로 둔다.
+    public void cancel(LocalDateTime now) {
+        if (deletedAt == null) {
+            deletedAt = Objects.requireNonNull(now);
+        }
+    }
+
+    public boolean isCanceled() {
+        return deletedAt != null;
+    }
 }
