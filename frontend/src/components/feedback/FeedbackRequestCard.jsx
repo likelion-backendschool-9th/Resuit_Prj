@@ -8,6 +8,25 @@ import { ChipRadioGroup } from '../common/Chip.jsx';
 import './FeedbackRequestCard.css';
 
 const SECTIONS = ['전체', '학력', '기술 스택', '프로젝트', '자기소개'].map((s) => ({ id: s, label: s }));
+const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
+// 3.2 피드백 요청에서 고르는 이력서 항목
+const SECTION_LABEL = { BASIC: '기본 정보', SKILLS: '기술 스택', PROJECTS: '프로젝트', AWARDS: '수상', INTRODUCTION: '자기소개', ANSWERS: '문항 답변' };
+const AVATAR_COLORS = ['av1', 'av2', 'av3', 'av4', 'av5', 'av6'];
+
+// 같은 사람은 항상 같은 아바타 색이 나오게 username으로 고른다
+function avatarColor(username = '') {
+  let sum = 0;
+  for (const ch of username) sum += ch.charCodeAt(0);
+  return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+}
+
+function timeText(value) {
+  const minutes = Math.floor((Date.now() - new Date(value).getTime()) / 60000);
+  if (!(minutes >= 1)) return '방금';
+  if (minutes < 60) return `${minutes}분 전`;
+  if (minutes < 60 * 24) return `${Math.floor(minutes / 60)}시간 전`;
+  return `${Math.floor(minutes / (60 * 24))}일 전`;
+}
 
 // 피드백 게시판의 이력서 카드. 펼치면 섹션별 피드백 목록과 작성란이 보인다.
 export default function FeedbackRequestCard({ request, defaultOpen = false }) {
@@ -15,8 +34,14 @@ export default function FeedbackRequestCard({ request, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
   const [section, setSection] = useState('전체');
   const [draft, setDraft] = useState('');
-  const count = request.feedbacks.length;
+  const { author } = request;
+  const name = author.nickname || author.username;
+  const feedbacks = request.feedbacks ?? [];
+  const count = request.commentCount;
   const inputId = `feedback-${request.id}`;
+  const resumeType = request.resumeType === 'TARGET'
+    ? ['특화 이력서', request.companyName, request.jobTitle].filter(Boolean).join(' · ')
+    : '공통 이력서';
 
   const submit = () => {
     if (!draft.trim()) return;
@@ -26,29 +51,29 @@ export default function FeedbackRequestCard({ request, defaultOpen = false }) {
 
   return (
     <article className="fb-card">
-      <Avatar initial={request.initial} color={request.av} />
+      <Avatar initial={name.charAt(0)} color={avatarColor(author.username)} src={author.profileImageUrl} />
       <div className="fb-card__body">
         <header className="row-wrap" style={{ gap: 6 }}>
-          <strong>{request.author}</strong>
-          <span className="muted">@{request.handle} · {request.time}</span>
-          <Badge tone="general">{request.field}</Badge>
+          <strong>{name}</strong>
+          <span className="muted">@{author.username} · {timeText(request.createdAt)}</span>
+          {request.category && <Badge tone="general">{FIELD_LABEL[request.category] ?? request.category}</Badge>}
           {request.mine && <Badge tone="accent">내 요청</Badge>}
+          {request.adopted && <Badge tone="accepted">채택 완료</Badge>}
         </header>
 
         <div className="fb-card__resume">
           <div className="resume-thumb" aria-hidden="true"><span /><span /><span /><span /></div>
           <div className="grow">
-            <div className="xs muted">{request.resumeType}</div>
+            <div className="xs muted">{resumeType}</div>
             <div className="bold">{request.resumeTitle}</div>
-            <div className="small muted">{request.sections}</div>
           </div>
         </div>
 
-        <p>{request.message}</p>
-        {request.focus.length > 0 && (
+        {request.content && <p>{request.content}</p>}
+        {request.sections.length > 0 && (
           <div className="row-wrap" style={{ gap: 6 }}>
             <span className="xs bold muted">봐 줬으면 하는 부분</span>
-            {request.focus.map((f) => <Badge key={f} tone="focus" size="md">{f}</Badge>)}
+            {request.sections.map((s) => <Badge key={s} tone="focus" size="md">{SECTION_LABEL[s] ?? s}</Badge>)}
           </div>
         )}
 
@@ -60,7 +85,7 @@ export default function FeedbackRequestCard({ request, defaultOpen = false }) {
         {open && (
           <div className="fb-card__panel">
             {request.mine && <p className="small muted">가장 도움이 된 피드백 1개를 채택해 주세요. 채택은 리뷰어의 인증 배지 평가에 반영돼요.</p>}
-            {request.feedbacks.map((f, i) => (
+            {feedbacks.map((f, i) => (
                 <div key={f.id} className="fb-item">
                   <Avatar initial={f.initial} color={f.av} size={32} company={f.company} />
                   <div className="grow stack" style={{ gap: 4 }}>

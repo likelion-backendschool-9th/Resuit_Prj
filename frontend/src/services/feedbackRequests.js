@@ -13,6 +13,15 @@ async function request(path, options = {}) {
   return response.status === 204 ? null : response.json();
 }
 
+// 피드백 게시판 목록 (WBS 4.1 전체, 4.3 category=FRONTEND|BACKEND, 4.4 mine=true)
+export const getFeedbackRequests = ({ category, mine } = {}, signal) => {
+  const params = new URLSearchParams();
+  if (category) params.set('category', category);
+  if (mine) params.set('mine', 'true');
+  const query = params.toString();
+  return request(query ? `?${query}` : '', { signal });
+};
+
 // 피드백 요청 (WBS 3.2 = 4.2). commonResumeId와 targetResumeId 중 하나만 보낸다.
 // sections: BASIC, SKILLS, PROJECTS, AWARDS, INTRODUCTION, ANSWERS
 export const createFeedbackRequest = (body) => request('', {

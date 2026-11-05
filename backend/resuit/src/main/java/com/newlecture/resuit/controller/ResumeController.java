@@ -6,6 +6,8 @@ import java.util.Map;
 
 import com.newlecture.resuit.dto.feedback.FeedbackRequestCreateRequest;
 import com.newlecture.resuit.dto.feedback.FeedbackRequestResponse;
+import com.newlecture.resuit.dto.feedback.FeedbackRequestSearchCondition;
+import com.newlecture.resuit.dto.feedback.FeedbackRequestSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
@@ -19,6 +21,7 @@ import com.newlecture.resuit.dto.resume.TargetResumeUpdateRequest;
 import com.newlecture.resuit.dto.AdoptFeedbackResponse;
 import com.newlecture.resuit.service.CommonResumeService;
 import com.newlecture.resuit.service.FeedbackAdoptionService;
+import com.newlecture.resuit.service.FeedbackBoardService;
 import com.newlecture.resuit.service.FeedbackRequestService;
 import com.newlecture.resuit.service.ResumeService;
 import com.newlecture.resuit.service.TargetResumeService;
@@ -46,6 +49,7 @@ public class ResumeController {
 	private final CommonResumeService commonResumeService;
 	private final TargetResumeService targetResumeService;
 	private final FeedbackAdoptionService feedbackAdoptionService;
+	private final FeedbackBoardService feedbackBoardService;
 
 	@GetMapping("/resumes")
 	public ResponseEntity<ResumeListResponse> getAllResumes(Principal principal) {
@@ -53,10 +57,11 @@ public class ResumeController {
 	}
 
 	@GetMapping("/feedback-requests")
-	public ResponseEntity<Void> getFeedbackRequests(
+	public ResponseEntity<List<FeedbackRequestSummary>> getFeedbackRequests(
 			@RequestParam(required = false) String category,
-			@RequestParam(required = false) Boolean mine) {
-		return ResponseEntity.ok().build();
+			@RequestParam(required = false) Boolean mine, Principal principal) {
+		return ResponseEntity.ok(feedbackBoardService.getRequests(username(principal),
+			new FeedbackRequestSearchCondition(category, Boolean.TRUE.equals(mine))));
 	}
 
 	@PostMapping("/feedback-requests")
