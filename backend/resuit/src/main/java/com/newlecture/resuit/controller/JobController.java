@@ -2,11 +2,11 @@ package com.newlecture.resuit.controller;
 
 import java.util.Map;
 import java.security.Principal;
-import java.net.URI;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import jakarta.validation.Valid;
 
 import com.newlecture.resuit.dto.JobResponse;
@@ -73,11 +74,11 @@ public class JobController {
 	}
 
 	@PostMapping
-	public ResponseEntity<JobDetailResponse> createJob(
+	@ResponseStatus(HttpStatus.CREATED)
+	public JobDetailResponse createJob(
 			@Valid @RequestBody CreateJobRequest request,
 			Principal principal) {
-		JobDetailResponse response = jobService.createJob(request, principal.getName());
-		return ResponseEntity.created(URI.create("/api/v1/jobs/" + response.id())).body(response);
+		return jobService.createJob(request, principal.getName());
 	}
 
 	@PatchMapping("/{jobId}")
