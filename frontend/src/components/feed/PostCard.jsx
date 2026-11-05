@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import PostOwnerActions from './PostOwnerActions.jsx';
 import { useAppState } from '../../context/AppStateContext.jsx';
 import Avatar from '../common/Avatar.jsx';
 import Badge, { POST_TYPE_BADGE } from '../common/Badge.jsx';
@@ -11,8 +12,8 @@ import './PostCard.css';
 
 const REPLY_LABEL = { question: '답변', repo: '리뷰' };
 
-export default function PostCard({ post }) {
-  const { me, liked, toggleLike } = useAppState();
+export default function PostCard({ post, onUpdated, onDeleted }) {
+  const { me, loggedIn, liked, toggleLike } = useAppState();
   const isLiked = !!liked[post.id];
   const typeBadge = POST_TYPE_BADGE[post.type];
   const job = post.type === 'job' ? post.job : null;
@@ -49,6 +50,9 @@ export default function PostCard({ post }) {
           <Link href={threadLink} className="post-card__question-link">답변 {post.replies || 0}개 보기</Link>
         )}
 
+        {post.source === 'api' && loggedIn && post.handle === me.handle && onUpdated && onDeleted && (
+          <PostOwnerActions post={post} onUpdated={onUpdated} onDeleted={onDeleted} />
+        )}
         {post.source !== 'api' && <div className="post-card__actions">
           <button type="button" className="post-card__action">
             <Icon name="reply" size={18} />

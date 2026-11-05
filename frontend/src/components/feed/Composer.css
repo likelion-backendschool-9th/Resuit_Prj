@@ -80,3 +80,12 @@
   color: var(--code-text);
   background: var(--code-bg);
 }
+
+.composer__fields,
+.composer__unsupported {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.post-owner-actions { margin-top: 10px; }

@@ -41,3 +41,22 @@ export async function getPosts({ page = 0, baseUrl = '' } = {}) {
   const data = await response.json();
   return { posts: data.content.map(toPost), page: data.number, last: data.last };
 }
+
+async function mutatePost(path, method, body) {
+  const { authenticatedFetch } = await import('./auth.js');
+  const response = await authenticatedFetch(`/api/v1/posts${path}`, {
+    method,
+    ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
+  });
+  if (!response.ok) {
+    if (response.status === 401) throw new Error('로그인이 필요해요. 다시 로그인해 주세요.');
+    if (response.status === 403) throw new Error('처리 권한이 없거나 인증이 만료되었어요. 새로고침 후 다시 시도해 주세요.');
+    if (response.status === 404) throw new Error('게시글을 찾을 수 없어요. 새로고침해 주세요.');
+    throw new Error('게시글을 저장하거나 삭제하지 못했어요. 다시 시도해 주세요.');
+  }
+  return method === 'DELETE' ? null : toPost(await response.json());
+}
+
+export const createPost = (body) => mutatePost('', 'POST', body);
+export const updatePost = (id, body) => mutatePost(`/${encodeURIComponent(id)}`, 'PATCH', body);
+export const deletePost = (id) => mutatePost(`/${encodeURIComponent(id)}`, 'DELETE');

@@ -22,7 +22,7 @@ const TECH_FILTERS = [{ id: 'all', label: '전체' }, ...TECH_TAGS.map((t) => ({
 
 export default function FeedPage({ initialTimeline }) {
   const { following, me, composeRequested, clearComposeRequest } = useAppState();
-  const { posts, hasMore, loading, error, loadMore } = useTimeline(initialTimeline);
+  const { posts, hasMore, loading, error, loadMore, upsertPost, removePost } = useTimeline(initialTimeline);
   const [tab, setTab] = useState('all');
   const [techFilter, setTechFilter] = useState('all');
   const composerRef = useRef(null);
@@ -45,13 +45,13 @@ export default function FeedPage({ initialTimeline }) {
     <>
       <MainColumn>
         <Tabs items={TABS} value={tab} onChange={setTab} label="피드 보기" sticky />
-        <Composer ref={composerRef} onPosted={() => setTab('all')} />
+        <Composer ref={composerRef} onPosted={(post) => { upsertPost(post); setTab('all'); }} />
         {tab === 'tech' && (
           <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--line)', background: 'var(--bg-sub)' }}>
             <ChipRadioGroup options={TECH_FILTERS} value={techFilter} onChange={setTechFilter} label="기술 태그 필터" tone="tech" size="filter" />
           </div>
         )}
-        {visible.map((p) => <PostCard key={p.id} post={p} />)}
+        {visible.map((p) => <PostCard key={p.id} post={p} onUpdated={upsertPost} onDeleted={removePost} />)}
         {!visible.length && !error && !loading && (
           <div className="empty">{hasMore ? '불러온 게시글 중 이 탭에 해당하는 글이 없어요.' : '아직 이 탭에 글이 없어요.'}</div>
         )}
