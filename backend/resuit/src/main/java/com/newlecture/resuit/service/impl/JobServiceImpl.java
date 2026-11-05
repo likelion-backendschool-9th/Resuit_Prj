@@ -132,16 +132,15 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public Page<JobResponse> getJobs(String type, Pageable pageable) {
-		Page<Job> jobs = type == null || type.isBlank()
-				? jobRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(pageable)
-				: jobRepository.findByTypeIgnoreCaseAndDeletedAtIsNullOrderByCreatedAtDesc(type, pageable);
+		String filterType = type == null || type.isBlank() ? null : type.trim();
+		Page<Job> jobs = jobRepository.findPublicJobs(filterType, pageable);
 		return jobs.map(JobResponse::from);
 	}
 
 	@Override
 	public JobDetailResponse getJob(Long id) {
-		var job = jobRepository.findByIdAndDeletedAtIsNull(id)
-				.orElseThrow(() -> new IllegalArgumentException("공고를 찾을 수 없습니다: " + id));
+		var job = jobRepository.findPublicJobById(id)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공고를 찾을 수 없습니다: " + id));
 		var questions = jobQuestionRepository.findByJob_IdOrderByOrderNoAsc(id).stream()
 				.map(question -> new JobDetailResponse.Question(
 						question.getId(),
