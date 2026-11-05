@@ -15,6 +15,7 @@ export default function FeedbackRequestCard({ request }) {
   const [opened, setOpened] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [count, setCount] = useState(request.commentCount);
+  const [adopted, setAdopted] = useState(request.adopted);
   const { author } = request;
   const name = author.nickname || author.username;
   const resumeType = request.resumeType === 'TARGET'
@@ -32,7 +33,7 @@ export default function FeedbackRequestCard({ request }) {
           <span className="muted">@{author.username} · {timeText(request.createdAt)}</span>
           {request.category && <Badge tone="general">{FIELD_LABEL[request.category] ?? request.category}</Badge>}
           {request.mine && <Badge tone="accent">내 요청</Badge>}
-          {request.adopted && <Badge tone="accepted">채택 완료</Badge>}
+          {adopted && <Badge tone="accepted">채택 완료</Badge>}
         </header>
 
         <button type="button" className="fb-card__resume" aria-expanded={previewOpen} onClick={() => setPreviewOpen((v) => !v)}>
@@ -60,7 +61,7 @@ export default function FeedbackRequestCard({ request }) {
 
         {opened && (
           <div hidden={!open}>
-            <FeedbackComments request={request} onAdded={() => setCount((c) => c + 1)} />
+            <FeedbackComments request={request} onAdded={() => setCount((c) => c + 1)} onAdopted={() => setAdopted(true)} />
           </div>
         )}
       </div>

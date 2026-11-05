@@ -28,6 +28,7 @@ import com.newlecture.resuit.service.FeedbackAdoptionService;
 import com.newlecture.resuit.service.FeedbackBoardService;
 import com.newlecture.resuit.service.FeedbackRequestService;
 import com.newlecture.resuit.service.ResumeService;
+import com.newlecture.resuit.service.ReviewService;
 import com.newlecture.resuit.service.TargetResumeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -248,6 +249,43 @@ public class ResumeController {
 	public ResponseEntity<ResumeErrorResponse> feedbackRequestClosed() {
 		return ResponseEntity.status(HttpStatus.CONFLICT)
 			.body(new ResumeErrorResponse("FEEDBACK_REQUEST_CLOSED", "취소된 피드백 요청에는 피드백을 남길 수 없습니다."));
+	}
+
+	// 4.10 채택은 ReviewService를 쓴다. ReviewController의 처리기는 이 컨트롤러에 적용되지 않아 같은 코드로 여기서도 처리한다.
+	@ExceptionHandler(ReviewService.UnauthenticatedUserException.class)
+	public ResponseEntity<ResumeErrorResponse> adoptUnauthenticated() {
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+			.body(new ResumeErrorResponse("UNAUTHENTICATED", "로그인이 필요합니다."));
+	}
+
+	@ExceptionHandler(ReviewService.InvalidReviewIdException.class)
+	public ResponseEntity<ResumeErrorResponse> invalidReviewId() {
+		return ResponseEntity.badRequest()
+			.body(new ResumeErrorResponse("INVALID_REVIEW_ID", "피드백 ID는 양수여야 합니다."));
+	}
+
+	@ExceptionHandler(ReviewService.ReviewNotFoundException.class)
+	public ResponseEntity<ResumeErrorResponse> reviewNotFound() {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+			.body(new ResumeErrorResponse("REVIEW_NOT_FOUND", "피드백을 찾을 수 없습니다."));
+	}
+
+	@ExceptionHandler(ReviewService.ReviewForbiddenException.class)
+	public ResponseEntity<ResumeErrorResponse> reviewForbidden() {
+		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+			.body(new ResumeErrorResponse("REVIEW_FORBIDDEN", "피드백 요청자만 채택할 수 있습니다."));
+	}
+
+	@ExceptionHandler(ReviewService.RequestClosedException.class)
+	public ResponseEntity<ResumeErrorResponse> adoptRequestClosed() {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(new ResumeErrorResponse("REQUEST_CLOSED", "취소한 피드백 요청에서는 채택할 수 없습니다."));
+	}
+
+	@ExceptionHandler(ReviewService.ReviewAlreadyAcceptedException.class)
+	public ResponseEntity<ResumeErrorResponse> reviewAlreadyAccepted() {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(new ResumeErrorResponse("REVIEW_ALREADY_ACCEPTED", "이미 다른 피드백을 채택했습니다."));
 	}
 
 	// @Valid 요청 DTO 검사에 걸리면 첫 번째 안내 문구를 돌려준다

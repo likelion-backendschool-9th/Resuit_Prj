@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getFeedbackComments, createFeedbackComment } from '../../services/feedbackRequests.js';
+import { getFeedbackComments, createFeedbackComment, adoptFeedback } from '../../services/feedbackRequests.js';
 import Avatar from '../common/Avatar.jsx';
 import Badge from '../common/Badge.jsx';
 import Button from '../common/Button.jsx';
@@ -17,8 +17,8 @@ function sectionOptions(request) {
   return [{ id: ALL, label: '전체' }, ...sections.map((s) => ({ id: s, label: SECTION_LABEL[s] ?? s }))];
 }
 
-// 피드백 카드를 펼쳤을 때 보이는 댓글 목록과 작성란 (WBS 4.6, 4.7, 4.9)
-export default function FeedbackComments({ request, onAdded }) {
+// 피드백 카드를 펼쳤을 때 보이는 댓글 목록과 작성란 (WBS 4.6, 4.7, 4.9, 4.10)
+export default function FeedbackComments({ request, onAdded, onAdopted }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -27,7 +27,13 @@ export default function FeedbackComments({ request, onAdded }) {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState('');
+  const [confirming, setConfirming] = useState(null);
+  const [adopting, setAdopting] = useState(false);
+  const [adoptNotice, setAdoptNotice] = useState('');
   const inputId = `feedback-${request.id}`;
+  const adopted = request.adopted || comments.some((c) => c.adopted);
+  // 4.10 요청한 본인만, 아직 아무것도 채택하지 않았을 때 남의 피드백 하나를 채택할 수 있다
+  const canAdopt = request.mine && !adopted;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -57,9 +63,24 @@ export default function FeedbackComments({ request, onAdded }) {
     }
   }
 
+  async function adopt(commentId) {
+    setAdopting(true);
+    setAdoptNotice('');
+    try {
+      const result = await adoptFeedback(commentId);
+      setComments((list) => list.map((c) => (c.commentId === commentId ? { ...c, adopted: true, adoptedAt: result.adoptedAt } : c)));
+      setConfirming(null);
+      onAdopted?.();
+    } catch (err) {
+      setAdoptNotice(err.message);
+    } finally {
+      setAdopting(false);
+    }
+  }
+
   return (
     <div className="fb-card__panel">
-      {request.mine && <p className="small muted">가장 도움이 된 피드백 1개를 채택해 주세요. 채택은 리뷰어의 인증 배지 평가에 반영돼요.</p>}
+      {request.mine && !adopted && <p className="small muted">가장 도움이 된 피드백 1개를 채택해 주세요. 채택은 리뷰어의 인증 배지 평가에 반영돼요.</p>}
       {loading ? <p className="small muted" role="status">피드백을 불러오는 중이에요.</p>
         : error ? <div role="alert" className="stack" style={{ gap: 6 }}><p className="small">{error}</p><Button variant="outline" size="sm" onClick={() => setRetry((v) => v + 1)}>다시 시도</Button></div>
         : comments.length === 0 ? <p className="small muted">아직 피드백이 없어요. 첫 피드백을 남겨 주세요.</p>
@@ -75,8 +96,19 @@ export default function FeedbackComments({ request, onAdded }) {
                   <Badge tone="general">{c.section ? SECTION_LABEL[c.section] ?? c.section : '전체'}</Badge>
                   <span className="xs muted">{timeText(c.createdAt)}</span>
                   {c.adopted && <span className="fb-item__adopt"><Badge tone="accepted" size="md">채택됨</Badge></span>}
+                  {canAdopt && !c.mine && confirming !== c.commentId && (
+                    <Button variant="accent-outline" size="sm" className="fb-item__adopt" onClick={() => { setConfirming(c.commentId); setAdoptNotice(''); }}>채택하기</Button>
+                  )}
                 </div>
                 <p style={{ fontSize: 14, whiteSpace: 'pre-wrap' }}>{c.content}</p>
+                {confirming === c.commentId && (
+                  <div className="row-wrap" style={{ gap: 6 }}>
+                    <span className="small">이 피드백을 채택할까요? 채택은 되돌릴 수 없어요.</span>
+                    <Button size="sm" onClick={() => adopt(c.commentId)} disabled={adopting}>{adopting ? '채택 중…' : '채택'}</Button>
+                    <Button variant="outline" size="sm" onClick={() => setConfirming(null)} disabled={adopting}>취소</Button>
+                  </div>
+                )}
+                {confirming === c.commentId && adoptNotice && <p className="small" role="alert">{adoptNotice}</p>}
               </div>
             </div>
           );
