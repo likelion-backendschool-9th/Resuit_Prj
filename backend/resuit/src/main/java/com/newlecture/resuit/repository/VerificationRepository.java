@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface VerificationRepository extends JpaRepository<Verification, Long> {
     Optional<Verification> findFirstByUserIdAndTypeOrderByIdDesc(UUID userId, String type);
+
+    boolean existsByUser_IdAndTypeAndVerifiedAtIsNotNull(UUID userId, String type);
 }

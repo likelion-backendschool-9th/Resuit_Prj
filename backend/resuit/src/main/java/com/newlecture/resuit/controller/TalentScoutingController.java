@@ -1,8 +1,10 @@
 package com.newlecture.resuit.controller;
 
+import java.security.Principal;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,26 +12,29 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.newlecture.resuit.dto.TalentSearchCondition;
+import com.newlecture.resuit.dto.TalentSummary;
+import com.newlecture.resuit.service.TalentScoutingService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1")
 public class TalentScoutingController {
 
+	private final TalentScoutingService talentScoutingService;
+
+	public TalentScoutingController(TalentScoutingService talentScoutingService) {
+		this.talentScoutingService = talentScoutingService;
+	}
+
 	@GetMapping("/company/talents")
-	public ResponseEntity<Void> getTalents(
-			@RequestParam(required = false) String field,
-			@RequestParam(required = false) String badge,
-			@RequestParam(required = false) Integer streak,
-			@RequestParam(required = false) String skills,
-			@RequestParam(required = false) String career,
-			@RequestParam(required = false) Integer minContrib,
-			@RequestParam(required = false) Integer minPosts,
-			@RequestParam(required = false) String region,
-			@RequestParam(required = false) Integer page,
-			@RequestParam(required = false) Integer size) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<Page<TalentSummary>> getTalents(
+			@Valid TalentSearchCondition condition,
+			Principal principal) {
+		return ResponseEntity.ok(talentScoutingService.getTalents(condition, principal.getName()));
 	}
 
 	@GetMapping("/company/talents/{userId}/resumes/{c_resumeId}")
