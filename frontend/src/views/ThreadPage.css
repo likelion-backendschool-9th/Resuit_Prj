@@ -1,4 +1,5 @@
 .thread-post {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -33,3 +34,5 @@
 .thread-reply__input:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .thread-reply__footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .thread-comments__heading { padding: 16px 20px; font-size: 16px; border-bottom: 1px solid var(--line); }
+
+.thread-post__header { padding-right: 36px; }

@@ -1,0 +1,21 @@
+.post-owner-actions { position: absolute; top: 12px; right: 12px; z-index: 2; cursor: default; }
+.post-owner-actions__panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 240px;
+  max-width: calc(100vw - 48px);
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.post-owner-actions__items { display: flex; flex-direction: column; gap: 6px; }
+.post-owner-actions__items .btn { justify-content: flex-start; gap: 8px; }
+.post-owner-actions .post-owner-actions__delete { background: var(--danger); border-color: var(--danger); color: var(--bg); }
+.post-owner-actions .post-owner-actions__delete:hover { background: var(--danger); color: var(--bg); opacity: 0.9; }
+.post-owner-editor { cursor: default; }

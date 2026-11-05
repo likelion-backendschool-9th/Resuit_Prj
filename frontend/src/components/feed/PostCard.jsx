@@ -13,7 +13,6 @@ import CodeBlock from './CodeBlock.jsx';
 import JobCard from '../jobs/JobCard.jsx';
 import './PostCard.css';
 
-const REPLY_LABEL = { question: '답변', repo: '리뷰' };
 
 export default function PostCard({ post, onUpdated, onDeleted }) {
   const router = useRouter();
@@ -27,7 +26,7 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
   const threadLink = post.threadId ? `/threads/${post.threadId}` : null;
 
   return (
-    <article className={`post-card${detailLink ? ' post-card--linked' : ''}`} onClick={(event) => {
+    <article className={`post-card${detailLink ? ' post-card--linked' : ''}${post.source === 'api' && loggedIn && post.handle === me.handle && onUpdated && onDeleted ? ' post-card--owned' : ''}`} onClick={(event) => {
       if (!detailLink || event.defaultPrevented || event.target.closest('a, button, input, textarea, select, label, form, video')) return;
       if (window.getSelection()?.toString()) return;
       router.push(detailLink);
@@ -69,32 +68,25 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
         {post.source === 'api' && <>
           <div className="post-card__actions">
             <button type="button" className="post-card__action" aria-label="댓글 작성" onClick={() => { setReplyNotice(''); setReplyOpen(true); }}>
-              <Icon name="reply" size={18} /><span>답글</span>
+              <Icon name="msg" size={20} />
+            </button>
+            <button type="button" className="post-card__action" aria-label="리트윗 준비 중" title="리트윗 준비 중" disabled>
+              <Icon name="repeat" size={20} />
+            </button>
+            <button type="button" className="post-card__action" aria-label="좋아요 준비 중" title="좋아요 준비 중" disabled>
+              <Icon name="heart" size={20} />
             </button>
           </div>
           {replyNotice && <span className="small muted" role="status">{replyNotice}</span>}
           {replyOpen && <CommentModal post={post} onClose={(saved) => { setReplyOpen(false); if (saved === true) setReplyNotice('댓글을 등록했어요. 상세 게시글에서 확인할 수 있어요.'); }} />}
         </>}
         {post.source !== 'api' && <div className="post-card__actions">
-          <button type="button" className="post-card__action">
-            <Icon name="reply" size={18} />
-            <span>{REPLY_LABEL[post.type] || '답글'} {post.replies || 0}</span>
+          <button type="button" className="post-card__action" aria-label="댓글 보기" disabled={!threadLink} onClick={() => router.push(threadLink)}>
+            <Icon name="msg" size={20} />
           </button>
-          <button type="button" className="post-card__action">
-            <Icon name="repost" size={18} />
-            <span>{post.reposts || 0}</span>
-          </button>
-          <button
-            type="button"
-            className={`post-card__action${isLiked ? ' is-liked' : ''}`}
-            aria-pressed={isLiked}
-            onClick={() => toggleLike(post.id)}
-          >
-            <Icon name={isLiked ? 'heartFill' : 'heart'} size={18} />
-            <span>{(post.likes || 0) + (isLiked ? 1 : 0)}</span>
-          </button>
-          <button type="button" className="post-card__action" aria-label="공유">
-            <Icon name="share" size={18} />
+          <button type="button" className="post-card__action" aria-label="리트윗 준비 중" disabled><Icon name="repeat" size={20} /></button>
+          <button type="button" className={`post-card__action${isLiked ? ' is-liked' : ''}`} aria-label="좋아요" aria-pressed={isLiked} onClick={() => toggleLike(post.id)}>
+            <Icon name="heart" filled={isLiked} size={20} />
           </button>
         </div>}
       </div>
