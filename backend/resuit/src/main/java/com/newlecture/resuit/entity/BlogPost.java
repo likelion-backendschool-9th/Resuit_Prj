@@ -13,7 +13,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "blog_posts")
+@Table(name = "blog_posts", uniqueConstraints = @UniqueConstraint(name = "uq_blog_posts_integration_guid", columnNames = {"integration_id", "guid"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)

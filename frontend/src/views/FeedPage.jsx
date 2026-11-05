@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAppState } from '../context/AppStateContext.jsx';
-import { TECH_TAGS } from '../data/mock.js';
+import { TECH_TAGS } from '../data/constants.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Tabs from '../components/common/Tabs.jsx';
 import { ChipRadioGroup } from '../components/common/Chip.jsx';

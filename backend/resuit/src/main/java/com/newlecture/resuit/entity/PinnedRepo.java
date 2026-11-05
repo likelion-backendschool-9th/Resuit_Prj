@@ -12,7 +12,10 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "pinned_repos")
+@Table(name = "pinned_repos", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_pinned_repos_user_order", columnNames = {"user_id", "order_no"}),
+        @UniqueConstraint(name = "uq_pinned_repos_user_name", columnNames = {"user_id", "repo_full_name"})
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)

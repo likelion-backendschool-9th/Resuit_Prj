@@ -41,4 +41,20 @@ public class CommonResume extends BaseTimeEntity {
     @Builder.Default
     @Column(name = "is_public", nullable = false)
     private boolean isPublic = false;
+
+    public void setPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
+    public void rename(String title) {
+        this.title = title;
+    }
+
+    public void updateField(String field) {
+        this.field = field;
+    }
+
+    public void updateContent(Map<String, Object> content) {
+        if (content != null) this.content = content;
+    }
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAppState } from '../../context/AppStateContext.jsx';
-import { REVIEWER_BADGES } from '../../data/mock.js';
 import Avatar from '../common/Avatar.jsx';
 import Badge from '../common/Badge.jsx';
 import Button from '../common/Button.jsx';
@@ -61,15 +60,13 @@ export default function FeedbackRequestCard({ request, defaultOpen = false }) {
         {open && (
           <div className="fb-card__panel">
             {request.mine && <p className="small muted">가장 도움이 된 피드백 1개를 채택해 주세요. 채택은 리뷰어의 인증 배지 평가에 반영돼요.</p>}
-            {request.feedbacks.map((f, i) => {
-              const reviewer = f.company ? null : REVIEWER_BADGES[f.author];
-              return (
+            {request.feedbacks.map((f, i) => (
                 <div key={f.id} className="fb-item">
                   <Avatar initial={f.initial} color={f.av} size={32} company={f.company} />
                   <div className="grow stack" style={{ gap: 4 }}>
                     <div className="row-wrap" style={{ gap: 6, fontSize: 14 }}>
                       <strong>{f.author}</strong>
-                      {reviewer && <Badge tone="verified"><Icon name="check" size={11} />{reviewer}</Badge>}
+                      {f.reviewerBadge && <Badge tone="verified"><Icon name="check" size={11} />{f.reviewerBadge}</Badge>}
                       <Badge tone="general">{f.section}</Badge>
                       <span className="xs muted">{f.time}</span>
                       {request.adopted === i && <span className="fb-item__adopt"><Badge tone="accepted" size="md">채택됨</Badge></span>}
@@ -80,8 +77,7 @@ export default function FeedbackRequestCard({ request, defaultOpen = false }) {
                     <p style={{ fontSize: 14 }}>{f.text}</p>
                   </div>
                 </div>
-              );
-            })}
+            ))}
 
             <div className="stack" style={{ gap: 8, paddingTop: 4 }}>
               <ChipRadioGroup options={SECTIONS} value={section} onChange={setSection} label="피드백할 섹션" size="sm" />

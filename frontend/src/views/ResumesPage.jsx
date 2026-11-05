@@ -1,39 +1,115 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppState } from '../context/AppStateContext.jsx';
-import { SPECIAL_RESUMES } from '../data/mock.js';
+import { resumeApi } from '../services/resumeApi.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Tabs from '../components/common/Tabs.jsx';
-import Avatar from '../components/common/Avatar.jsx';
 import Badge from '../components/common/Badge.jsx';
 import Button, { IconButton } from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
 import './ResumesPage.css';
 
 const TABS = [{ id: 'all', label: '전체' }, { id: 'common', label: '공통' }, { id: 'special', label: '특화' }];
-const STATUS = { writing: { label: '작성 중', tone: 'special' }, submitted: { label: '제출 완료', tone: 'accent' } };
 const MAX_NAME = 40;
 
+function fieldLabel(field) {
+  if (field === 'FRONTEND') return '프론트엔드';
+  if (field === 'BACKEND') return '백엔드';
+  return field || '미정';
+}
+
+function formatUpdated(value) {
+  if (!value) return '방금 저장';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString('ko-KR', {
+    month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function contentSummary(content) {
+  if (!content || typeof content !== 'object') return '아직 작성한 섹션이 없어요';
+  const keys = Object.keys(content);
+  if (keys.length === 0) return '아직 작성한 섹션이 없어요';
+  return keys.slice(0, 4).join(' · ');
+}
+
 export default function ResumesPage() {
-  const { commonResumes, addCommonResume, renameCommonResume, removeCommonResume, publicResumeIds, isResumeRequested, toggleResumeRequest } = useAppState();
+  const { me, loggedIn, authLoading, isResumeRequested, toggleResumeRequest } = useAppState();
   const [tab, setTab] = useState('all');
+  const [commonResumes, setCommonResumes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [renaming, setRenaming] = useState(null);
   const [draftName, setDraftName] = useState('');
-  const writing = SPECIAL_RESUMES.filter((r) => r.status === 'writing').length;
-  const submitted = SPECIAL_RESUMES.filter((r) => r.status === 'submitted').length;
 
-  const startRename = (r) => { setRenaming(r.id); setDraftName(r.name); };
-  const saveName = (id) => {
-    const name = draftName.trim();
-    if (name) renameCommonResume(id, name);
-    setRenaming(null);
+  const load = useCallback(async () => {
+    if (!loggedIn) {
+      setCommonResumes([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const items = await resumeApi.listCommon(me.handle);
+      setCommonResumes(items);
+      setError('');
+    } catch {
+      setError('공통 이력서를 불러오지 못했습니다.');
+      setCommonResumes([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [loggedIn, me.handle]);
+
+  useEffect(() => {
+    if (authLoading) return undefined;
+    load();
+    return undefined;
+  }, [authLoading, load]);
+
+  const startRename = (r) => { setRenaming(r.id); setDraftName(r.title || ''); };
+  const saveName = async (id) => {
+    const title = draftName.trim();
+    if (!title) return;
+    try {
+      const updated = await resumeApi.updateCommon(me.handle, id, { title });
+      setCommonResumes((list) => list.map((r) => (r.id === id ? updated : r)));
+      setRenaming(null);
+      setError('');
+    } catch {
+      setError('이름을 저장하지 못했습니다.');
+    }
   };
-  const addCommon = () => {
-    setRenaming(addCommonResume());
-    setDraftName('');
-    if (tab === 'special') setTab('all');
+
+  const addCommon = async () => {
+    try {
+      const created = await resumeApi.createCommon(me.handle, {
+        title: `새 공통 이력서 ${commonResumes.length + 1}`,
+        field: 'FRONTEND',
+        content: {},
+      });
+      setCommonResumes((list) => [created, ...list]);
+      setRenaming(created.id);
+      setDraftName(created.title);
+      if (tab === 'special') setTab('all');
+      setError('');
+    } catch {
+      setError('공통 이력서를 만들지 못했습니다.');
+    }
+  };
+
+  const removeCommon = async (id, title) => {
+    if (!window.confirm(`「${title}」을(를) 삭제할까요?`)) return;
+    try {
+      await resumeApi.deleteCommon(me.handle, id);
+      setCommonResumes((list) => list.filter((r) => r.id !== id));
+      setError('');
+    } catch {
+      setError('삭제하지 못했습니다. 지원·피드백에 연결된 이력서일 수 있어요.');
+    }
   };
 
   return (
@@ -45,18 +121,31 @@ export default function ResumesPage() {
         </div>
         <div style={{ marginTop: 8 }}><Tabs items={TABS} value={tab} onChange={setTab} label="이력서 종류" /></div>
 
-        {tab !== 'special' && (
+        {!authLoading && !loggedIn && (
+          <p className="small muted" style={{ margin: '16px 0' }}>로그인하면 내 공통 이력서를 관리할 수 있어요.</p>
+        )}
+        {error && <p className="small muted" role="alert" style={{ margin: '12px 0' }}>{error}</p>}
+        {loading && loggedIn && <p className="small muted" style={{ margin: '12px 0' }}>불러오는 중…</p>}
+
+        {tab !== 'special' && loggedIn && (
           <section className="section">
             <div className="row-wrap" style={{ justifyContent: 'space-between', gap: 12 }}>
               <h2 className="section-label">공통 이력서 {commonResumes.length}개 · 일반 공고에 그대로 제출</h2>
-              <button type="button" className="resume-add" onClick={addCommon}><Icon name="plus" size={16} />새 공통 이력서</button>
+              <button type="button" className="resume-add" onClick={addCommon}>
+                <Icon name="plus" size={16} />
+                새 공통 이력서
+              </button>
             </div>
+
+            {commonResumes.length === 0 && !loading && (
+              <p className="small muted">아직 공통 이력서가 없어요. 새 공통 이력서로 시작해 보세요.</p>
+            )}
 
             {commonResumes.map((r) => {
               const requested = isResumeRequested(r.id);
-              const isPublic = publicResumeIds.includes(r.id);
+              const title = r.title;
               return (
-                <article key={r.id} className={`common-resume${isPublic ? ' is-public' : ''}`}>
+                <article key={r.id} className={`common-resume${r.isPublic ? ' is-public' : ''}`}>
                   <div className="common-resume__row">
                     <div className="resume-thumb common-resume__thumb" aria-hidden="true"><span /><span /><span /><span /></div>
                     <div className="common-resume__info">
@@ -79,27 +168,49 @@ export default function ResumesPage() {
                         </>
                       ) : (
                         <div className="row-wrap" style={{ gap: 6 }}>
-                          <strong style={{ fontSize: 17 }}>{r.name}</strong>
-                          <IconButton label={`「${r.name}」 이름 변경`} className="icon-btn--plain common-resume__rename" onClick={() => startRename(r)}><Icon name="pencil" size={16} /></IconButton>
-                          <Badge tone="general">{r.field}</Badge>
-                          {isPublic && <Badge tone="accepted"><Icon name="eye" size={12} />프로필 공개</Badge>}
+                          <strong style={{ fontSize: 17 }}>{title}</strong>
+                          <IconButton label={`「${title}」 이름 변경`} className="icon-btn--plain common-resume__rename" onClick={() => startRename(r)}>
+                            <Icon name="pencil" size={16} />
+                          </IconButton>
+                          <Badge tone="general">{fieldLabel(r.field)}</Badge>
+                          {r.isPublic && (
+                            <Badge tone="accepted">
+                              <Icon name="eye" size={12} />
+                              프로필 공개
+                            </Badge>
+                          )}
                         </div>
                       )}
-                      <div className="small muted">{r.sections} · {r.updated}</div>
-                      <div className="small" style={{ color: 'var(--accent-text)', fontWeight: 500 }}>받은 피드백 {r.feedback}개{r.bases ? ` · 특화 이력서 ${r.bases}개의 베이스` : ''}</div>
+                      <div className="small muted">{contentSummary(r.content)} · {formatUpdated(r.updatedAt)}</div>
                     </div>
                     <div className="row-wrap">
-                      <Button variant="outline" size="mid" to="/resumes/edit?job=1&mode=base">편집</Button>
-                      <Button variant={requested ? 'outline' : 'primary'} size="mid" aria-pressed={requested} onClick={() => toggleResumeRequest(r)}>
+                      <Button variant="outline" size="mid" to={`/resumes/edit?common=${r.id}`}>편집</Button>
+                      <Button
+                        variant={requested ? 'outline' : 'primary'}
+                        size="mid"
+                        aria-pressed={requested}
+                        onClick={() => toggleResumeRequest({
+                          id: r.id,
+                          name: title,
+                          field: fieldLabel(r.field),
+                          sections: contentSummary(r.content),
+                        })}
+                      >
                         {requested ? '요청 취소' : '피드백 요청'}
                       </Button>
-                      <IconButton label={`「${r.name}」 삭제`} className="common-resume__remove" onClick={() => removeCommonResume(r.id)}><Icon name="trash" size={16} /></IconButton>
+                      <IconButton
+                        label={`「${title}」 삭제`}
+                        className="common-resume__remove"
+                        onClick={() => removeCommon(r.id, title)}
+                      >
+                        <Icon name="trash" size={16} />
+                      </IconButton>
                     </div>
                   </div>
                   {requested && (
                     <div className="request-notice" role="status">
                       <Icon name="check" size={18} />
-                      <span className="request-notice__text">「{r.name}」이 피드백 게시판에 올라갔어요.</span>
+                      <span className="request-notice__text">「{title}」이 피드백 게시판에 올라갔어요.</span>
                       <Link href="/feedback" className="text-link" style={{ fontSize: 13 }}>피드백 보러 가기</Link>
                     </div>
                   )}
@@ -118,16 +229,10 @@ export default function ResumesPage() {
         {tab !== 'common' && (
           <section className="section">
             <h2 className="section-label">특화 이력서 · 공고별로 작성</h2>
-            {SPECIAL_RESUMES.map((r) => (
-              <Link key={r.id} href={`/resumes/edit?job=${r.jobId || 1}&mode=base`} className="resume-row">
-                <Avatar initial={r.initial} color="co3" company />
-                <div className="grow" style={{ flexBasis: 220 }}>
-                  <div className="bold" style={{ fontSize: 16 }}>{r.company} · {r.role}</div>
-                  <div className="small muted">{r.base} · 요구 문항 {r.questions}개 · {r.updated}</div>
-                </div>
-                <Badge tone={STATUS[r.status].tone} size="md">{STATUS[r.status].label}</Badge>
-              </Link>
-            ))}
+            <p className="small muted">
+              특화 이력서 API는 아직 연결 전이에요. 공고에서 지원을 시작하면 여기에 표시될 예정입니다.
+            </p>
+            <Button variant="outline" to="/jobs">공고 보러 가기</Button>
           </section>
         )}
       </MainColumn>
@@ -136,14 +241,16 @@ export default function ResumesPage() {
         <section className="card">
           <h2>지원 현황</h2>
           <div className="grid-3" style={{ gap: 8 }}>
-            <div className="stat"><b>{writing}</b><span className="xs muted">작성 중</span></div>
-            <div className="stat"><b>{submitted}</b><span className="xs muted">제출 완료</span></div>
+            <div className="stat"><b>{commonResumes.length}</b><span className="xs muted">공통</span></div>
+            <div className="stat"><b>0</b><span className="xs muted">특화</span></div>
             <div className="stat"><b>0</b><span className="xs muted">결과 발표</span></div>
           </div>
         </section>
         <section className="card" style={{ gap: 8 }}>
           <h2>이력서 구조</h2>
-          <p className="text-2" style={{ fontSize: 14, lineHeight: 1.7 }}>공통 이력서는 용도별로 여러 개 만들고 이름을 붙여 관리해요. 특화 이력서는 공고마다 하나씩, 원하는 공통 이력서를 복사해 시작하거나 빈 상태로 시작합니다.</p>
+          <p className="text-2" style={{ fontSize: 14, lineHeight: 1.7 }}>
+            공통 이력서는 용도별로 여러 개 만들고 이름을 붙여 관리해요. 특화 이력서는 공고마다 하나씩, 원하는 공통 이력서를 복사해 시작하거나 빈 상태로 시작합니다.
+          </p>
         </section>
       </RightAside>
     </>

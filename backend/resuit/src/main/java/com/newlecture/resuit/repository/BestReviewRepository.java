@@ -71,4 +71,14 @@ public interface BestReviewRepository extends JpaRepository<BestReview, Long> {
         JOIN users u ON u.id = c.user_id
         """, nativeQuery = true)
     Page<HistoryRow> findHistory(@Param("viewerId") UUID viewerId, Pageable pageable);
+
+    @Query("""
+        select count(b) from BestReview b
+        where b.comment.user.id = :userId
+          and b.periodStart >= :from
+          and b.periodStart < :to
+        """)
+    long countForReviewer(@Param("userId") UUID userId,
+                          @Param("from") LocalDate from,
+                          @Param("to") LocalDate to);
 }

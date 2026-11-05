@@ -79,7 +79,9 @@ frontend/
 | `/resumes` | ResumesPage | 이력서 › 내 이력서. 공통 이력서 여러 개 추가 · 이름 변경 · 삭제. "피드백 요청" 시 피드백 게시판에 실제로 올라감 |
 | `/feedback` | FeedbackPage | 이력서 › 피드백. 섹션을 골라 피드백 작성, 내 요청의 피드백 채택 |
 | `/threads/[id]` | ThreadPage | 질문 스레드, 답변 작성, 도움돼요 |
-| `/profile` | ProfilePage | GitHub 잔디, 프로필 꾸미기(위젯 켜기/끄기), 공개 이력서 설정(최대 3개), 공유자 배지, 리뷰어 인증 배지 진행 현황 |
+| `/profile`, `/{username}` | ProfilePage | 공개 프로필, 대표 이력서 고정, 배지·활동 현황, 기업 이메일 인증 진입 |
+| `/setting/profile` | ProfilePage | 내 프로필 설정 |
+| `/setting/integrations` | IntegrationsPage | GitHub·블로그 연결, 대표 레포 설정 |
 | `/company/post` | CompanyPostPage | 일반 · 특화 공고 작성, 요구 문항 추가 · 수정 · 삭제 |
 | `/talent` | TalentSearchPage | 기업 회원 전용 인재 찾기. 분야별 조회는 무료, 배지 · 기술 · 경력 · 활동 근거 · 지역 필터는 기업 Pro(체험) |
 

@@ -38,6 +38,13 @@ public class UserBadge {
     @Column(name = "is_eligible", nullable = false)
     private boolean isEligible;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private BadgeStatus status;
+
+    @Column(name = "grace_until")
+    private LocalDateTime graceUntil;
+
     @Column(name = "continuous_since")
     private LocalDateTime continuousSince;
 
@@ -49,5 +56,31 @@ public class UserBadge {
         this.user = user;
         this.badge = badge;
         this.isEligible = true;
+        this.status = BadgeStatus.ACTIVE;
+    }
+
+    public void activate(LocalDateTime at) {
+        this.status = BadgeStatus.ACTIVE;
+        this.isEligible = true;
+        this.graceUntil = null;
+        this.expiresAt = null;
+        if (this.continuousSince == null) {
+            this.continuousSince = at;
+        }
+    }
+
+    public void requireRenewal(LocalDateTime nextEvaluationAt) {
+        this.status = BadgeStatus.GRACE;
+        this.isEligible = false;
+        this.graceUntil = nextEvaluationAt;
+        this.continuousSince = null;
+    }
+
+    public void expire(LocalDateTime at) {
+        this.status = BadgeStatus.EXPIRED;
+        this.isEligible = false;
+        this.graceUntil = null;
+        this.expiresAt = at;
+        this.continuousSince = null;
     }
 }
