@@ -1,6 +1,6 @@
 import { forwardRef, useState } from 'react';
 import { useAppState } from '../../context/AppStateContext.jsx';
-import { TECH_TAGS } from '../../data/mock.js';
+import { TECH_TAGS } from '../../data/constants.js';
 import Avatar from '../common/Avatar.jsx';
 import Button, { IconButton } from '../common/Button.jsx';
 import Icon from '../common/Icon.jsx';

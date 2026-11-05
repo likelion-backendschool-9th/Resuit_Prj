@@ -11,6 +11,7 @@
 - `POST /api/v1/auth/logout`: CSRF 토큰 확인 후 세션 무효화, 204.
 - JSESSIONID는 HttpOnly, SameSite=Lax, 기본 30분 세션이다. 운영 HTTPS에서는 Secure 쿠키와 신뢰하는 프록시의 forwarded header 설정도 맞춰야 한다.
 - 기본 프로필·회원 식별 범위만 요청한다. 저장소 수정·비공개 레포·메일 발송 권한을 로그인에 요청하지 않는다.
+- 신규 회원의 `username`은 GitHub `login`, Google 이메일 로컬파트, 네이버 닉네임 등을 소문자·허용 문자로 정리해 쓰고, 중복이면 `_1` 접미사를 붙인다. 예전에 `u_`+UUID로 만들어진 계정은 다음 로그인 때 같은 규칙으로 한 번 바꾼다.
 
 ## 앱 등록과 키 설정
 

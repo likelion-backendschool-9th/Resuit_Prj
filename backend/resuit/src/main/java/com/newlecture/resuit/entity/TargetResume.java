@@ -41,4 +41,11 @@ public class TargetResume extends BaseTimeEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "content", columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> content;
+
+    // 3.11 특화 이력서 수정. 제목과 내용(요구 문항 답변 포함)만 바꾼다.
+    // 어느 공고용인지(job), 어떤 공통 이력서에서 시작했는지(commonResume)는 바꾸지 않는다.
+    public void update(String title, Map<String, Object> content) {
+        this.title = Objects.requireNonNull(title);
+        this.content = Objects.requireNonNull(content);
+    }
 }

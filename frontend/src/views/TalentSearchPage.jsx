@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { TALENTS } from '../data/mock.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Badge from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
@@ -11,6 +10,7 @@ import TalentCard from '../components/talent/TalentCard.jsx';
 import TalentFilters from '../components/talent/TalentFilters.jsx';
 import './TalentSearchPage.css';
 
+const TALENTS = [];
 const FIELDS = [{ id: 'all', label: '전체' }, { id: '백엔드', label: '백엔드' }, { id: '프론트엔드', label: '프론트엔드' }, { id: '풀스택', label: '풀스택' }];
 const NO_FILTERS = { badgeOnly: false, skills: [], career: 'all', streak: false, github: false, writer: false, region: 'all' };
 const MIN_STREAK = 2;
@@ -41,7 +41,6 @@ function activeLabels(f) {
   ].filter(Boolean);
 }
 
-// 기업 회원 전용: 공개 이력서 검색. 상세 필터는 기업 Pro에서 열린다.
 export default function TalentSearchPage() {
   const [pro, setPro] = useState(false);
   const [tab, setTab] = useState('all');
@@ -68,7 +67,7 @@ export default function TalentSearchPage() {
           <h1>인재 찾기</h1>
           <Badge tone="invert" size="md">기업 회원 전용</Badge>
           <span className="small muted" style={{ marginLeft: 'auto' }}>
-            노바랩스 · <strong style={{ color: pro ? 'var(--accent-text)' : 'var(--text)' }}>{pro ? '기업 Pro 체험 중' : '무료'}</strong>
+            <strong style={{ color: pro ? 'var(--accent-text)' : 'var(--text)' }}>{pro ? '기업 Pro 체험 중' : '무료'}</strong>
           </span>
         </div>
         <p className="page-desc">구직자가 프로필에서 공개로 설정한 이력서만 보여요. 인증 배지는 분기마다 갱신되고, 다음 평가는 2027년 1월 1일이에요.</p>

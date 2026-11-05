@@ -33,7 +33,6 @@ WBS에서 같은 기능이 여러 곳에 적힌 경우 하나로 정리한다.
 - 추천 피드(1.12)의 기준.
 - 대댓글을 몇 단계까지 허용할지.
 - 유료 피드백을 취소하면 크레딧을 어느 시점까지, 얼마나 돌려줄지.
-- 프로필에 공통 이력서를 몇 개 보여 줄지. WBS(5.9)는 대표 이력서 하나를 고정하고, 프론트는 공개 이력서를 최대 3개까지 고른 순서대로 보여 준다(6장).
 - 직무 분야에 풀스택을 넣을지. 프론트의 인재 목록에는 `풀스택`이 있지만 WBS의 필터는 전체·프론트·백엔드뿐이다.
 - 프론트 목업에만 있고 WBS에 없는 기능(기술 태그, 출처, 리포스트, 피드의 채용 글, 질문 답변 채택·도움돼요)을 넣을지. 공유자 배지를 "태그별 기술 글 N개"로 계산하려면 기술 태그 저장이 필요하다.
 
@@ -537,7 +536,8 @@ erDiagram
 | `blog_posts` | `id`, `user_id`, `integration_id`, `guid`, `title`, `url`, `collected_at`; 선택 `description`, `published_at` | RSS의 글 고유값 `guid`로 중복 수집을 막는다(`UNIQUE(integration_id, guid)`). `user_id`는 연동의 회원과 같아야 한다(서비스에서 검사). 최근 블로그 글(5.13)은 `published_at` 최신순으로 읽는다. 블로그 공유카드는 이 행의 제목·요약·주소를 보여 준다. |
 | `follows` | `follower_id`, `following_id`, `created_at` | PK는 `(follower_id, following_id)`라서 같은 사람을 두 번 팔로우할 수 없다. 자기 자신은 팔로우하지 않는다(`CHECK(follower_id <> following_id)`). 언팔은 행을 지운다. 프로필 조회(5.3)의 팔로우 여부, 팔로워·팔로잉 수, 팔로잉 피드(1.13)가 이 테이블을 읽는다. |
 | `badges` | `id`, `code`; 선택 `type`, `name`, `description`, `icon_url`, `validity_days` | 배지 정의다. `code`는 유일하며 코드에서 배지를 찾을 때 쓴다. 기간이 정해진 배지만 `validity_days`가 있다. 배지 정의는 운영자가 미리 넣는다. |
-| `user_badges` | `user_id`, `badge_id`, `acquired_at`, `is_eligible`; 선택 `continuous_since`, `expires_at` | PK는 `(user_id, badge_id)`라서 같은 배지를 두 번 지급하지 않는다. 기간 배지는 `expires_at = acquired_at + validity_days`로 저장한다. `is_eligible`이 거짓이거나 만료된 배지는 표시하지 않는다. `continuous_since`는 조건을 연속으로 유지하기 시작한 시각이다. |
+| `user_badges` | `user_id`, `badge_id`, `acquired_at`, `is_eligible`, `status`; 선택 `continuous_since`, `grace_until`, `expires_at` | PK는 `(user_id, badge_id)`라서 같은 종류의 현재 배지 상태를 한 줄로 관리한다. 리뷰어 배지는 분기 평가에서 `ACTIVE → GRACE → EXPIRED`로 전환하며, 기업 필터에는 `ACTIVE`만 포함한다. 유예·만료 배지도 프로필 이력에는 표시할 수 있다. 자세한 규칙은 [배지 갱신 규칙](./badge-renewal.md)에 있다. |
+| `user_badge_history` | `id`, `user_id`, `badge_id`, `active_from`, `active_until` | 리뷰어 배지가 유예 상태로 내려갈 때 끝난 활성 기간을 기록한다. 같은 배지를 나중에 다시 받아도 지난 인증 기간을 유지한다. |
 | `verifications` | `id`, `user_id`, `type`, `email`, `code_hash`, `expires_at`, `created_at`; 선택 `verified_at` | `type IN ('COMPANY_EMAIL','EMPLOYEE')`. 인증 코드를 보낼 때마다 새 행을 만든다. 확인할 때는 그 회원·종류의 가장 최근 행이 만료 전이고 해시가 일치해야 한다. 성공하면 `verified_at`을 기록한다. 현직자 인증(`EMPLOYEE`)이 끝나면 `mentors` 행을 만들고 현직자 배지를 지급한다. 인증 상태 조회는 `verified_at`이 있는 행이 있는지로 판단한다. |
 
 `users.widgets`는 켜진 위젯을 표시 순서대로 담은 배열이다. 예: `["GRASS", "PINNED_RESUME"]`. 목록에 없는 위젯은 꺼진 것이다. 위젯 종류는 Java enum으로 관리하며 지금 화면에는 GitHub 잔디(`GRASS`)와 대표 이력서(`PINNED_RESUME`)가 있다.
@@ -677,9 +677,9 @@ PK와 UNIQUE 제약은 인덱스를 함께 만든다. 아래에는 그 밖에 �
 3. **시각**: `'20분'`, `'3일 전 수정'` 같은 상대 시각은 서버가 주는 ISO 8601 시각으로 화면에서 계산한다.
 4. **집계 값**: 게시글의 `likes`, `replies`, 이력서의 `feedback`(받은 피드백 수), `bases`(이 이력서로 만든 특화 이력서 수)는 저장하지 않고 조회할 때 센다.
 5. **특화 이력서 상태**: 목업의 `status: writing | submitted`는 저장 컬럼이 아니다. 같은 공고에 `APPLIED` 지원 기록이 있으면 제출, 없으면 작성 중이다. 목업에 공고 없는 특화 이력서(`jobId: null`)가 있지만, 설계에서 특화 이력서는 반드시 공고에 속한다.
-6. **프로필 공개 이력서**: 목업은 공개 이력서를 최대 3개(`MAX_PUBLIC_RESUMES`) 고른 순서대로 보여 주지만, 설계는 대표 이력서 하나(`users.pinned_common_resume_id`)와 공개 여부(`common_resumes.is_public`)다. 팀 결정(1장) 뒤에 한쪽으로 맞춘다. 여러 개로 정하면 `common_resumes`에 공개 순서 컬럼을 더한다.
+6. **프로필 공개 이력서**: 공통 이력서는 여러 개 만들고 공개할 수 있다(`common_resumes.is_public`). 프로필에 고정하는 대표 이력서는 한 개이며 `users.pinned_common_resume_id`에 저장한다. `PUT /users/me/pinned-resume`의 `cResumeId`를 NULL로 보내면 고정을 해제한다. 고정 대상은 본인 소유의 공개 이력서여야 한다. 추후 여러 개 고정으로 바꾸면 별도 고정 관계 또는 순서 컬럼을 추가하고 기존 ID를 이전한다.
 7. **채택**: 목업의 `adopted`는 채택된 피드백 하나의 순번이다. 요청당 하나만 채택하는 것으로 보이며, 팀 결정(1장)과 함께 확정한다.
-8. **배지**: 공유자 배지(태그별 기술 글 수), 리뷰어 배지(분기마다 채택된 피드백 수와 서로 다른 요청자 수)는 서버가 기존 테이블로 계산해 `user_badges`에 지급한다. 리뷰어 배지 진행 현황(`BADGE_PROGRESS`)도 `feedback_comments`의 채택 기록으로 계산한다. 인재 목록의 배지 상태 `active | grace | expired`는 `user_badges.is_eligible`과 `expires_at`으로 계산한다.
+8. **배지**: 공유자 배지(태그별 기술 글 수), 리뷰어 배지(분기마다 채택된 피드백 수와 서로 다른 요청자 수)는 서버가 기존 테이블로 계산해 `user_badges`에 지급한다. 리뷰어 배지 진행 현황(`BADGE_PROGRESS`)도 `feedback_comments`의 채택 기록으로 계산한다. 리뷰어 배지는 최근 2분기 활동을 분기마다 평가하고, 미달 첫 분기에는 유예를 준다. 인재 목록의 배지 상태 `active | grace | expired`는 `user_badges.status`로 구분한다. 세부 기준은 [배지 갱신 규칙](./badge-renewal.md)에 있다.
 9. **인재 목록**: 목업의 `headline`(한 줄 소개), `career`(경력 구간)는 저장 컬럼이 없다. 이력서 `content`에 넣을지, `users`에 컬럼을 더할지 인재 검색을 구현할 때 정한다.
 10. **WBS에 없는 목업 데이터**: 게시글의 `tags`, `source`, `reposts`, 채용 글(`type: 'job'`), 질문 스레드의 답변 채택·좋아요는 저장할 곳이 없다. 1장의 팀 결정 전까지 API로 바꾸지 않는다.
 

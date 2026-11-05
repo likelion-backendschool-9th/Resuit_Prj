@@ -2,14 +2,9 @@ package com.newlecture.resuit.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.io.Serializable;
-import java.time.*;
 import java.util.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "common_resumes")
@@ -41,4 +36,15 @@ public class CommonResume extends BaseTimeEntity {
     @Builder.Default
     @Column(name = "is_public", nullable = false)
     private boolean isPublic = false;
+
+    // 3.6 공통 이력서 수정. 제목·분야·내용만 바꾼다. 작성자(user)는 바꾸지 않는다.
+    public void update(String title, String field, Map<String, Object> content) {
+        this.title = Objects.requireNonNull(title);
+        this.field = field;
+        this.content = Objects.requireNonNull(content);
+    }
+
+    public void setPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+    }
 }

@@ -12,7 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = @UniqueConstraint(name = "uq_users_username", columnNames = "username"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -59,4 +59,24 @@ public class User extends BaseTimeEntity {
 
     @Column(name = "subscription")
     private Boolean subscription;
+
+    public void updateProfile(String nickname, String selfIntroduction,
+            String profileImageUrl, Map<String, Object> widgets) {
+        if (nickname != null) this.nickname = nickname;
+        if (selfIntroduction != null) this.selfIntroduction = selfIntroduction;
+        if (profileImageUrl != null) this.profileImageUrl = profileImageUrl;
+        if (widgets != null) this.widgets = widgets;
+    }
+
+    public void changeUsername(String username) {
+        this.username = username;
+    }
+
+    public void pinResume(CommonResume resume) {
+        this.pinnedCommonResume = resume;
+    }
+
+    public void displayBadge(Badge badge) {
+        this.displayedBadge = badge;
+    }
 }

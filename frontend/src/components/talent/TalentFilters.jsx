@@ -1,4 +1,4 @@
-import { TALENT_SKILLS } from '../../data/mock.js';
+import { TALENT_SKILLS } from '../../data/constants.js';
 import Badge from '../common/Badge.jsx';
 import { ToggleChip } from '../common/Chip.jsx';
 
