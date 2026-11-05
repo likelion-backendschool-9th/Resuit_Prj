@@ -12,6 +12,7 @@ import Icon from '../components/common/Icon.jsx';
 import SearchBox from '../components/common/SearchBox.jsx';
 import { PostImage, PostVideo } from '../components/feed/PostEmbeds.jsx';
 import PostContent from '../components/feed/PostContent.jsx';
+import LikeButton from '../components/feed/LikeButton.jsx';
 import CommentsSection from '../components/feed/CommentsSection.jsx';
 import PostOwnerActions from '../components/feed/PostOwnerActions.jsx';
 import './ThreadPage.css';
@@ -54,9 +55,9 @@ export default function ThreadPage({ initialPost, error }) {
           {loggedIn && post.handle === me.handle && <PostOwnerActions post={post} onUpdated={setUpdatedPost}
             onDeleted={() => { router.replace('/'); router.refresh(); }} />}
           <div className="thread-post__actions" aria-label="게시글 반응">
-            <a href="#thread-reply" className="icon-btn icon-btn--plain" aria-label="댓글 작성란으로 이동"><Icon name="reply" /></a>
-            <button className="icon-btn icon-btn--plain" disabled aria-label="리포스트 준비 중" title="리포스트 준비 중"><Icon name="repost" /></button>
-            <button className="icon-btn icon-btn--plain" disabled aria-label="좋아요 준비 중" title="좋아요 준비 중"><Icon name="heart" /></button>
+            <a href="#thread-reply" className="icon-btn icon-btn--plain" aria-label="댓글 작성란으로 이동"><Icon name="msg" /></a>
+            <button className="icon-btn icon-btn--plain" disabled aria-label="리포스트 준비 중" title="리포스트 준비 중"><Icon name="repeat" /></button>
+            <LikeButton post={post} />
           </div>
         </article>
         <CommentsSection key={post.id} post={post} />

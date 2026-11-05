@@ -88,6 +88,7 @@ export function AppStateProvider({ children }) {
           ...list,
         ]),
       liked,
+      setPostLiked: (key, value) => setLiked((previous) => ({ ...previous, [key]: value })),
       toggleLike: (id) => setLiked((m) => ({ ...m, [id]: !m[id] })),
       following,
       setFollowState: (handle, value) => setFollowing((m) => ({ ...m, [handle]: !!value })),

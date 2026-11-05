@@ -13,9 +13,14 @@ public record PostTimelineResponse(
 		String videoUrl,
 		String blogPostUrl,
 		String repoFullName,
-		LocalDateTime createdAt) {
+		LocalDateTime createdAt,
+		boolean liked) {
 
 	public static PostTimelineResponse from(Post post) {
+        return from(post, false);
+    }
+
+    public static PostTimelineResponse from(Post post, boolean liked) {
 		return new PostTimelineResponse(
 				post.getId(),
 				new Author(
@@ -28,7 +33,7 @@ public record PostTimelineResponse(
 				post.getVideoUrl(),
 				post.getBlogPost() == null ? null : post.getBlogPost().getUrl(),
 				post.getRepoFullName(),
-				post.getCreatedAt());
+				post.getCreatedAt(), liked);
 	}
 
 	public record Author(

@@ -25,7 +25,7 @@
 }
 .post-card__question-link:hover { color: var(--question); opacity: 0.85; }
 
-.post-card__actions { display: flex; justify-content: space-between; gap: 16px; flex-wrap: nowrap; color: var(--text-sub); font-size: 13px; }
+.post-card__actions { display: flex; justify-content: flex-start; align-items: center; gap: 16px; flex-wrap: nowrap; color: var(--text-sub); font-size: 13px; }
 .post-card__action {
   display: inline-flex;
   align-items: center;

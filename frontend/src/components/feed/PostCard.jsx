@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { useState } from 'react';
+import LikeButton from './LikeButton.jsx';
 import CommentModal from './CommentModal.jsx';
 import { useRouter } from 'next/navigation';
 import PostOwnerActions from './PostOwnerActions.jsx';
@@ -73,9 +74,7 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
             <button type="button" className="post-card__action" aria-label="리트윗 준비 중" title="리트윗 준비 중" disabled>
               <Icon name="repeat" size={20} />
             </button>
-            <button type="button" className="post-card__action" aria-label="좋아요 준비 중" title="좋아요 준비 중" disabled>
-              <Icon name="heart" size={20} />
-            </button>
+            <LikeButton post={post} />
           </div>
           {replyNotice && <span className="small muted" role="status">{replyNotice}</span>}
           {replyOpen && <CommentModal post={post} onClose={(saved) => { setReplyOpen(false); if (saved === true) setReplyNotice('댓글을 등록했어요. 상세 게시글에서 확인할 수 있어요.'); }} />}

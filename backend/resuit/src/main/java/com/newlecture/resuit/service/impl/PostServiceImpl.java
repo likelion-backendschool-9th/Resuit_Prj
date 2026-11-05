@@ -48,14 +48,13 @@ public class PostServiceImpl implements PostService {
 
 	@Override
 	public Page<PostTimelineResponse> getTimeline(Pageable pageable) {
-		return postRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(pageable)
-				.map(PostTimelineResponse::from);
+		return timeline(postRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(pageable));
 	}
 
 	@Override
 	public PostDetailResponse getPostDetail(Long id) {
 		return postRepository.findByIdAndDeletedAtIsNull(id)
-				.map(PostDetailResponse::from)
+				.map(this::detail)
 				.orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다: " + id));
 	}
 
@@ -75,7 +74,7 @@ public class PostServiceImpl implements PostService {
 				.repoFullName(request.repoFullName())
 				.build();
 
-		return PostDetailResponse.from(postRepository.save(post));
+		return detail(postRepository.save(post));
 	}
 
 	@Override
@@ -89,7 +88,7 @@ public class PostServiceImpl implements PostService {
 				request.imageUrl(),
 				request.videoUrl(),
 				request.repoFullName());
-		return PostDetailResponse.from(post);
+		return detail(post);
 	}
 
 	@Override
@@ -136,9 +135,7 @@ public class PostServiceImpl implements PostService {
 		if (followingIds.isEmpty()) {
 			return Page.empty(pageable);
 		}
-		return postRepository.findByUser_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(
-						followingIds, pageable)
-				.map(PostTimelineResponse::from);
+		return timeline(postRepository.findByUser_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(followingIds, pageable));
 	}
 
 	@Override
@@ -181,8 +178,25 @@ public class PostServiceImpl implements PostService {
 	}
 
 	private Page<PostTimelineResponse> getFeedByType(String type, Pageable pageable) {
-		return postRepository.findByTypeIgnoreCaseAndDeletedAtIsNullOrderByCreatedAtDesc(type, pageable)
-				.map(PostTimelineResponse::from);
+		return timeline(postRepository.findByTypeIgnoreCaseAndDeletedAtIsNullOrderByCreatedAtDesc(type, pageable));
 	}
+
+    private java.util.Set<Long> likedIds(List<Long> ids) {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (ids.isEmpty() || auth == null || !auth.isAuthenticated()
+                || auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
+            return java.util.Set.of();
+        }
+        return postLikeRepository.findLikedPostIds(auth.getName(), ids);
+    }
+
+    private Page<PostTimelineResponse> timeline(Page<Post> posts) {
+        var liked = likedIds(posts.getContent().stream().map(Post::getId).toList());
+        return posts.map(post -> PostTimelineResponse.from(post, liked.contains(post.getId())));
+    }
+
+    private PostDetailResponse detail(Post post) {
+        return PostDetailResponse.from(post, likedIds(List.of(post.getId())).contains(post.getId()));
+    }
 
 }

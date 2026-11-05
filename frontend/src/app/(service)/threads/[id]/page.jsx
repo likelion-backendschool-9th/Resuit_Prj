@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import ThreadPage from '@/views/ThreadPage.jsx';
 import { getPostDetail } from '@/services/posts.js';
 
@@ -11,7 +12,8 @@ export default async function Page({ params }) {
   let post = null;
   let error = '';
   try {
-    post = await getPostDetail(id, { baseUrl: process.env.BACKEND_URL || 'http://localhost:8080' });
+    post = await getPostDetail(id, { baseUrl: process.env.BACKEND_URL || 'http://localhost:8080',
+      headers: { Cookie: (await cookies()).toString() } });
   } catch (err) {
     error = err.message;
   }

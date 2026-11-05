@@ -15,7 +15,8 @@
 .thread-post__actions {
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: flex-start;
+  gap: 16px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
   color: var(--text-sub);

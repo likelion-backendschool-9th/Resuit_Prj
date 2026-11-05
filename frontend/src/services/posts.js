@@ -3,6 +3,7 @@ function toPost(post) {
   const author = post.author.nickname || post.author.username;
   return {
     id: post.id,
+    liked: post.liked === true,
     author,
     handle: post.author.username,
     initial: author?.slice(0, 1) || '?',
@@ -62,9 +63,9 @@ export const createPost = (body) => mutatePost('', 'POST', postPayload(body));
 export const updatePost = (id, body) => mutatePost(`/${encodeURIComponent(id)}`, 'PATCH', postPayload(body));
 export const deletePost = (id) => mutatePost(`/${encodeURIComponent(id)}`, 'DELETE');
 
-export async function getPostDetail(id, { baseUrl = '' } = {}) {
+export async function getPostDetail(id, { baseUrl = '', headers } = {}) {
   const response = await fetch(`${baseUrl}/api/v1/posts/${encodeURIComponent(id)}`, {
-    cache: 'no-store', credentials: 'same-origin', signal: AbortSignal.timeout(10000),
+    cache: 'no-store', credentials: 'same-origin', headers, signal: AbortSignal.timeout(10000),
   });
   if (!response.ok) {
     throw new Error(response.status === 404
@@ -75,7 +76,7 @@ export async function getPostDetail(id, { baseUrl = '' } = {}) {
 }
 
 
-export async function getFeed({ tab = 'recommend', userId, page = 0, baseUrl = '', signal } = {}) {
+export async function getFeed({ tab = 'recommend', userId, page = 0, baseUrl = '', signal, headers } = {}) {
   const query = new URLSearchParams({ tab, page: String(page), size: '20' });
   if (tab === 'following') {
     if (!userId) throw new Error('팔로잉 피드는 로그인 후 볼 수 있어요.');
@@ -83,10 +84,22 @@ export async function getFeed({ tab = 'recommend', userId, page = 0, baseUrl = '
   }
   const timeout = AbortSignal.timeout(10000);
   const response = await fetch(`${baseUrl}/api/v1/posts/feeds?${query}`, {
-    credentials: 'same-origin', cache: 'no-store',
+    credentials: 'same-origin', cache: 'no-store', headers,
     signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   });
   if (!response.ok) throw new Error('피드를 불러오지 못했어요. 다시 시도해 주세요.');
   const data = await response.json();
   return { posts: data.content.map(toPost), page: data.number, last: data.last };
 }
+
+
+async function setPostLike(id, liked) {
+  const { authenticatedFetch } = await import('./auth.js');
+  const response = await authenticatedFetch(`/api/v1/posts/${encodeURIComponent(id)}/likes`, { method: liked ? 'POST' : 'DELETE' });
+  if (!response.ok) {
+    if (response.status === 401) throw new Error('로그인이 필요해요. 다시 로그인해 주세요.');
+    throw new Error('좋아요를 변경하지 못했어요. 다시 시도해 주세요.');
+  }
+}
+export const likePost = (id) => setPostLike(id, true);
+export const unlikePost = (id) => setPostLike(id, false);
