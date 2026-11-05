@@ -14,9 +14,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 import com.newlecture.resuit.dto.JobResponse;
 import com.newlecture.resuit.dto.JobDetailResponse;
+import com.newlecture.resuit.dto.GeneralJobApplicationRequest;
+import com.newlecture.resuit.dto.JobApplicationResponse;
 import com.newlecture.resuit.service.JobService;
 
 @RestController
@@ -42,11 +45,11 @@ public class JobController {
 	}
 
 	@PostMapping("/{jobId}/applications")
-	public ResponseEntity<Void> applyForJob(
+	public JobApplicationResponse applyForJob(
 			@PathVariable Long jobId,
-			@RequestParam(required = false) String mode,
-			@RequestBody(required = false) Map<String, Object> applicationRequest) {
-		return ResponseEntity.ok().build();
+			@Valid @RequestBody GeneralJobApplicationRequest applicationRequest,
+			java.security.Principal principal) {
+		return jobService.applyForGeneralJob(jobId, applicationRequest, principal.getName());
 	}
 
 	@DeleteMapping("/{jobId}/applications")
