@@ -14,8 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.newlecture.resuit.dto.TalentResumeQuery;
 import com.newlecture.resuit.dto.TalentSearchCondition;
 import com.newlecture.resuit.dto.TalentSummary;
+import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.service.TalentScoutingService;
 
 import jakarta.validation.Valid;
@@ -38,10 +40,12 @@ public class TalentScoutingController {
 	}
 
 	@GetMapping("/company/talents/{userId}/resumes/{c_resumeId}")
-	public ResponseEntity<Void> getPublicResume(
+	public ResponseEntity<CommonResumeDetailResponse> getPublicResume(
 			@PathVariable UUID userId,
-			@PathVariable Long c_resumeId) {
-		return ResponseEntity.ok().build();
+			@PathVariable Long c_resumeId,
+			Principal principal) {
+		return ResponseEntity.ok(talentScoutingService.getPublicResume(
+				new TalentResumeQuery(userId, c_resumeId, principal.getName())));
 	}
 
 	@PostMapping("/company/offers")
