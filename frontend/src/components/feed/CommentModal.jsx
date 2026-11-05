@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createComment } from '../../services/comments.js';
 import Avatar from '../common/Avatar.jsx';
 import Button from '../common/Button.jsx';
+import PostContent from './PostContent.jsx';
 import CommentForm from './CommentForm.jsx';
 import './Comments.css';
 
@@ -33,7 +34,7 @@ export default function CommentModal({ post, onClose }) {
       <Avatar initial={post.initial} src={post.profileImage} size={40} />
       <div className="comment-form__body">
         <div><strong>{post.author}</strong> <span className="small muted">@{post.handle}</span></div>
-        <p className="comment-modal__text">{post.body || '첨부 게시글'}</p>
+        <div className="comment-modal__text"><PostContent content={post.body || '첨부 게시글'} /></div>
       </div>
     </div>
     <CommentForm onBusyChange={setSaving} handle={post.handle} onSave={async (content) => {

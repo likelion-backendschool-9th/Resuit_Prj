@@ -3,6 +3,7 @@ import { useAppState } from '../../context/AppStateContext.jsx';
 import { MEDIA_ACCEPT } from '../../services/media.js';
 import useMediaAttachments from './useMediaAttachments.js';
 import MediaAttachments from './MediaAttachments.jsx';
+import { splitPostForEditing, serializePostContent } from '../../utils/postContent.js';
 import { TECH_TAGS } from '../../data/constants.js';
 import Button, { IconButton } from '../common/Button.jsx';
 import Icon from '../common/Icon.jsx';
@@ -19,7 +20,6 @@ const PLACEHOLDERS = {
   tech: '새로 알게 된 기술, 버전 변경점, 꿀팁을 짧게 공유해 주세요.',
   question: '취업, 이력서, 개발에 대해 궁금한 걸 물어보세요.'
 };
-const MAX_LENGTH = 280;
 const MAX_TAGS = 3;
 
 // 홈 피드 상단 글쓰기. (이력서 피드백 요청은 이력서 › 내 이력서에서 한다)
@@ -32,12 +32,13 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [kind, setKind] = useState(post?.type || 'general');
-  const [text, setText] = useState(post?.body || '');
+  const [initialContent] = useState(() => splitPostForEditing(post?.body || ''));
+  const [text, setText] = useState(initialContent.body);
   const [tags, setTags] = useState([]);
   const [source, setSource] = useState('');
-  const [codeOpen, setCodeOpen] = useState(false);
-  const [codeFile, setCodeFile] = useState('');
-  const [codeText, setCodeText] = useState('');
+  const [codeOpen, setCodeOpen] = useState(!!initialContent.code);
+  const [codeFile, setCodeFile] = useState(initialContent.code?.file || '');
+  const [codeText, setCodeText] = useState(initialContent.code?.text || '');
 
   const hasCode = codeOpen && codeText.trim().length > 0;
   const blank = !text.trim() && !hasCode && !media.items.length && !post?.image && !post?.video;
@@ -52,10 +53,10 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
     setSaving(true);
     setError('');
     try {
-      await onSave({ type: kind, content: text.trim(), imageUrl: post?.image || media.items.find((item) => item.mediaType === 'IMAGE')?.path || null,
+      await onSave({ type: kind, content: serializePostContent(text, hasCode ? { file: codeFile, text: codeText } : null), imageUrl: post?.image || media.items.find((item) => item.mediaType === 'IMAGE')?.path || null,
         videoUrl: post?.video || media.items.find((item) => item.mediaType === 'VIDEO')?.path || null, repoFullName: post?.repoFullName || null });
       media.finishPublish(true);
-      if (!post) setText('');
+      if (!post) { setText(''); setCodeFile(''); setCodeText(''); setCodeOpen(false); }
     } catch (err) {
       media.finishPublish(false);
       setError(err.message || '저장하지 못했어요. 다시 시도해 주세요.');
@@ -75,7 +76,6 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
           ref={textareaRef}
           className="composer__text"
           rows={3}
-          maxLength={post ? Math.max(MAX_LENGTH, post.body?.length || 0) : MAX_LENGTH}
           placeholder={PLACEHOLDERS[kind]}
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -102,13 +102,13 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
           <div className="composer__code">
             <div className="composer__code-head">
               <Icon name="code" size={16} />
-              <label htmlFor="composer-code-file" className="sr-only">파일 이름</label>
-              <input id="composer-code-file" className="composer__code-file" placeholder="파일 이름 (예: UserService.java)" value={codeFile} onChange={(e) => setCodeFile(e.target.value)} />
+              <label htmlFor={`${inputId}-code-file`} className="sr-only">파일 이름</label>
+              <input id={`${inputId}-code-file`} className="composer__code-file" placeholder="파일 이름 (예: UserService.java)" value={codeFile} onChange={(e) => setCodeFile(e.target.value)} />
               <span className="xs muted">{codeText ? codeText.split('\n').length : 0}줄</span>
             </div>
-            <label htmlFor="composer-code-text" className="sr-only">코드</label>
+            <label htmlFor={`${inputId}-code-text`} className="sr-only">코드</label>
             <textarea
-              id="composer-code-text"
+              id={`${inputId}-code-text`}
               className="composer__code-text"
               rows={6}
               spellCheck={false}
@@ -131,7 +131,7 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
               title={post ? '수정할 때는 기존 첨부를 유지합니다.' : !loggedIn ? '로그인 후 첨부할 수 있어요.' : '이미지·영상 각각 1개, 파일당 최대 50MB'}
               onClick={() => fileInput.current?.click()} className="icon-btn--plain icon-btn--sm composer__tool"><Icon name="image" /></IconButton>
             <IconButton
-              label="코드 블록" disabled title="코드 블록 저장은 아직 지원하지 않아요."
+              label="코드 블록" title="코드 첨부 또는 제거"
               aria-pressed={codeOpen}
               className={`icon-btn--plain icon-btn--sm composer__tool${codeOpen ? ' is-on' : ''}`}
               onClick={() => setCodeOpen((v) => !v)}
@@ -141,7 +141,7 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
             <IconButton label="해시태그" disabled title="해시태그 저장은 아직 지원하지 않아요." className="icon-btn--plain icon-btn--sm composer__tool"><Icon name="hash" /></IconButton>
           </div>
           <div className="row" style={{ gap: 12 }}>
-            <span className="small muted">{text.length} / {MAX_LENGTH}</span>
+            <span className="small muted">{text.length}자</span>
             {onCancel && <Button variant="ghost" onClick={onCancel}>취소</Button>}
             <Button type="submit" disabled={blank || media.busy}>{saving ? '저장 중…' : post ? '수정 저장' : '게시'}</Button>
           </div>

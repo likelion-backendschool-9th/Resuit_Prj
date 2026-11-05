@@ -11,6 +11,7 @@ import Button from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
 import SearchBox from '../components/common/SearchBox.jsx';
 import { PostImage, PostVideo } from '../components/feed/PostEmbeds.jsx';
+import PostContent from '../components/feed/PostContent.jsx';
 import CommentsSection from '../components/feed/CommentsSection.jsx';
 import PostOwnerActions from '../components/feed/PostOwnerActions.jsx';
 import './ThreadPage.css';
@@ -44,7 +45,7 @@ export default function ThreadPage({ initialPost, error }) {
             </div>
             {badge && <Badge tone={badge.tone}>{badge.label}</Badge>}
           </header>
-          {post.body && <p className="thread-post__text">{post.body}</p>}
+          <PostContent content={post.body} textClassName="thread-post__text" />
           {post.image && <PostImage src={post.image} alt={post.imageAlt} />}
           {post.video && <PostVideo src={post.video} alt={`${post.author}님의 첨부 영상`} />}
           {post.blogPostUrl && <a className="embed" href={post.blogPostUrl} target="_blank" rel="noopener noreferrer">블로그 원문 보기</a>}

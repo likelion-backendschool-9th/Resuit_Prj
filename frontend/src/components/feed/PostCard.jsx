@@ -9,6 +9,7 @@ import Badge, { POST_TYPE_BADGE } from '../common/Badge.jsx';
 import FollowButton from '../common/FollowButton.jsx';
 import Icon from '../common/Icon.jsx';
 import { TechTags, PostImage, PostVideo, BlogEmbed, RepoEmbed, Evidence } from './PostEmbeds.jsx';
+import PostContent from './PostContent.jsx';
 import CodeBlock from './CodeBlock.jsx';
 import JobCard from '../jobs/JobCard.jsx';
 import './PostCard.css';
@@ -44,9 +45,8 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
           )}
         </header>
 
-        {detailLink ? <Link href={detailLink} className="post-card__detail-link" aria-label={`${post.author}님의 게시글 상세 보기`}>
-          <p className="post-card__text">{post.body || '게시글 보기'}</p>
-        </Link> : post.body && <p className="post-card__text">{post.body}</p>}
+        <PostContent content={post.body} detailLink={detailLink} />
+        {detailLink && <Link href={detailLink} className="sr-only">{post.author}님의 게시글 상세 보기</Link>}
 
         {post.code && <CodeBlock code={post.code} />}
         {post.image && <PostImage src={post.image} alt={post.imageAlt} />}
