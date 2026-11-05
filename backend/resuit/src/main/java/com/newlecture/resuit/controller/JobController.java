@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,6 +21,7 @@ import jakarta.validation.Valid;
 
 import com.newlecture.resuit.dto.JobResponse;
 import com.newlecture.resuit.dto.CreateJobRequest;
+import com.newlecture.resuit.dto.SaveJobDraftRequest;
 import com.newlecture.resuit.dto.JobDetailResponse;
 import com.newlecture.resuit.dto.GeneralJobApplicationRequest;
 import com.newlecture.resuit.dto.JobApplicationResponse;
@@ -37,6 +39,30 @@ public class JobController {
 		this.jobService = jobService;
 		this.jobApplicationService = jobApplicationService;
 	}
+
+    @PostMapping("/me/drafts")
+    @ResponseStatus(HttpStatus.CREATED)
+    public JobDetailResponse createDraft(@Valid @RequestBody SaveJobDraftRequest request, Principal principal) {
+        return jobService.createDraft(request, principal.getName());
+    }
+
+    @GetMapping("/me/drafts")
+    public Page<JobResponse> getDrafts(Principal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return jobService.getDrafts(principal.getName(), PageRequest.of(page, size));
+    }
+
+    @GetMapping("/me/drafts/{jobId}")
+    public JobDetailResponse getDraft(@PathVariable Long jobId, Principal principal) {
+        return jobService.getDraft(jobId, principal.getName());
+    }
+
+    @PutMapping("/me/drafts/{jobId}")
+    public JobDetailResponse updateDraft(@PathVariable Long jobId,
+            @Valid @RequestBody SaveJobDraftRequest request, Principal principal) {
+        return jobService.updateDraft(jobId, request, principal.getName());
+    }
 
 	@GetMapping
 	public Page<JobResponse> getJobs(

@@ -1,12 +1,15 @@
 package com.newlecture.resuit.service.impl;
 
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.newlecture.resuit.dto.GeneralJobApplicationRequest;
 import com.newlecture.resuit.dto.JobApplicationResponse;
 import com.newlecture.resuit.dto.SpecialJobApplicationRequest;
 import com.newlecture.resuit.entity.JobApplication;
+import com.newlecture.resuit.entity.Job;
 import com.newlecture.resuit.repository.CommonResumeRepository;
 import com.newlecture.resuit.repository.JobApplicationRepository;
 import com.newlecture.resuit.repository.JobRepository;
@@ -36,6 +39,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 		var job = jobRepository.findByIdAndDeletedAtIsNull(jobId)
 				.orElseThrow(() -> new IllegalArgumentException("공고를 찾을 수 없습니다: " + jobId));
 
+        validateNotDraft(job);
 		if (!"GENERAL".equalsIgnoreCase(job.getType())) {
 			throw new IllegalArgumentException("일반 공고만 일반 지원으로 신청할 수 있습니다.");
 		}
@@ -66,6 +70,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 		var job = jobRepository.findByIdAndDeletedAtIsNull(jobId)
 				.orElseThrow(() -> new IllegalArgumentException("공고를 찾을 수 없습니다: " + jobId));
 
+        validateNotDraft(job);
 		if (!"SPECIAL".equalsIgnoreCase(job.getType())) {
 			throw new IllegalArgumentException("특화 공고만 특화 지원으로 신청할 수 있습니다.");
 		}
@@ -100,4 +105,10 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 				.orElseThrow(() -> new IllegalArgumentException("취소할 지원 내역이 없거나 이미 취소한 지원입니다."));
 		application.cancel();
 	}
+    private void validateNotDraft(Job job) {
+        if ("DRAFT".equalsIgnoreCase(job.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "임시저장 공고에는 지원할 수 없습니다.");
+        }
+    }
+
 }

@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
 import com.newlecture.resuit.dto.CreateJobRequest;
+import com.newlecture.resuit.dto.SaveJobDraftRequest;
+import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.entity.JobQuestion;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -127,6 +129,7 @@ public class JobServiceImpl implements JobService {
                 .map(question -> new JobDetailResponse.Question(question.getId(), question.getContent(),
                         question.getCharLimit(), question.getOrderNo()))
                 .toList();
+        job.publishDraft();
         return JobDetailResponse.from(job, savedQuestions);
     }
 
@@ -166,6 +169,83 @@ public class JobServiceImpl implements JobService {
             throw new AccessDeniedException("본인이 작성한 공고만 삭제할 수 있습니다.");
         }
         job.delete();
+    }
+
+    @Override
+    @Transactional
+    public JobDetailResponse createDraft(SaveJobDraftRequest request, String username) {
+        var company = requireCompany(username);
+        var job = jobRepository.save(Job.builder()
+                .company(company)
+                .type(request.type().toUpperCase(Locale.ROOT))
+                .title(request.title().trim())
+                .location(request.location())
+                .employmentType(request.employmentType())
+                .career(request.career())
+                .description(request.description())
+                .requirements(request.requirements())
+                .preferred(request.preferred())
+                .deadline(request.deadline())
+                .status("DRAFT")
+                .build());
+        return JobDetailResponse.from(job, saveDraftQuestions(job, request.questions()));
+    }
+
+    @Override
+    @Transactional
+    public JobDetailResponse updateDraft(Long jobId, SaveJobDraftRequest request, String username) {
+        var job = requireDraft(jobId, requireCompany(username));
+        job.update(request.type().toUpperCase(Locale.ROOT), request.title().trim(), request.location(),
+                request.employmentType(), request.career(), request.description(), request.requirements(),
+                request.preferred(), request.deadline());
+        jobQuestionRepository.deleteByJob_Id(jobId);
+        return JobDetailResponse.from(job, saveDraftQuestions(job, request.questions()));
+    }
+
+    @Override
+    public Page<JobResponse> getDrafts(String username, Pageable pageable) {
+        var company = requireCompany(username);
+        return jobRepository.findByCompany_IdAndStatusAndDeletedAtIsNullOrderByUpdatedAtDescIdDesc(
+                company.getId(), "DRAFT", pageable).map(JobResponse::from);
+    }
+
+    @Override
+    public JobDetailResponse getDraft(Long jobId, String username) {
+        var job = requireDraft(jobId, requireCompany(username));
+        var questions = jobQuestionRepository.findByJob_IdOrderByOrderNoAsc(jobId).stream()
+                .map(question -> new JobDetailResponse.Question(question.getId(), question.getContent(),
+                        question.getCharLimit(), question.getOrderNo()))
+                .toList();
+        return JobDetailResponse.from(job, questions);
+    }
+
+    private User requireCompany(String username) {
+        var company = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AccessDeniedException("기업 계정이 필요합니다."));
+        if (!"COMPANY".equals(company.getRole())) {
+            throw new AccessDeniedException("기업 계정만 임시저장 공고를 관리할 수 있습니다.");
+        }
+        return company;
+    }
+
+    private Job requireDraft(Long jobId, User company) {
+        return jobRepository.findByIdAndCompany_IdAndStatusAndDeletedAtIsNull(jobId, company.getId(), "DRAFT")
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "본인의 임시저장 공고를 찾을 수 없습니다."));
+    }
+
+    private List<JobDetailResponse.Question> saveDraftQuestions(Job job, List<SaveJobDraftRequest.Question> questions) {
+        List<JobQuestion> entities = new ArrayList<>();
+        if (questions != null) {
+            for (int index = 0; index < questions.size(); index++) {
+                var question = questions.get(index);
+                entities.add(JobQuestion.builder().job(job).content(question.content())
+                        .charLimit(question.charLimit()).orderNo(index + 1).build());
+            }
+        }
+        return jobQuestionRepository.saveAll(entities).stream()
+                .map(question -> new JobDetailResponse.Question(question.getId(), question.getContent(),
+                        question.getCharLimit(), question.getOrderNo()))
+                .toList();
     }
 
     private void validateQuestions(String type, List<CreateJobRequest.Question> questions) {

@@ -5,9 +5,14 @@ import org.springframework.data.domain.Pageable;
 
 import com.newlecture.resuit.dto.JobResponse;
 import com.newlecture.resuit.dto.CreateJobRequest;
+import com.newlecture.resuit.dto.SaveJobDraftRequest;
 import com.newlecture.resuit.dto.JobDetailResponse;
 
 public interface JobService {
+    JobDetailResponse createDraft(SaveJobDraftRequest request, String username);
+    JobDetailResponse updateDraft(Long jobId, SaveJobDraftRequest request, String username);
+    Page<JobResponse> getDrafts(String username, Pageable pageable);
+    JobDetailResponse getDraft(Long jobId, String username);
 	void deleteJob(Long jobId, String username);
 	JobDetailResponse createJob(CreateJobRequest request, String username);
 	JobDetailResponse updateJob(Long jobId, CreateJobRequest request, String username);

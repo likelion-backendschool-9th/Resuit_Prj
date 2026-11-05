@@ -1,6 +1,7 @@
 package com.newlecture.resuit.repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,9 @@ import org.springframework.data.repository.query.Param;
 import com.newlecture.resuit.entity.Job;
 
 public interface JobRepository extends JpaRepository<Job, Long> {
+    Page<Job> findByCompany_IdAndStatusAndDeletedAtIsNullOrderByUpdatedAtDescIdDesc(
+            UUID companyId, String status, Pageable pageable);
+    Optional<Job> findByIdAndCompany_IdAndStatusAndDeletedAtIsNull(Long id, UUID companyId, String status);
     @Query("""
             select j from Job j
             where j.deletedAt is null

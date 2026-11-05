@@ -75,6 +75,12 @@ public class Job extends BaseTimeEntity {
         this.deadline = deadline;
     }
 
+    public void publishDraft() {
+        if ("DRAFT".equals(status)) {
+            status = "OPEN";
+        }
+    }
+
     public void delete() {
         if (deletedAt == null) {
             deletedAt = LocalDateTime.now();
