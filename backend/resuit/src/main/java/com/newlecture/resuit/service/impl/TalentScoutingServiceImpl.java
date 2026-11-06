@@ -61,7 +61,9 @@ public class TalentScoutingServiceImpl implements TalentScoutingService {
 				.map(user -> user.getId())
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
 		// 재발송하면 최신 행은 미인증이 되므로, 완료된 기록이 하나라도 있는지로 판별한다.
-		if (!verificationRepository.existsByUser_IdAndTypeAndVerifiedAtIsNotNull(userId, COMPANY_EMAIL)) {
+		if (verificationRepository
+				.findFirstByUserIdAndTypeAndVerifiedAtIsNotNullOrderByVerifiedAtDesc(userId, COMPANY_EMAIL)
+				.isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 		}
 	}

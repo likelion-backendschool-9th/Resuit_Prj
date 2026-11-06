@@ -10,6 +10,4 @@ public interface VerificationRepository extends JpaRepository<Verification, Long
 
     Optional<Verification> findFirstByUserIdAndTypeAndVerifiedAtIsNotNullOrderByVerifiedAtDesc(
             UUID userId, String type);
-
-    boolean existsByUser_IdAndTypeAndVerifiedAtIsNotNull(UUID userId, String type);
 }
