@@ -19,7 +19,7 @@ export function AppStateProvider({ children }) {
     const abort = new AbortController();
     getAuthSession({ signal: abort.signal }).then(setSession).catch(() => {
       if (!abort.signal.aborted) {
-        setSession({ authenticated: false, user: null, providers: [] });
+        setSession({ authenticated: false, user: null, providers: [], linkedProviders: [] });
         setAuthError('');
       }
     });
@@ -56,7 +56,11 @@ export function AppStateProvider({ children }) {
       authLoading: session === null && !authError,
       authError,
       authProviders: session?.providers || [],
+      linkedProviders: session?.linkedProviders || [],
       loggedIn,
+      refreshSession: async () => {
+        setSession(await getAuthSession());
+      },
       logout: async () => {
         await logoutSession();
         setSession(await getAuthSession());

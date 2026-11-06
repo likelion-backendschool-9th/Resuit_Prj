@@ -17,15 +17,15 @@
 
 앱 등록은 각 서비스에 “이 사이트가 로그인을 요청한다”는 정보를 등록하는 과정이다. 사용자 비밀번호를 Resuit가 받지 않고 제공자의 로그인·동의 화면으로 이동한다.
 
-로컬 공개 주소가 `http://localhost:5174`인 경우:
+로컬 공개 주소가 `http://localhost:5173`인 경우:
 
 | 제공자 | 개발자 설정 | 등록할 콜백 URL |
 | --- | --- | --- |
-| Google | Google Cloud/Google Auth Platform에서 웹 애플리케이션 OAuth 클라이언트 생성 | http://localhost:5174/api/login/oauth2/code/google |
-| GitHub | Settings → Developer settings → OAuth Apps → New OAuth App | http://localhost:5174/api/login/oauth2/code/github |
-| 네이버 | NAVER Developers → 애플리케이션 등록 → 네이버 로그인·PC 웹 설정 | http://localhost:5174/api/login/oauth2/code/naver |
+| Google | Google Cloud/Google Auth Platform에서 웹 애플리케이션 OAuth 클라이언트 생성 | http://localhost:5173/api/login/oauth2/code/google |
+| GitHub | Settings → Developer settings → OAuth Apps → New OAuth App | http://localhost:5173/api/login/oauth2/code/github |
+| 네이버 | NAVER Developers → 애플리케이션 등록 → 네이버 로그인·PC 웹 설정 | http://localhost:5173/api/login/oauth2/code/naver (콜백·서비스 URL을 위와 정확히 일치. Spring Security 7 PKCE는 네이버 등록에서 비활성화함) |
 
-홈페이지/서비스 URL은 `http://localhost:5174`를 사용한다. Google이 테스트 상태라면 이용할 테스트 계정을 등록하고, 네이버도 개발/검수 상태에 맞는 이용 계정을 확인한다. 운영 도메인이 정해지면 그 도메인의 콜백 주소를 별도로 등록한다. 제공자의 콜백 등록 값과 실제 redirect_uri는 일치해야 한다.
+홈페이지/서비스 URL은 `http://localhost:5173`을 사용한다. Google이 테스트 상태라면 이용할 테스트 계정을 등록하고, 네이버도 개발/검수 상태에 맞는 이용 계정을 확인한다. 운영 도메인이 정해지면 그 도메인의 콜백 주소를 별도로 등록한다. 제공자의 콜백 등록 값과 실제 redirect_uri는 일치해야 한다.
 
 공식 안내:
 
@@ -36,7 +36,7 @@
 발급받은 값은 루트 .env에만 입력한다.
 
 ```dotenv
-RESUIT_AUTH_PUBLIC_BASE_URL=http://localhost:5174
+RESUIT_AUTH_PUBLIC_BASE_URL=http://localhost:5173
 GOOGLE_CLIENT_ID=발급값
 GOOGLE_CLIENT_SECRET='발급값'
 GITHUB_CLIENT_ID=발급값
@@ -51,7 +51,9 @@ NAVER_CLIENT_SECRET='발급값'
 
 - database/migrations/004_social_accounts.sql을 배포 전에 적용한다. 개인 DB에는 적용 완료. users.username 유일성도 확인한다. 기존 중복 회원을 자동 병합하지 않는다.
 - social_accounts의 provider+subject 유일키로 외부 계정을 식별한다. 같은 외부 계정의 반복 로그인은 같은 users 회원에 연결된다.
-- 제공자가 다른 계정은 이메일이 같아도 자동 병합하지 않는다. 별도 계정 연결 화면은 이번 범위에 없다.
+- 제공자가 다른 계정은 이메일이 같아도 자동 병합하지 않는다. 온보딩에서 Google만 쓰거나 GitHub만 쓰면 각각 별도 Resuit 회원이 된다.
+- **계정 연결**: 로그인한 뒤 `/setting/integrations`에서 `POST /api/v1/auth/link/{provider}`가 서명된 `link` 토큰이 붙은 인가 주소를 돌려준다. 그 토큰은 인가 시작 시 OAuth state와 같은 세션에 저장되어, 콜백에서 현재 회원에 `social_accounts` 행을 추가한다. 프로필에서 연결하지 않고 다른 제공자로 외부 로그인하면 별도 계정이다. 이미 다른 회원에 묶인 제공자·subject를 여기서 연결하면 그 로그인 수단은 지금 회원으로 옮겨지고, 이전 회원에서는 빠진다. `DELETE /api/v1/auth/link/{provider}`로 해제할 수 있으나 마지막 로그인 수단은 해제할 수 없다.
+- `GET /api/v1/auth/session`의 `linkedProviders`에 현재 회원에 연결된 제공자 목록이 포함된다.
 - 첫 로그인에는 임의의 유일 username과 USER 역할을 생성한다. 외부 프로필 값을 내부 역할이나 권한으로 사용하지 않는다.
 - Principal.getName()은 내부 users.username이다. 기존 리뷰·이메일 인증 서비스는 이 계약을 그대로 사용한다.
 - 동일 외부 계정의 첫 로그인을 DB 트랜잭션 advisory lock으로 직렬화한다.
@@ -60,6 +62,7 @@ NAVER_CLIENT_SECRET='발급값'
 - 세션 기반 CSRF 보호는 활성화한다. 프론트의 authenticatedFetch는 변경 요청 전에 세션 endpoint에서 토큰을 받아 지정 헤더로 전달한다. 로그인·로그아웃 이후 이전 토큰을 계속 사용하지 않는다.
 - 세션 조회는 전역 메뉴·계정 상태·여러 기능의 변경 요청에서 쓰이므로 프로필 전용 API와 분리했다.
 - OAuth 이동은 전체 문서 이동이 필요한 외부 인증 흐름이므로 로그인 버튼은 일반 anchor를 사용한다. 일반 서비스 내 이동은 기존 Link를 유지한다.
+- GitHub 로그인·연결도 `/api/oauth2/authorization/github`다. 인가 주소에 `prompt=select_account`를 붙여 GitHub 계정 선택 화면을 거친 뒤, 등록된 콜백 `http://localhost:5173/api/login/oauth2/code/github`로 Resuit에 돌아온다. `github.com/logout`으로는 보내지 않는다. GitHub는 그 주소의 외부 복귀를 버리고 홈에 남긴다.
 
 ## 기존 화면의 범위
 

@@ -105,6 +105,32 @@ public class CompanyVerificationServiceImpl implements CompanyVerificationServic
         return new ConfirmResponse(verification.getId(), verification.getEmail(), verification.getVerifiedAt());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public MyStatusResponse getMyStatus(UUID userId) {
+        var completed = verifications
+                .findFirstByUserIdAndTypeAndVerifiedAtIsNotNullOrderByVerifiedAtDesc(userId, TYPE);
+        if (completed.isPresent()) {
+            var verification = completed.get();
+            return new MyStatusResponse(TYPE, "VERIFIED", verification.getEmail(),
+                    verification.getVerifiedAt(), null);
+        }
+
+        var latest = verifications.findFirstByUserIdAndTypeOrderByIdDesc(userId, TYPE);
+        if (latest.isEmpty()) {
+            return new MyStatusResponse(TYPE, "NONE", null, null, null);
+        }
+
+        var verification = latest.get();
+        boolean pending = verification.getExpiresAt().isAfter(now());
+        return new MyStatusResponse(
+                TYPE,
+                pending ? "PENDING" : "EXPIRED",
+                verification.getEmail(),
+                null,
+                verification.getExpiresAt());
+    }
+
     private User authenticatedUser(String username) {
         if (username == null || username.isBlank()) throw new CompanyVerificationException(UNAUTHENTICATED, "로그인이 필요합니다.");
         return users.findForVerification(username)

@@ -1,7 +1,7 @@
-import ProfilePage from '@/views/ProfilePage.jsx';
+import ProfileEditPage from '@/views/ProfileEditPage.jsx';
 
-export const metadata = { title: '프로필 설정', robots: { index: false } };
+export const metadata = { title: '프로필 편집', robots: { index: false } };
 
 export default function Page() {
-  return <ProfilePage startEditing />;
+  return <ProfileEditPage />;
 }

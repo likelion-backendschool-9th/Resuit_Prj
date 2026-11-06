@@ -11,6 +11,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -21,6 +24,8 @@ public class SecurityConfiguration {
     @Bean
     SecurityFilterChain security(HttpSecurity http, SocialClientConfiguration.Clients clients,
             SocialMemberService members, LoginRedirectHandler redirects,
+            OAuth2AuthorizationRequestResolver oauth2AuthorizationRequestResolver,
+            AuthorizationRequestRepository<OAuth2AuthorizationRequest> oauth2AuthorizationRequestRepository,
             ObjectProvider<DevHeaderAuthenticationFilter> devHeaderAuth,
             @Value("${app.dev-header-auth.enabled:false}") boolean headerAuthEnabled) throws Exception {
         http.formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable);
@@ -58,7 +63,10 @@ public class SecurityConfiguration {
         if (clients.enabled()) {
             var delegate = new DefaultOAuth2UserService();
             http.oauth2Login(oauth -> oauth
-                .authorizationEndpoint(endpoint -> endpoint.baseUri("/api/oauth2/authorization"))
+                .authorizationEndpoint(endpoint -> endpoint
+                    .baseUri(OAuthAuthorizationConfig.AUTHORIZATION_BASE_URI)
+                    .authorizationRequestResolver(oauth2AuthorizationRequestResolver)
+                    .authorizationRequestRepository(oauth2AuthorizationRequestRepository))
                 .redirectionEndpoint(endpoint -> endpoint.baseUri("/api/login/oauth2/code/*"))
                 .userInfoEndpoint(info -> info.userService(request -> {
                     var external = delegate.loadUser(request);
