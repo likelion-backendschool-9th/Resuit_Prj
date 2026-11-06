@@ -8,6 +8,62 @@
 }
 .profile__head-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: -56px; }
 .profile__avatar { border: 4px solid var(--bg); border-radius: 50%; }
+.profile__careers { display: flex; flex-direction: column; }
+.profile__career-root { font-size: 13px; font-weight: 800; line-height: 1.4; }
+.profile__career-tree { margin: 0; padding: 0; list-style: none; }
+.profile__career-node {
+  position: relative;
+  margin: 0;
+  padding: 1px 0 1px 14px;
+  list-style: none;
+}
+.profile__career-node::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--line-strong);
+}
+.profile__career-node::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 10px;
+  border-top: 1px solid var(--line-strong);
+}
+.profile__career-node.is-last::before {
+  bottom: auto;
+  height: 0.72em;
+}
+.profile__career-name { font-size: 14px; font-weight: 700; line-height: 1.45; }
+.profile__career-meta { font-size: 13px; line-height: 1.45; color: var(--text-sub); }
+.profile__career-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-sub);
+  white-space: pre-wrap;
+}
+.profile__career-desc.is-clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.profile__career-more {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.profile__career-more:hover { text-decoration: underline; }
 .profile__stats { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; color: var(--text-sub); }
 .profile__stats strong { color: var(--text); }
 .profile__sharer {

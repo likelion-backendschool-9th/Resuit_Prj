@@ -26,6 +26,9 @@ const MAX_PUBLIC_RESUMES = 3;
 /** 오른쪽 보유 배지 미리보기 개수. 나머지는 더 보기로 펼친다. */
 const BADGE_PREVIEW_LIMIT = 3;
 
+/** 프로필 헤더에 바로 보여줄 경력 수. 나머지는 더 보기로 펼친다. */
+const CAREER_PREVIEW_LIMIT = 2;
+
 const BADGE_STATUS_ORDER = { ACTIVE: 0, GRACE: 1, EXPIRED: 2 };
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -53,6 +56,12 @@ function formatGrassRangeLabel(contributions, year) {
     return `${contributions.from} ~ ${contributions.to}`;
   }
   return `${year}년`;
+}
+
+function careerPeriod(item) {
+  const start = (item.startDate || '').replaceAll('-', '.');
+  const end = item.endDate ? String(item.endDate).replaceAll('-', '.') : '재직 중';
+  return start ? `${start} ~ ${end}` : end;
 }
 
 function statusLabel(status) {
@@ -83,6 +92,7 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
   const [grassYear, setGrassYear] = useState(CURRENT_YEAR);
   const [resumeSettingsOpen, setResumeSettingsOpen] = useState(false);
   const [badgesExpanded, setBadgesExpanded] = useState(false);
+  const [careersExpanded, setCareersExpanded] = useState(false);
   const [badgePanels, setBadgePanels] = useState({
     progress: true,
     owned: true,
@@ -133,6 +143,9 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
     ? ownedBadges
     : ownedBadges.slice(0, BADGE_PREVIEW_LIMIT);
   const hiddenBadgeCount = Math.max(0, ownedBadges.length - BADGE_PREVIEW_LIMIT);
+  const careers = profile?.careers || [];
+  const visibleCareers = careersExpanded ? careers : careers.slice(0, CAREER_PREVIEW_LIMIT);
+  const hiddenCareerCount = Math.max(0, careers.length - CAREER_PREVIEW_LIMIT);
   const badgeHistory = profile?.badgeHistory || [];
   const progress = data.progress;
   const apiPosts = tab === 'tech' ? data.techPosts : data.posts;
@@ -216,6 +229,43 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
             <div className="muted">@{displayHandle}</div>
           </div>
           <p>{profile?.selfIntroduction || intro}</p>
+          {careers.length > 0 && (
+            <div className="profile__careers">
+              <div className="profile__career-root">경력/</div>
+              <ul className="profile__career-tree">
+                {visibleCareers.map((item, index) => {
+                  const isLast = index === visibleCareers.length - 1 && hiddenCareerCount === 0;
+                  return (
+                    <li key={item.id} className={`profile__career-node${isLast ? ' is-last' : ''}`}>
+                      <span className="profile__career-name">{item.companyName} · {item.jobTitle}</span>
+                      <ul className="profile__career-tree">
+                        <li className={`profile__career-node${item.description ? '' : ' is-last'}`}>
+                          <span className="profile__career-meta">{careerPeriod(item)}</span>
+                        </li>
+                        {item.description && (
+                          <li className="profile__career-node is-last">
+                            <p className={`profile__career-desc${careersExpanded ? '' : ' is-clamped'}`}>{item.description}</p>
+                          </li>
+                        )}
+                      </ul>
+                    </li>
+                  );
+                })}
+                {hiddenCareerCount > 0 && (
+                  <li className="profile__career-node is-last">
+                    <button
+                      type="button"
+                      className="profile__career-more"
+                      aria-expanded={careersExpanded}
+                      onClick={() => setCareersExpanded((open) => !open)}
+                    >
+                      {careersExpanded ? '경력 접기' : `경력 더 보기 (${hiddenCareerCount})`}
+                    </button>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
           <div className="profile__stats">
             <span><strong>{profile?.following ?? 0}</strong> 팔로잉</span>
             <span><strong>{profile?.followers ?? 0}</strong> 팔로워</span>

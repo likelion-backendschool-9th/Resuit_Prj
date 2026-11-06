@@ -1,6 +1,6 @@
 # 프로필·배지 API
 
-모든 경로는 `/api/v1` 아래에 있다. 공개 프로필 응답에는 통계, 대표 이력서, 대표 배지, 보유 배지와 지난 배지 이력이 함께 들어 있다. 비밀번호와 연동 토큰은 응답에 포함하지 않는다.
+모든 경로는 `/api/v1` 아래에 있다. 공개 프로필 응답에는 통계, 경력, 대표 이력서, 대표 배지, 보유 배지와 지난 배지 이력이 함께 들어 있다. 비밀번호와 연동 토큰은 응답에 포함하지 않는다.
 
 | 기능 | 경로 |
 | --- | --- |
@@ -30,7 +30,7 @@
 
 GitHub로 로그인하면 액세스 토큰과 login을 `integrations`(GITHUB)에 저장한다. `access_token`은 `INTEGRATION_TOKEN_SECRET`으로 AES-GCM 암호화해 DB에 두고, GitHub API 호출 시에만 복호화한다. API 응답에는 토큰을 포함하지 않는다. `pinned=true`는 DB의 대표 레포만, 파라미터 없으면 연동된 계정의 공개 레포를 GitHub API로 가져와 `pinned` 여부를 함께 표시한다. 기여 잔디는 GraphQL로 가져온다. `from`·`to`를 생략하면 최근 1년이고, 둘 다 보내면 그 기간(최대 365일)을 조회한다. 응답에 실제 조회 구간 `from`·`to`와 `weeks`·`totalContributions`가 포함된다. 프로필 화면에서는 연도(숫자)를 고르며, 해당 해의 1.1~12.31(올해는 오늘까지)을 조회한다. 블로그 RSS는 Velog·Tistory·ETC(직접 URL)를 지원한다. 연결 전 소유 검증 코드(`resuit-verify-…`)를 소개/글에 넣어야 한다. 벨로그 소개는 공개 GraphQL에서 읽고, 티스토리는 `https://{id}.tistory.com/rss`와 블로그 첫 화면에서 코드를 찾는다. 티스토리 Open API는 2024년 2월에 종료되어 로그인 연결은 쓰지 않는다. 이후 수동 sync와 매시 15분 스케줄로 수집한다. 사설·내부망 RSS는 거부한다.
 
-프로필 수정(`PATCH /users/me`)은 `nickname`, `selfIntroduction`, `profileImageUrl`, `widgets`를 받는다. `widgets`는 `{ "grass": true, "resumes": true }` 형태다. 프로필 사진은 `POST /posts/uploads`로 이미지를 올린 뒤 받은 임시 경로를 `profileImageUrl`에 넣거나, `https://` 주소를 그대로 보낸다. 임시 경로는 저장 시 `image/`로 옮기고 `/media/...`로 보관한다. 닉네임·소개·사진 편집 UI는 `/setting/profile`, 위젯·대표 이력서는 프로필 꾸미기, 대표 레포는 `/setting/integrations`에서 한다.
+프로필 조회 응답의 `careers`는 `user_careers`를 표시 순서대로 담는다. 한 줄은 `companyName`, `jobTitle`, `startDate`, `endDate`, `description`, `displayOrder`다. `endDate`가 없으면 재직 중이다. 프로필 수정(`PATCH /users/me`)은 `nickname`, `selfIntroduction`, `profileImageUrl`, `widgets`, `careers`를 받는다. `careers`를 생략하면 기존 경력을 유지하고, 배열을 보내면 그 목록으로 통째로 바꾼다. 빈 배열은 경력을 모두 지운다. 최대 20개다. `widgets`는 `{ "grass": true, "resumes": true }` 형태다. 프로필 사진은 `POST /posts/uploads`로 이미지를 올린 뒤 받은 임시 경로를 `profileImageUrl`에 넣거나, `https://` 주소를 그대로 보낸다. 임시 경로는 저장 시 `image/`로 옮기고 `/media/...`로 보관한다. 닉네임·소개·사진 편집 UI는 `/setting/profile`, 위젯·대표 이력서는 프로필 꾸미기, 대표 레포는 `/setting/integrations`에서 한다.
 
 OAuth 세션 로그인과 `local` 프로필의 `X-Username` 헤더를 본인 식별에 쓴다. 로컬 실행은 다음과 같다.
 

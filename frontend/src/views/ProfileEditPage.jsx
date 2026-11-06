@@ -10,6 +10,42 @@ import useProfileData from '../components/profile/useProfileData.js';
 import { profileApi } from '../services/profileApi.js';
 import './ProfileEditPage.css';
 
+function nextCareerKey() {
+  return `career-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function blankCareer() {
+  return {
+    key: nextCareerKey(),
+    mode: 'write',
+    fresh: true,
+    companyName: '',
+    jobTitle: '',
+    startDate: '',
+    endDate: '',
+    description: '',
+  };
+}
+
+function careerFromProfile(item) {
+  return {
+    key: `saved-${item.id}`,
+    mode: 'read',
+    fresh: false,
+    companyName: item.companyName || '',
+    jobTitle: item.jobTitle || '',
+    startDate: item.startDate || '',
+    endDate: item.endDate || '',
+    description: item.description || '',
+  };
+}
+
+function careerPeriod(item) {
+  const start = (item.startDate || '').replaceAll('-', '.');
+  const end = item.endDate ? item.endDate.replaceAll('-', '.') : '재직 중';
+  return start ? `${start} ~ ${end}` : end;
+}
+
 function previewSrc(imageUrl, localPreview) {
   if (localPreview) return localPreview;
   const value = (imageUrl || '').trim();
@@ -28,6 +64,7 @@ export default function ProfileEditPage() {
   const [imageUrl, setImageUrl] = useState('');
   const [pendingFile, setPendingFile] = useState(null);
   const [localPreview, setLocalPreview] = useState('');
+  const [careers, setCareers] = useState([]);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -36,12 +73,78 @@ export default function ProfileEditPage() {
     setNickname(data.profile.nickname || '');
     setIntro(data.profile.selfIntroduction || '');
     setImageUrl(data.profile.profileImageUrl || '');
+    setCareers((data.profile.careers || []).map(careerFromProfile));
     setPendingFile(null);
   }, [data.profile]);
 
   useEffect(() => () => {
     if (localPreview) URL.revokeObjectURL(localPreview);
   }, [localPreview]);
+
+  const updateCareer = (key, patch) => {
+    setCareers((rows) => rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+  };
+
+  const beginCareer = () => {
+    if (careers.some((item) => item.mode === 'write')) {
+      setMessage('작성 중인 경력을 추가한 뒤 다음 경력을 적어 주세요.');
+      return;
+    }
+    setMessage('');
+    setCareers((rows) => [...rows, blankCareer()]);
+  };
+
+  const confirmCareer = (key) => {
+    const item = careers.find((row) => row.key === key);
+    if (!item) return;
+    if (!item.companyName.trim() || !item.jobTitle.trim() || !item.startDate) {
+      setMessage('회사명, 직무, 시작일을 입력한 뒤 추가해 주세요.');
+      return;
+    }
+    if (item.endDate && item.endDate < item.startDate) {
+      setMessage('종료일은 시작일보다 빠를 수 없습니다.');
+      return;
+    }
+    setMessage('');
+    updateCareer(key, { mode: 'read', fresh: false, snapshot: undefined });
+  };
+
+  const editCareer = (key) => {
+    if (careers.some((item) => item.mode === 'write' && item.key !== key)) {
+      setMessage('작성 중인 경력을 추가한 뒤 다른 경력을 수정해 주세요.');
+      return;
+    }
+    setMessage('');
+    setCareers((rows) => rows.map((row) => (
+      row.key === key
+        ? {
+          ...row,
+          mode: 'write',
+          snapshot: {
+            companyName: row.companyName,
+            jobTitle: row.jobTitle,
+            startDate: row.startDate,
+            endDate: row.endDate,
+            description: row.description,
+          },
+        }
+        : row
+    )));
+  };
+
+  const cancelCareer = (key) => {
+    setMessage('');
+    setCareers((rows) => rows.flatMap((row) => {
+      if (row.key !== key) return [row];
+      if (row.fresh || !row.snapshot) return [];
+      return [{
+        ...row,
+        ...row.snapshot,
+        mode: 'read',
+        snapshot: undefined,
+      }];
+    }));
+  };
 
   const previewName = nickname.trim() || data.profile?.nickname || me.name || '?';
   const avatarSrc = previewSrc(imageUrl, localPreview);
@@ -74,10 +177,25 @@ export default function ProfileEditPage() {
       } else if (nextImage && !/^https:\/\//i.test(nextImage) && !nextImage.startsWith('/media/')) {
         throw new Error('프로필 사진은 파일을 고르거나 https:// 주소를 입력해 주세요.');
       }
+      const draft = careers.find((item) => item.mode === 'write' && (
+        item.companyName.trim() || item.jobTitle.trim() || item.startDate || item.endDate || item.description.trim()
+      ));
+      if (draft) {
+        throw new Error('작성 중인 경력을 추가한 뒤 저장해 주세요.');
+      }
       await data.updateProfile({
         nickname: nickname.trim() || null,
         selfIntroduction: intro.trim(),
         profileImageUrl: nextImage || '',
+        careers: careers
+          .filter((item) => item.mode === 'read')
+          .map((item) => ({
+            companyName: item.companyName.trim(),
+            jobTitle: item.jobTitle.trim(),
+            startDate: item.startDate || null,
+            endDate: item.endDate || null,
+            description: item.description.trim() || null,
+          })),
       });
       if (localPreview) URL.revokeObjectURL(localPreview);
       setPendingFile(null);
@@ -182,6 +300,108 @@ export default function ProfileEditPage() {
                 placeholder="https://..."
               />
             </label>
+            <div className="profile-edit__field">
+              <span>경력</span>
+              <p className="small muted">경력 추가로 입력칸을 연 뒤, 추가를 누르면 읽기 카드로 바뀝니다. 종료일을 비우면 재직 중입니다.</p>
+              {careers.map((item) => (
+                item.mode === 'read' ? (
+                  <article key={item.key} className="profile-edit__career is-read">
+                    <strong>{item.companyName}</strong>
+                    <span className="profile-edit__career-role">{item.jobTitle}</span>
+                    <span className="small muted">{careerPeriod(item)}</span>
+                    {item.description && <p className="small">{item.description}</p>}
+                    <div className="profile-edit__actions">
+                      <Button type="button" variant="outline" size="sm" disabled={!loggedIn || saving} onClick={() => editCareer(item.key)}>
+                        수정
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={!loggedIn || saving}
+                        onClick={() => setCareers((rows) => rows.filter((row) => row.key !== item.key))}
+                      >
+                        삭제
+                      </Button>
+                    </div>
+                  </article>
+                ) : (
+                  <div key={item.key} className="profile-edit__career">
+                    <label className="profile-edit__field">
+                      회사명
+                      <input
+                        value={item.companyName}
+                        maxLength={100}
+                        disabled={!loggedIn || data.loading}
+                        onChange={(event) => updateCareer(item.key, { companyName: event.target.value })}
+                      />
+                    </label>
+                    <label className="profile-edit__field">
+                      직무
+                      <input
+                        value={item.jobTitle}
+                        maxLength={100}
+                        disabled={!loggedIn || data.loading}
+                        onChange={(event) => updateCareer(item.key, { jobTitle: event.target.value })}
+                      />
+                    </label>
+                    <div className="profile-edit__career-dates">
+                      <label className="profile-edit__field">
+                        시작일
+                        <input
+                          type="date"
+                          value={item.startDate}
+                          disabled={!loggedIn || data.loading}
+                          onChange={(event) => updateCareer(item.key, { startDate: event.target.value })}
+                        />
+                      </label>
+                      <label className="profile-edit__field">
+                        종료일
+                        <input
+                          type="date"
+                          value={item.endDate}
+                          disabled={!loggedIn || data.loading}
+                          onChange={(event) => updateCareer(item.key, { endDate: event.target.value })}
+                        />
+                      </label>
+                    </div>
+                    <label className="profile-edit__field">
+                      설명
+                      <textarea
+                        value={item.description}
+                        maxLength={1000}
+                        rows={2}
+                        disabled={!loggedIn || data.loading}
+                        onChange={(event) => updateCareer(item.key, { description: event.target.value })}
+                        placeholder="맡은 일을 짧게 적어도 됩니다"
+                      />
+                    </label>
+                    <div className="profile-edit__actions">
+                      <Button type="button" size="sm" disabled={!loggedIn || saving} onClick={() => confirmCareer(item.key)}>
+                        {item.fresh ? '추가' : '완료'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={!loggedIn || saving}
+                        onClick={() => cancelCareer(item.key)}
+                      >
+                        취소
+                      </Button>
+                    </div>
+                  </div>
+                )
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!loggedIn || data.loading || careers.length >= 20}
+                onClick={beginCareer}
+              >
+                경력 추가
+              </Button>
+            </div>
             <div className="profile-edit__actions">
               <Button onClick={save} disabled={!loggedIn || saving || data.loading}>
                 {saving ? '저장 중…' : '저장'}

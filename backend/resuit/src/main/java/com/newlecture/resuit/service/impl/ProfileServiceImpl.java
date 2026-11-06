@@ -1,5 +1,7 @@
 package com.newlecture.resuit.service.impl;
 
+import com.newlecture.resuit.dto.CareerRequest;
+import com.newlecture.resuit.dto.CareerResponse;
 import com.newlecture.resuit.dto.DisplayedBadgeRequest;
 import com.newlecture.resuit.dto.FollowStatusResponse;
 import com.newlecture.resuit.dto.MyProfileResponse;
@@ -15,16 +17,19 @@ import com.newlecture.resuit.entity.CommonResume;
 import com.newlecture.resuit.entity.Follow;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.entity.UserBadge;
+import com.newlecture.resuit.entity.UserCareer;
 import com.newlecture.resuit.repository.CommonResumeRepository;
 import com.newlecture.resuit.repository.FollowRepository;
 import com.newlecture.resuit.repository.ProfileFeedbackRepository;
 import com.newlecture.resuit.repository.ProfilePostRepository;
 import com.newlecture.resuit.repository.UserBadgeHistoryRepository;
 import com.newlecture.resuit.repository.UserBadgeRepository;
+import com.newlecture.resuit.repository.UserCareerRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.MediaService;
 import com.newlecture.resuit.service.ProfileService;
 import com.newlecture.resuit.service.ReviewerBadgePolicy;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,6 +55,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final ProfileFeedbackRepository feedbacks;
     private final UserBadgeRepository userBadges;
     private final UserBadgeHistoryRepository badgeHistory;
+    private final UserCareerRepository careers;
     private final MediaService mediaService;
 
     @Override
@@ -108,7 +114,70 @@ public class ProfileServiceImpl implements ProfileService {
         }
         user.updateProfile(request.nickname(), request.selfIntroduction(),
                 profileImageUrl, normalizeWidgets(request.widgets()));
+        replaceCareers(user, request.careers());
         return toMyResponse(user);
+    }
+
+    /** null이면 경력을 유지하고, 목록이면 기존 줄을 그 순서로 바꾼다. */
+    private void replaceCareers(User user, List<CareerRequest> requested) {
+        if (requested == null) {
+            return;
+        }
+        if (requested.size() > 20) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "경력은 20개까지 저장할 수 있습니다.");
+        }
+        careers.deleteAll(careers.findByUser_IdOrderByDisplayOrderAsc(user.getId()));
+        careers.flush();
+        int order = 1;
+        for (CareerRequest item : requested) {
+            careers.save(UserCareer.builder()
+                    .user(user)
+                    .companyName(requiredText(item.companyName(), 100,
+                            "회사명을 입력해 주세요.", "회사명은 100자 이하여야 합니다."))
+                    .jobTitle(requiredText(item.jobTitle(), 100,
+                            "직무를 입력해 주세요.", "직무는 100자 이하여야 합니다."))
+                    .startDate(requiredDate(item.startDate()))
+                    .endDate(validEndDate(item.startDate(), item.endDate()))
+                    .description(optionalText(item.description(), 1000))
+                    .displayOrder(order++)
+                    .build());
+        }
+    }
+
+    private static String requiredText(String raw, int max, String missing, String tooLong) {
+        if (raw == null || raw.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, missing);
+        }
+        String value = raw.trim();
+        if (value.length() > max) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, tooLong);
+        }
+        return value;
+    }
+
+    private static String optionalText(String raw, int max) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String value = raw.trim();
+        if (value.length() > max) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "경력 설명은 " + max + "자 이하여야 합니다.");
+        }
+        return value;
+    }
+
+    private static LocalDate requiredDate(LocalDate startDate) {
+        if (startDate == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "경력 시작일이 필요합니다.");
+        }
+        return startDate;
+    }
+
+    private static LocalDate validEndDate(LocalDate startDate, LocalDate endDate) {
+        if (endDate != null && startDate != null && endDate.isBefore(startDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "경력 종료일은 시작일보다 빠를 수 없습니다.");
+        }
+        return endDate;
     }
 
     /** null은 미변경, 빈 문자열은 삭제, 임시 업로드는 게시 폴더로 옮긴다. */
@@ -269,11 +338,16 @@ public class ProfileServiceImpl implements ProfileService {
                 .toList();
         boolean isFollowing = viewerId != null && !viewerId.equals(id)
                 && follows.existsByFollowerIdAndFollowingId(viewerId, id);
+        List<CareerResponse> careerItems = careers.findByUser_IdOrderByDisplayOrderAsc(id).stream()
+                .map(item -> new CareerResponse(item.getId(), item.getCompanyName(),
+                        item.getJobTitle(), item.getStartDate(), item.getEndDate(),
+                        item.getDescription(), item.getDisplayOrder()))
+                .toList();
         return new ProfileResponse(id, user.getUsername(), user.getNickname(),
                 user.getProfileImageUrl(), user.getSelfIntroduction(), user.getWidgets(),
                 follows.countByFollowingId(id), follows.countByFollowerId(id),
                 posts.countByUserIdAndDeletedAtIsNull(id), feedbacks.countByUserId(id),
-                isFollowing, resume, displayed, badges, history);
+                isFollowing, resume, displayed, badges, history, careerItems);
     }
 
     private ProfileResponse.BadgeSummary toBadgeSummary(UserBadge owned) {
