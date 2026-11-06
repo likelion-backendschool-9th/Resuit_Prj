@@ -22,11 +22,13 @@ import com.newlecture.resuit.repository.ProfilePostRepository;
 import com.newlecture.resuit.repository.UserBadgeHistoryRepository;
 import com.newlecture.resuit.repository.UserBadgeRepository;
 import com.newlecture.resuit.repository.UserRepository;
+import com.newlecture.resuit.service.MediaService;
 import com.newlecture.resuit.service.ProfileService;
 import com.newlecture.resuit.service.ReviewerBadgePolicy;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +50,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final ProfileFeedbackRepository feedbacks;
     private final UserBadgeRepository userBadges;
     private final UserBadgeHistoryRepository badgeHistory;
+    private final MediaService mediaService;
 
     @Override
     @Transactional(readOnly = true)
@@ -99,12 +102,45 @@ public class ProfileServiceImpl implements ProfileService {
         if (request.selfIntroduction() != null && request.selfIntroduction().length() > 500) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "자기소개는 500자 이하여야 합니다.");
         }
-        if (request.profileImageUrl() != null && request.profileImageUrl().length() > 500) {
+        String profileImageUrl = resolveProfileImageUrl(userId, request.profileImageUrl());
+        if (profileImageUrl != null && profileImageUrl.length() > 500) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "프로필 사진 주소가 너무 깁니다.");
         }
         user.updateProfile(request.nickname(), request.selfIntroduction(),
-                request.profileImageUrl(), normalizeWidgets(request.widgets()));
+                profileImageUrl, normalizeWidgets(request.widgets()));
         return toMyResponse(user);
+    }
+
+    /** null은 미변경, 빈 문자열은 삭제, 임시 업로드는 게시 폴더로 옮긴다. */
+    private String resolveProfileImageUrl(UUID userId, String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String value = raw.trim();
+        if (value.isEmpty()) {
+            return "";
+        }
+        String lower = value.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("https://")) {
+            return value;
+        }
+        if (value.startsWith("/media/image/")) {
+            return value;
+        }
+        String relative = value.startsWith("/media/") ? value.substring("/media/".length()) : value;
+        if (relative.startsWith("tmpImage/") || relative.startsWith("image/")) {
+            try {
+                if (relative.startsWith("image/")) {
+                    return "/media/" + relative.replace('\\', '/');
+                }
+                String published = mediaService.finalizeForPost(relative, userId, "IMAGE");
+                return published == null ? "" : "/media/" + published;
+            } catch (IllegalArgumentException exception) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "프로필 사진은 파일 업로드 또는 https:// 주소만 사용할 수 있습니다.");
     }
 
     @Override

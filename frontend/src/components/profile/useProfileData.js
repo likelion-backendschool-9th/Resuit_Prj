@@ -9,6 +9,8 @@ const EMPTY_MORE = { posts: false, tech: false, feedback: false };
 /**
  * @param {object} [options]
  * @param {boolean} [options.ready] 세션 확인이 끝난 뒤에만 API를 호출한다
+ * @param {string} [options.contributionFrom] 기여 잔디 from (YYYY-MM-DD)
+ * @param {string} [options.contributionTo] 기여 잔디 to (YYYY-MM-DD)
  */
 export default function useProfileData(
   username,
@@ -19,6 +21,8 @@ export default function useProfileData(
   options = {},
 ) {
   const ready = options.ready !== false;
+  const contributionFrom = options.contributionFrom || '';
+  const contributionTo = options.contributionTo || '';
 
   const [profile, setProfile] = useState(initialProfile || null);
   const [loading, setLoading] = useState(Boolean(ready && !initialProfile));
@@ -93,16 +97,24 @@ export default function useProfileData(
   useEffect(() => {
     if (!ready || !username) return undefined;
     let active = true;
-    profileApi.getContributions(username).then((data) => {
+    setContributions(null);
+    const range = {};
+    if (contributionFrom && contributionTo) {
+      range.from = contributionFrom;
+      range.to = contributionTo;
+    }
+    profileApi.getContributions(username, range).then((data) => {
       if (!active) return;
       setContributions({
         login: data.login,
         totalContributions: data.totalContributions,
         weeks: data.weeks,
+        from: data.from,
+        to: data.to,
       });
-    }).catch(() => {});
+    }).catch(() => { if (active) setContributions(null); });
     return () => { active = false; };
-  }, [username, ready]);
+  }, [username, ready, contributionFrom, contributionTo]);
 
   useEffect(() => {
     if (!ready || !username) return undefined;
@@ -167,14 +179,73 @@ export default function useProfileData(
     setOwnedResumes(data.resumes);
   };
 
-  const connectBlog = async (platform, blogId) => {
-    const linked = await profileApi.connectBlog(username, platform, blogId);
+  const connectBlog = async (platform, blogId, rssUrl) => {
+    const linked = await profileApi.connectBlog(username, platform, blogId, rssUrl);
     setIntegrations((items) => [...(items || []).filter((item) => item.provider !== 'BLOG'), linked]);
+    try {
+      setBlogPosts(await profileApi.getBlogPosts(username));
+    } catch {
+      /* keep previous posts */
+    }
+    return linked;
+  };
+
+  const startBlogVerify = async (platform, blogId, rssUrl) => (
+    profileApi.startBlogVerify(username, platform, blogId, rssUrl)
+  );
+
+  const connectTistory = async (name) => {
+    const linked = await profileApi.connectTistoryBlog(username, name);
+    setIntegrations((items) => [...(items || []).filter((item) => item.provider !== 'BLOG'), linked]);
+    try {
+      setBlogPosts(await profileApi.getBlogPosts(username));
+    } catch {
+      /* keep previous posts */
+    }
+    return linked;
+  };
+
+  const confirmBlogVerify = async () => {
+    const linked = await profileApi.confirmBlogVerify(username);
+    setIntegrations((items) => [...(items || []).filter((item) => item.provider !== 'BLOG'), linked]);
+    try {
+      setBlogPosts(await profileApi.getBlogPosts(username));
+    } catch {
+      /* keep previous posts */
+    }
+    return linked;
+  };
+
+  const syncGithub = async () => {
+    const linked = await profileApi.syncGithub(username);
+    setIntegrations((items) => [
+      ...(items || []).filter((item) => item.provider !== 'GITHUB'),
+      linked,
+    ]);
+    return linked;
+  };
+
+  const syncBlog = async () => {
+    const linked = await profileApi.syncBlog(username);
+    setIntegrations((items) => [
+      ...(items || []).filter((item) => item.provider !== 'BLOG'),
+      linked,
+    ]);
+    try {
+      setBlogPosts(await profileApi.getBlogPosts(username));
+    } catch {
+      /* keep previous posts */
+    }
+    return linked;
   };
 
   const disconnectIntegration = async (provider) => {
     const linked = await profileApi.disconnectIntegration(username, provider);
     setIntegrations((items) => [...(items || []).filter((item) => item.provider !== linked.provider), linked]);
+    if (linked.provider === 'GITHUB') {
+      setContributions(null);
+      setCandidateRepos([]);
+    }
   };
 
   const pinRepos = async (names) => {
@@ -208,7 +279,8 @@ export default function useProfileData(
   return {
     profile, loading, ownedResumes, progress, posts, techPosts, feedbacks, integrations,
     repos, candidateRepos, blogPosts, contributions, hasMore, error, updateProfile, pinResume,
-    displayBadge, setVisibility, connectBlog, disconnectIntegration, pinRepos, loadMore, setError,
-    patchProfile,
+    displayBadge, setVisibility, connectBlog, startBlogVerify, confirmBlogVerify, connectTistory,
+    syncGithub, syncBlog,
+    disconnectIntegration, pinRepos, loadMore, setError, patchProfile,
   };
 }

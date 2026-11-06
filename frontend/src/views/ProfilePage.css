@@ -53,6 +53,15 @@
 }
 .profile__widget { margin: 16px 24px 0; }
 .profile__widget h2 { font-size: 16px; }
+.profile__grass-period select {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
 
 .profile__settings-btn { min-height: 36px; }
 .profile__resume-settings {

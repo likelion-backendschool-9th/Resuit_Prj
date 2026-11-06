@@ -1,7 +1,7 @@
 import './ContributionGraph.css';
 
-// GitHub 잔디. weeks: number[][] (52주 × 7일, 값은 0~4).
-export default function ContributionGraph({ weeks }) {
+// GitHub 잔디. weeks: number[][] (주 × 7일, 값은 0~4).
+export default function ContributionGraph({ weeks, label = 'GitHub 기여 기록' }) {
   const data = weeks?.length ? weeks : [];
 
   if (!data.length) {
@@ -15,7 +15,7 @@ export default function ContributionGraph({ weeks }) {
   return (
     <div className="grass">
       <div className="grass__scroll">
-        <div className="grass__grid" role="img" aria-label="최근 1년 GitHub 기여 기록">
+        <div className="grass__grid" role="img" aria-label={label}>
           {data.map((week, w) => (
             <div key={w} className="grass__week">
               {week.map((lvl, d) => <span key={d} className={`grass__cell g${lvl}`} />)}

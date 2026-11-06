@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAppState } from '../context/AppStateContext.jsx';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
@@ -28,6 +28,33 @@ const BADGE_PREVIEW_LIMIT = 3;
 
 const BADGE_STATUS_ORDER = { ACTIVE: 0, GRACE: 1, EXPIRED: 2 };
 
+const CURRENT_YEAR = new Date().getFullYear();
+/** GitHub 조회는 한 번에 1년이라 연도 단위로 고른다. */
+const GRASS_YEARS = Array.from({ length: 15 }, (_, index) => CURRENT_YEAR - index);
+
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+function toIsoDate(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+/** 선택한 연도의 1.1 ~ 12.31 (올해면 오늘까지). */
+function contributionRangeForYear(year) {
+  const today = new Date();
+  const from = `${year}-01-01`;
+  const to = year === today.getFullYear() ? toIsoDate(today) : `${year}-12-31`;
+  return { from, to };
+}
+
+function formatGrassRangeLabel(contributions, year) {
+  if (contributions?.from && contributions?.to) {
+    return `${contributions.from} ~ ${contributions.to}`;
+  }
+  return `${year}년`;
+}
+
 function statusLabel(status) {
   if (status === 'ACTIVE') return '활성';
   if (status === 'GRACE') return '갱신 필요';
@@ -53,30 +80,27 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
   const handle = username || me.handle;
   const [editing, setEditing] = useState(startEditing);
   const [tab, setTab] = useState('posts');
+  const [grassYear, setGrassYear] = useState(CURRENT_YEAR);
   const [resumeSettingsOpen, setResumeSettingsOpen] = useState(false);
   const [badgesExpanded, setBadgesExpanded] = useState(false);
-  const [nicknameDraft, setNicknameDraft] = useState('');
-  const [introDraft, setIntroDraft] = useState('');
-  const [savingProfile, setSavingProfile] = useState(false);
   const [badgePanels, setBadgePanels] = useState({
     progress: true,
     owned: true,
     history: false,
   });
+  const grassRange = contributionRangeForYear(grassYear);
   const data = useProfileData(
     handle,
     isOwner,
     initialProfile,
     tab,
     loggedIn ? me.handle : undefined,
-    { ready: !authLoading && (loggedIn || Boolean(username)) },
+    {
+      ready: !authLoading && (loggedIn || Boolean(username)),
+      contributionFrom: grassRange.from,
+      contributionTo: grassRange.to,
+    },
   );
-
-  useEffect(() => {
-    if (!editing || !data.profile) return;
-    setNicknameDraft(data.profile.nickname || '');
-    setIntroDraft(data.profile.selfIntroduction || '');
-  }, [editing, data.profile]);
 
   const toggleBadgePanel = (key) => {
     setBadgePanels((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -139,22 +163,6 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
     }
   };
 
-  const saveProfileBasics = async () => {
-    if (!isOwner) return;
-    setSavingProfile(true);
-    try {
-      await data.updateProfile({
-        nickname: nicknameDraft.trim() || null,
-        selfIntroduction: introDraft.trim(),
-      });
-      data.setError('');
-    } catch {
-      data.setError('프로필을 저장하지 못했습니다.');
-    } finally {
-      setSavingProfile(false);
-    }
-  };
-
   const toggleResumePublic = async (resume) => {
     const publicCount = ownedResumeList.filter((r) => r.isPublic).length;
     if (!resume.isPublic && publicCount >= MAX_PUBLIC_RESUMES) {
@@ -190,7 +198,12 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
               />
             )}
             <div className="profile__avatar">
-              <Avatar initial={(displayName || '?').slice(0, 1)} color={me.av} size={120} />
+              <Avatar
+                initial={(displayName || '?').slice(0, 1)}
+                color={me.av}
+                size={120}
+                src={profile?.profileImageUrl || undefined}
+              />
             </div>
             {isOwner ? (
               <Button variant="outline" aria-pressed={editing} onClick={() => setEditing((v) => !v)}>
@@ -225,28 +238,8 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
         {editing && isOwner && (
           <section className="profile__edit">
             <h2>기본 정보</h2>
-            <label className="profile__edit-field">
-              닉네임
-              <input
-                value={nicknameDraft}
-                maxLength={50}
-                onChange={(e) => setNicknameDraft(e.target.value)}
-                placeholder="프로필에 보일 이름"
-              />
-            </label>
-            <label className="profile__edit-field">
-              자기소개
-              <textarea
-                value={introDraft}
-                maxLength={500}
-                rows={3}
-                onChange={(e) => setIntroDraft(e.target.value)}
-                placeholder="간단한 소개를 적어 보세요"
-              />
-            </label>
-            <Button onClick={saveProfileBasics} disabled={savingProfile}>
-              {savingProfile ? '저장 중…' : '기본 정보 저장'}
-            </Button>
+            <p className="small muted">닉네임·소개·프로필 사진은 프로필 편집에서 수정할 수 있어요.</p>
+            <Link href="/setting/profile" className="text-link">프로필 편집으로 이동</Link>
 
             <div className="profile__setting-divider" />
             <h2>프로필 위젯</h2>
@@ -273,17 +266,32 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
 
         {widgets.grass && (
           <section className="card profile__widget">
-            <div className="row-wrap" style={{ justifyContent: 'space-between', gap: 12 }}>
+            <div className="row-wrap" style={{ justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
               <h2>GitHub 기여 기록</h2>
-              <span className="small muted">
-                {`github.com/${data.contributions?.login || github?.externalId || '[아이디]'}`}
-                {' · 최근 1년'}
-                {typeof data.contributions?.totalContributions === 'number'
-                  ? ` · ${data.contributions.totalContributions}회`
-                  : ''}
-              </span>
+              <label className="profile__grass-period">
+                <span className="sr-only">기여 연도</span>
+                <select
+                  value={grassYear}
+                  onChange={(event) => setGrassYear(Number(event.target.value))}
+                  aria-label="기여 잔디 연도"
+                >
+                  {GRASS_YEARS.map((year) => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </label>
             </div>
-            <ContributionGraph weeks={data.contributions?.weeks} />
+            <p className="small muted" style={{ margin: 0 }}>
+              {`github.com/${data.contributions?.login || github?.externalId || '[아이디]'}`}
+              {` · ${formatGrassRangeLabel(data.contributions, grassYear)}`}
+              {typeof data.contributions?.totalContributions === 'number'
+                ? ` · ${data.contributions.totalContributions}회`
+                : ''}
+            </p>
+            <ContributionGraph
+              weeks={data.contributions?.weeks}
+              label={`${formatGrassRangeLabel(data.contributions, grassYear)} GitHub 기여 기록`}
+            />
             {!data.contributions?.weeks && (
               <p className="small muted">
                 {loggedIn
@@ -648,12 +656,32 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
                 </Link>
               )}
             </>
-          ) : data.blogPosts.map((post) => (
-            <div key={post.id}>
-              <div style={{ fontWeight: 500 }}>{post.title}</div>
-              <div className="xs bold" style={{ color: 'var(--blog)' }}>{post.publishedAt || '블로그'}</div>
-            </div>
-          ))}
+          ) : data.blogPosts.map((post) => {
+            const published = post.publishedAt
+              ? new Date(post.publishedAt).toLocaleDateString('ko-KR', {
+                year: 'numeric', month: 'numeric', day: 'numeric',
+              })
+              : null;
+            return (
+              <div key={post.id}>
+                <div style={{ fontWeight: 500 }}>
+                  {post.url ? (
+                    <a
+                      href={post.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: 'inherit', textDecoration: 'none' }}
+                    >
+                      {post.title}
+                    </a>
+                  ) : post.title}
+                </div>
+                {published && (
+                  <div className="xs muted">{published}</div>
+                )}
+              </div>
+            );
+          })}
         </section>
       </RightAside>
     </>

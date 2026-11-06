@@ -21,6 +21,8 @@ resuit:
   verification:
     code-secret: ${VERIFICATION_CODE_SECRET:}
     mail-from: ${VERIFICATION_MAIL_FROM:}
+  integration:
+    token-secret: ${INTEGRATION_TOKEN_SECRET:}
 
 server:
   servlet:
