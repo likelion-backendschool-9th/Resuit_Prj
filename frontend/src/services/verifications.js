@@ -19,5 +19,4 @@ export async function getMyVerificationStatus() {
   return data;
 }
 
-export const sendVerificationEmail = (email) => post('/email', { email });
-export const confirmVerificationEmail = (verificationId, code) => post('/email/confirm', { verificationId, code });
+export const verifyCompanyEmail = (email) => post('/email', { email });
