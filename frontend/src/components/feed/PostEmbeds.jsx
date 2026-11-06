@@ -22,7 +22,7 @@ export function PostVideo({ src, poster, alt, duration }) {
   return (
     <div className="post-video">
       <video className="post-media post-media--video" src={src} poster={poster} aria-label={alt} controls muted loop playsInline autoPlay preload="metadata" />
-      <span className="post-video__label">영상 · {duration}</span>
+      <span className="post-video__label">영상{duration ? ` · ${duration}` : ''}</span>
     </div>
   );
 }

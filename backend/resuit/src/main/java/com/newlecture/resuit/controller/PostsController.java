@@ -151,6 +151,21 @@ public class PostsController {
 		return postService.getQuestionFeed(PageRequest.of(page, size));
 	}
 
+	/*
+	이미지, 영상관련
+	이 주석이 남아있는 현재로썬 게시글 당, 영상,이미지 각 1개씩만 업로드 가능
+	이것을 개선하려면, 게시글과 미디어를 1:N 관계로 바꾸고, 미디어 업로드시 게시글 id를 받아서 저장하도록 해야함
+	엔티티 구조를 바꾸는 작업이 필요, ERD에는 해당 구조를 반영한 테이블은 제작 해놓음
+
+	백엔드 처리 흐름
+- 임시 업로드·취소: 기존 API 유지. 임시 파일은 아직 PostMedia에 저장하지 않는다.
+- 게시글 작성: 첨부 목록을 받아 최종 경로로 이동하고, 파일마다 PostMedia를 생성
+- 게시글 수정: 유지할 첨부, 제거할 첨부, 새 첨부를 구분해 목록과 순서를 갱신
+- 게시글 조회: 첨부 목록을 순서대로 DTO에 담아 반환
+- 게시글 삭제: 현재의 소프트 삭제 방식을 유지하며, 첨부파일의 실제 정리 시점은 별도로 정함.
+파일 이동은 DB 트랜잭션으로 되돌릴 수 없으므로, 저장 도중 실패했을 때 파일을 정리하는 처리도 필요
+이건 나중에 구현할래... 토큰없어
+	*/
 	@PostMapping(value = "/uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public MediaUploadResponse uploadMedia(
 			@RequestParam("file") MultipartFile file,
