@@ -14,10 +14,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.newlecture.resuit.dto.CompanySubscriptionRequest;
+import com.newlecture.resuit.dto.CompanySubscriptionResponse;
 import com.newlecture.resuit.dto.TalentResumeQuery;
 import com.newlecture.resuit.dto.TalentSearchCondition;
 import com.newlecture.resuit.dto.TalentSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
+import com.newlecture.resuit.service.CompanySubscriptionService;
 import com.newlecture.resuit.service.TalentScoutingService;
 
 import jakarta.validation.Valid;
@@ -27,9 +30,12 @@ import jakarta.validation.Valid;
 public class TalentScoutingController {
 
 	private final TalentScoutingService talentScoutingService;
+	private final CompanySubscriptionService subscriptionService;
 
-	public TalentScoutingController(TalentScoutingService talentScoutingService) {
+	public TalentScoutingController(TalentScoutingService talentScoutingService,
+			CompanySubscriptionService subscriptionService) {
 		this.talentScoutingService = talentScoutingService;
+		this.subscriptionService = subscriptionService;
 	}
 
 	@GetMapping("/company/talents")
@@ -60,13 +66,15 @@ public class TalentScoutingController {
 	}
 
 	@GetMapping("/company/subscription")
-	public ResponseEntity<Void> getCompanySubscription() {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<CompanySubscriptionResponse> getCompanySubscription(
+			Principal principal) {
+		return ResponseEntity.ok(subscriptionService.getMySubscription(principal.getName()));
 	}
 
 	@PutMapping("/company/subscription")
-	public ResponseEntity<Void> updateCompanySubscription(
-			@RequestBody(required = false) Map<String, Object> subscriptionRequest) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<CompanySubscriptionResponse> updateCompanySubscription(
+			@Valid @RequestBody CompanySubscriptionRequest request,
+			Principal principal) {
+		return ResponseEntity.ok(subscriptionService.updateMySubscription(principal.getName(), request));
 	}
 }
