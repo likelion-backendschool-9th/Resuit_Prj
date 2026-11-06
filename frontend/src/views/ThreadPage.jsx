@@ -9,7 +9,6 @@ import Avatar from '../components/common/Avatar.jsx';
 import Badge, { POST_TYPE_BADGE } from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
-import SearchBox from '../components/common/SearchBox.jsx';
 import { PostImage, PostVideo } from '../components/feed/PostEmbeds.jsx';
 import PostContent from '../components/feed/PostContent.jsx';
 import LikeButton from '../components/feed/LikeButton.jsx';
@@ -63,16 +62,15 @@ export default function ThreadPage({ initialPost, error }) {
         <CommentsSection key={post.id} post={post} />
       </>}
     </MainColumn>
-      <RightAside showReviews label="베스트 리뷰 및 명예의 전당" />
       <RightAside showReviews label="리뷰 추천 및 보조 정보">
           <section className="card" style={{ gap: 14 }}>
             <h2>비슷한 질문</h2>
             <span className="small muted">아직 비슷한 질문이 없어요.</span>
           </section>
-          <section className="card" style={{ gap: 8 }}>
-            <h2>질문 작성자</h2>
-            <Link href="/profile" className="bold" style={{ textDecoration: 'none' }}>{thread.author} @{thread.handle}</Link>
-          </section>
+          {post && <section className="card" style={{ gap: 8 }}>
+            <h2>게시글 작성자</h2>
+            <Link href={`/${encodeURIComponent(post.handle)}`} className="bold" style={{ textDecoration: 'none' }}>{post.author} @{post.handle}</Link>
+          </section>}
         </RightAside>
   </>;
 }
