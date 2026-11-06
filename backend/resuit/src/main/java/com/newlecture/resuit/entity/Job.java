@@ -60,4 +60,31 @@ public class Job extends BaseTimeEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public void update(String type, String title, String location, String employmentType,
+            String career, String description, String requirements, String preferred,
+            LocalDate deadline) {
+        this.type = type;
+        this.title = title;
+        this.location = location;
+        this.employmentType = employmentType;
+        this.career = career;
+        this.description = description;
+        this.requirements = requirements;
+        this.preferred = preferred;
+        this.deadline = deadline;
+    }
+
+    public void publishDraft() {
+        if ("DRAFT".equals(status)) {
+            status = "OPEN";
+        }
+    }
+
+    public void delete() {
+        if (deletedAt == null) {
+            deletedAt = LocalDateTime.now();
+        }
+    }
+
 }
