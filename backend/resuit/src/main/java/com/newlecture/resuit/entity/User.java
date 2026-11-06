@@ -79,4 +79,8 @@ public class User extends BaseTimeEntity {
     public void displayBadge(Badge badge) {
         this.displayedBadge = badge;
     }
+
+    public void changeRole(String role) {
+        this.role = role;
+    }
 }

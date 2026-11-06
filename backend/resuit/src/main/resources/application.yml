@@ -8,19 +8,11 @@ spring:
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
-  mail:
-    properties:
-      "[mail.smtp.connectiontimeout]": 5000
-      "[mail.smtp.timeout]": 5000
-      "[mail.smtp.writetimeout]": 5000
 
-# 실제 값은 환경 변수로 공급한다. 미설정 상태에서는 발송 성공을 반환하지 않는다.
+# 실제 값은 환경 변수로 공급한다.
 resuit:
   media:
     root: ${RESUIT_MEDIA_ROOT:src/main/media}
-  verification:
-    code-secret: ${VERIFICATION_CODE_SECRET:}
-    mail-from: ${VERIFICATION_MAIL_FROM:}
   integration:
     token-secret: ${INTEGRATION_TOKEN_SECRET:}
 
