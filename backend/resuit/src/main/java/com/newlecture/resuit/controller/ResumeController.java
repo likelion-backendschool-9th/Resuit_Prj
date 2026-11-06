@@ -2,15 +2,21 @@ package com.newlecture.resuit.controller;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Map;
 
+import com.newlecture.resuit.dto.feedback.FeedbackCommentCreateCommand;
+import com.newlecture.resuit.dto.feedback.FeedbackCommentCreateRequest;
+import com.newlecture.resuit.dto.feedback.FeedbackCommentResponse;
 import com.newlecture.resuit.dto.feedback.FeedbackRequestCreateRequest;
 import com.newlecture.resuit.dto.feedback.FeedbackRequestResponse;
+import com.newlecture.resuit.dto.feedback.FeedbackRequestSearchCondition;
+import com.newlecture.resuit.dto.feedback.FeedbackRequestSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
 import com.newlecture.resuit.dto.resume.ResumeListResponse;
+import com.newlecture.resuit.dto.resume.ResumePreviewCondition;
+import com.newlecture.resuit.dto.resume.ResumePreviewResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeCreateRequest;
 import com.newlecture.resuit.dto.resume.TargetResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeSummary;
@@ -19,12 +25,16 @@ import com.newlecture.resuit.dto.resume.TargetResumeUpdateRequest;
 import com.newlecture.resuit.dto.AdoptFeedbackResponse;
 import com.newlecture.resuit.service.CommonResumeService;
 import com.newlecture.resuit.service.FeedbackAdoptionService;
+import com.newlecture.resuit.service.FeedbackBoardService;
 import com.newlecture.resuit.service.FeedbackRequestService;
 import com.newlecture.resuit.service.ResumeService;
+import com.newlecture.resuit.service.ReviewService;
 import com.newlecture.resuit.service.TargetResumeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,6 +56,7 @@ public class ResumeController {
 	private final CommonResumeService commonResumeService;
 	private final TargetResumeService targetResumeService;
 	private final FeedbackAdoptionService feedbackAdoptionService;
+	private final FeedbackBoardService feedbackBoardService;
 
 	@GetMapping("/resumes")
 	public ResponseEntity<ResumeListResponse> getAllResumes(Principal principal) {
@@ -53,10 +64,11 @@ public class ResumeController {
 	}
 
 	@GetMapping("/feedback-requests")
-	public ResponseEntity<Void> getFeedbackRequests(
+	public ResponseEntity<List<FeedbackRequestSummary>> getFeedbackRequests(
 			@RequestParam(required = false) String category,
-			@RequestParam(required = false) Boolean mine) {
-		return ResponseEntity.ok().build();
+			@RequestParam(required = false) Boolean mine, Principal principal) {
+		return ResponseEntity.ok(feedbackBoardService.getRequests(username(principal),
+			new FeedbackRequestSearchCondition(category, Boolean.TRUE.equals(mine))));
 	}
 
 	@PostMapping("/feedback-requests")
@@ -74,20 +86,23 @@ public class ResumeController {
 	}
 
 	@GetMapping("/resumes/{id}")
-	public ResponseEntity<Void> previewResume(@PathVariable Long id) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<ResumePreviewResponse> previewResume(
+			@PathVariable Long id, @RequestParam(required = false) String type, Principal principal) {
+		return ResponseEntity.ok(feedbackBoardService.getResumePreview(username(principal),
+			new ResumePreviewCondition(id, type)));
 	}
 
 	@GetMapping("/feedback-requests/{id}/comments")
-	public ResponseEntity<Void> getFeedbackComments(@PathVariable Long id) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<List<FeedbackCommentResponse>> getFeedbackComments(@PathVariable Long id, Principal principal) {
+		return ResponseEntity.ok(feedbackBoardService.getComments(id, username(principal)));
 	}
 
 	@PostMapping("/feedback-requests/{id}/comments")
-	public ResponseEntity<Void> createFeedbackComment(
+	public ResponseEntity<FeedbackCommentResponse> createFeedbackComment(
 			@PathVariable Long id,
-			@RequestBody(required = false) Map<String, Object> commentRequest) {
-		return ResponseEntity.ok().build();
+			@Valid @RequestBody FeedbackCommentCreateRequest commentRequest, Principal principal) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(feedbackBoardService.createComment(
+			new FeedbackCommentCreateCommand(id, username(principal), commentRequest)));
 	}
 
 	@PostMapping("/feedbacks/{feedbackId}/adopt")
@@ -228,5 +243,56 @@ public class ResumeController {
 	public ResponseEntity<ResumeErrorResponse> targetResumeExists() {
 		return ResponseEntity.status(HttpStatus.CONFLICT)
 			.body(new ResumeErrorResponse("TARGET_RESUME_EXISTS", "이 공고의 특화 이력서가 이미 있습니다."));
+	}
+
+	@ExceptionHandler(FeedbackBoardService.FeedbackRequestClosedException.class)
+	public ResponseEntity<ResumeErrorResponse> feedbackRequestClosed() {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(new ResumeErrorResponse("FEEDBACK_REQUEST_CLOSED", "취소된 피드백 요청에는 피드백을 남길 수 없습니다."));
+	}
+
+	// 4.10 채택은 ReviewService를 쓴다. ReviewController의 처리기는 이 컨트롤러에 적용되지 않아 같은 코드로 여기서도 처리한다.
+	@ExceptionHandler(ReviewService.UnauthenticatedUserException.class)
+	public ResponseEntity<ResumeErrorResponse> adoptUnauthenticated() {
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+			.body(new ResumeErrorResponse("UNAUTHENTICATED", "로그인이 필요합니다."));
+	}
+
+	@ExceptionHandler(ReviewService.InvalidReviewIdException.class)
+	public ResponseEntity<ResumeErrorResponse> invalidReviewId() {
+		return ResponseEntity.badRequest()
+			.body(new ResumeErrorResponse("INVALID_REVIEW_ID", "피드백 ID는 양수여야 합니다."));
+	}
+
+	@ExceptionHandler(ReviewService.ReviewNotFoundException.class)
+	public ResponseEntity<ResumeErrorResponse> reviewNotFound() {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+			.body(new ResumeErrorResponse("REVIEW_NOT_FOUND", "피드백을 찾을 수 없습니다."));
+	}
+
+	@ExceptionHandler(ReviewService.ReviewForbiddenException.class)
+	public ResponseEntity<ResumeErrorResponse> reviewForbidden() {
+		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+			.body(new ResumeErrorResponse("REVIEW_FORBIDDEN", "피드백 요청자만 채택할 수 있습니다."));
+	}
+
+	@ExceptionHandler(ReviewService.RequestClosedException.class)
+	public ResponseEntity<ResumeErrorResponse> adoptRequestClosed() {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(new ResumeErrorResponse("REQUEST_CLOSED", "취소한 피드백 요청에서는 채택할 수 없습니다."));
+	}
+
+	@ExceptionHandler(ReviewService.ReviewAlreadyAcceptedException.class)
+	public ResponseEntity<ResumeErrorResponse> reviewAlreadyAccepted() {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(new ResumeErrorResponse("REVIEW_ALREADY_ACCEPTED", "이미 다른 피드백을 채택했습니다."));
+	}
+
+	// @Valid 요청 DTO 검사에 걸리면 첫 번째 안내 문구를 돌려준다
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ResumeErrorResponse> invalidRequest(MethodArgumentNotValidException e) {
+		var error = e.getBindingResult().getFieldError();
+		return ResponseEntity.badRequest()
+			.body(new ResumeErrorResponse("INVALID_REQUEST", error == null ? "요청 값이 올바르지 않습니다." : error.getDefaultMessage()));
 	}
 }
