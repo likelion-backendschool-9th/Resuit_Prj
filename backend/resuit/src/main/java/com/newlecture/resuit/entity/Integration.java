@@ -40,7 +40,7 @@ public class Integration extends BaseCreatedEntity {
     @Column(name = "rss_url", length = 500)
     private String rssUrl;
 
-    @Column(name = "access_token", length = 500)
+    @Column(name = "access_token", length = 1000)
     private String accessToken;
 
     @Builder.Default

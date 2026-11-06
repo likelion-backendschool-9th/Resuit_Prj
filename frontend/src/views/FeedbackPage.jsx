@@ -34,7 +34,7 @@ export default function FeedbackPage() {
           : <div className="empty">{tab === 'mine' ? '아직 피드백을 요청한 이력서가 없어요. 내 이력서에서 요청해 보세요.' : '이 분야에 올라온 이력서가 아직 없어요.'}</div>}
       </MainColumn>
 
-      <RightAside>
+      <RightAside showReviews label="리뷰 추천 및 보조 정보">
         <section className="card">
           <h2>좋은 피드백 쓰는 법</h2>
           <ol className="text-2" style={{ paddingLeft: 18, fontSize: 14, lineHeight: 1.8 }}>

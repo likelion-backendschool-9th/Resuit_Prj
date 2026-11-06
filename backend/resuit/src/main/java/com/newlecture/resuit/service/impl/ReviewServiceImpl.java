@@ -57,10 +57,12 @@ public class ReviewServiceImpl implements ReviewService {
         if (query.page() < 0 || query.page() > 100000 || query.size() < 1 || query.size() > 50) {
             throw new InvalidPaginationException();
         }
-        var history = bestReviews.findHistory(viewerId(query.username()), PageRequest.of(query.page(), query.size()));
-        var entries = history.getContent().stream().map(row ->
-            new HallOfFameResponse.Entry(row.getSelectionId(), row.getPeriod(), toReview(row))).toList();
-        return new HallOfFameResponse(entries, query.page(), query.size(), history.getTotalElements(), history.hasNext());
+        var ranking = bestReviews.findHallOfFameReviewers(PageRequest.of(query.page(), query.size()));
+        var reviewers = ranking.getContent().stream().map(row ->
+            new HallOfFameResponse.Reviewer(row.getRank(), row.getUsername(), row.getNickname(),
+                row.getReviewCount(), row.getSelectionCount(), row.getWeeklyCount(), row.getMonthlyCount(),
+                row.getRepresentativeReviewId(), row.getRepresentativeContent(), row.getLatestSelection())).toList();
+        return new HallOfFameResponse(reviewers, query.page(), query.size(), ranking.getTotalElements(), ranking.hasNext());
     }
 
     @Override

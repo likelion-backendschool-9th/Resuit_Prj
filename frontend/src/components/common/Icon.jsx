@@ -1,5 +1,6 @@
 // 선 아이콘 모음. <Icon name="home" size={22} /> 처럼 쓴다.
 const PATHS = {
+  more: <><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></>,
   home: <path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z" />,
   job: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" /></>,
   file: <><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M8 13h8M8 17h5" /></>,

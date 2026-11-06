@@ -23,7 +23,7 @@ public class SocialClientConfiguration {
         public java.util.Set<String> providers() { return registrations.keySet(); }
     }
     @Bean
-    public Clients socialClients(Environment env, @Value("${resuit.auth.public-base-url:http://localhost:5174}") String base) {
+    public Clients socialClients(Environment env, @Value("${resuit.auth.public-base-url:http://localhost:5173}") String base) {
         var clients = new ArrayList<ClientRegistration>();
         for (String provider : java.util.List.of("google", "github", "naver")) {
             String id = env.getProperty(provider.toUpperCase() + "_CLIENT_ID", "");
@@ -37,7 +37,9 @@ public class SocialClientConfiguration {
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationUri("https://nid.naver.com/oauth2.0/authorize")
                 .tokenUri("https://nid.naver.com/oauth2.0/token")
-                .userInfoUri("https://openapi.naver.com/v1/nid/me").userNameAttributeName("response").clientName("Naver");
+                .userInfoUri("https://openapi.naver.com/v1/nid/me").userNameAttributeName("response").clientName("Naver")
+                // Spring Security 7은 PKCE 기본 ON. 네이버는 PKCE 미지원이라 끄지 않으면 서비스 오류 화면이 난다.
+                .clientSettings(ClientRegistration.ClientSettings.builder().requireProofKey(false).build());
             clients.add(builder.clientId(id).clientSecret(secret)
                 .redirectUri(base.replaceAll("/+$", "") + "/api/login/oauth2/code/" + provider).build());
         }

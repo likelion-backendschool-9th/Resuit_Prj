@@ -205,7 +205,7 @@ export default function ResumesPage() {
         )}
       </MainColumn>
 
-      <RightAside>
+      <RightAside showReviews label="리뷰 추천 및 보조 정보">
         <section className="card">
           <h2>지원 현황</h2>
           <div className="grid-3" style={{ gap: 8 }}>

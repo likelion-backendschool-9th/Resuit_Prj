@@ -6,9 +6,13 @@ import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.IntegrationRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.GithubContributionService;
+import com.newlecture.resuit.service.TokenCipher;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +54,7 @@ public class GithubContributionServiceImpl implements GithubContributionService 
 
     private final UserRepository users;
     private final IntegrationRepository integrations;
+    private final TokenCipher tokenCipher;
     private final RestClient githubApi = RestClient.builder()
             .baseUrl("https://api.github.com")
             .requestFactory(new JdkClientHttpRequestFactory())
@@ -67,13 +72,13 @@ public class GithubContributionServiceImpl implements GithubContributionService 
         Integration integration = integrations.findByUserIdAndProvider(user.getId(), "GITHUB")
                 .orElseGet(() -> integrations.save(Integration.builder()
                         .user(user).provider("GITHUB").build()));
-        integration.connectGithub(githubLogin, accessToken);
+        integration.connectGithub(githubLogin, tokenCipher.encrypt(accessToken));
         integration.markSynced(java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Seoul")));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public GithubContributionsResponse getContributions(String username) {
+    public GithubContributionsResponse getContributions(String username, LocalDate fromDate, LocalDate toDate) {
         User user = users.findByUsername(username).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
         Integration linked = integrations.findByUserIdAndProvider(user.getId(), "GITHUB")
@@ -81,15 +86,15 @@ public class GithubContributionServiceImpl implements GithubContributionService 
                 .filter(item -> item.getExternalId() != null && item.getAccessToken() != null)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "GitHub 연동이 없습니다. GitHub로 다시 로그인해 주세요."));
+        String accessToken = tokenCipher.decrypt(linked.getAccessToken());
 
-        ZonedDateTime to = ZonedDateTime.now(ZoneOffset.UTC);
-        ZonedDateTime from = to.minusYears(1);
+        Range range = resolveRange(fromDate, toDate);
         Map<String, Object> body = Map.of(
                 "query", GRAPHQL,
                 "variables", Map.of(
                         "login", linked.getExternalId(),
-                        "from", Instant.from(from).toString(),
-                        "to", Instant.from(to).toString()
+                        "from", Instant.from(range.from()).toString(),
+                        "to", Instant.from(range.to()).toString()
                 )
         );
 
@@ -98,7 +103,7 @@ public class GithubContributionServiceImpl implements GithubContributionService 
             root = githubApi.post()
                     .uri("/graphql")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("Authorization", "Bearer " + linked.getAccessToken())
+                    .header("Authorization", "Bearer " + accessToken)
                     .header("Accept", "application/vnd.github+json")
                     .body(body)
                     .retrieve()
@@ -143,7 +148,38 @@ public class GithubContributionServiceImpl implements GithubContributionService 
                 weeks.add(days);
             }
         }
-        return new GithubContributionsResponse(linked.getExternalId(), total, weeks);
+        return new GithubContributionsResponse(
+                linked.getExternalId(),
+                total,
+                weeks,
+                range.from().toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                range.to().toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
+    }
+
+    private static Range resolveRange(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate == null && toDate == null) {
+            ZonedDateTime to = ZonedDateTime.now(ZoneOffset.UTC);
+            ZonedDateTime from = to.minusYears(1);
+            return new Range(from, to);
+        }
+        if (fromDate == null || toDate == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "from과 to는 함께 보내거나 모두 생략해야 합니다.");
+        }
+        if (toDate.isBefore(fromDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "to는 from보다 이전일 수 없습니다.");
+        }
+        long days = ChronoUnit.DAYS.between(fromDate, toDate);
+        if (days > 365) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "기여 잔디 조회 기간은 최대 1년입니다.");
+        }
+        ZonedDateTime from = fromDate.atStartOfDay(ZoneOffset.UTC);
+        ZonedDateTime to = toDate.atTime(23, 59, 59).atZone(ZoneOffset.UTC);
+        return new Range(from, to);
+    }
+
+    private record Range(ZonedDateTime from, ZonedDateTime to) {
     }
 
     @SuppressWarnings("unchecked")

@@ -10,4 +10,5 @@ public interface IntegrationRepository extends JpaRepository<Integration, Long> 
     Optional<Integration> findByUserIdAndProvider(UUID userId, String provider);
     List<Integration> findByUserId(UUID userId);
     List<Integration> findByProviderAndConnectedTrue(String provider);
+    List<Integration> findByProviderAndPlatformAndExternalId(String provider, String platform, String externalId);
 }

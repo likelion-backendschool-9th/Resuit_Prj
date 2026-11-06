@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 52MB
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
     username: ${POSTGRES_USER}
@@ -17,6 +21,8 @@ resuit:
   verification:
     code-secret: ${VERIFICATION_CODE_SECRET:}
     mail-from: ${VERIFICATION_MAIL_FROM:}
+  integration:
+    token-secret: ${INTEGRATION_TOKEN_SECRET:}
 
 server:
   servlet:

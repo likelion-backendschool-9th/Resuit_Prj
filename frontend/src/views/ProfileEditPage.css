@@ -1,0 +1,105 @@
+.profile-edit__content {
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-edit__card {
+  gap: 12px;
+}
+
+.profile-edit__card h2 {
+  font-size: 17px;
+}
+
+.profile-edit__preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.profile-edit__preview-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-edit__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.profile-edit__field input,
+.profile-edit__field textarea {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  padding: 9px 10px;
+  font: inherit;
+  resize: vertical;
+}
+
+.profile-edit__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.profile-edit__file-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-edit__file-btn input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.profile-edit__file-btn:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.profile-edit__career {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sub);
+}
+
+.profile-edit__career.is-read {
+  background: var(--bg);
+}
+
+.profile-edit__career-role {
+  color: var(--text-sub);
+}
+
+.profile-edit__career-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}

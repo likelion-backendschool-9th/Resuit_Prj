@@ -19,7 +19,7 @@ export function AppStateProvider({ children }) {
     const abort = new AbortController();
     getAuthSession({ signal: abort.signal }).then(setSession).catch(() => {
       if (!abort.signal.aborted) {
-        setSession({ authenticated: false, user: null, providers: [] });
+        setSession({ authenticated: false, user: null, providers: [], linkedProviders: [] });
         setAuthError('');
       }
     });
@@ -29,6 +29,7 @@ export function AppStateProvider({ children }) {
   const member = session?.user;
   const me = member
     ? {
+        id: member.id,
         name: member.nickname || member.username,
         handle: member.username,
         initial: (member.nickname || member.username).slice(0, 1),
@@ -55,7 +56,11 @@ export function AppStateProvider({ children }) {
       authLoading: session === null && !authError,
       authError,
       authProviders: session?.providers || [],
+      linkedProviders: session?.linkedProviders || [],
       loggedIn,
+      refreshSession: async () => {
+        setSession(await getAuthSession());
+      },
       logout: async () => {
         await logoutSession();
         setSession(await getAuthSession());
@@ -87,6 +92,7 @@ export function AppStateProvider({ children }) {
           ...list,
         ]),
       liked,
+      setPostLiked: (key, value) => setLiked((previous) => ({ ...previous, [key]: value })),
       toggleLike: (id) => setLiked((m) => ({ ...m, [id]: !m[id] })),
       following,
       setFollowState: (handle, value) => setFollowing((m) => ({ ...m, [handle]: !!value })),

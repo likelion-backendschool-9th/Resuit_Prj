@@ -12,6 +12,7 @@ import com.newlecture.resuit.dto.UpdateProfileRequest;
 import com.newlecture.resuit.dto.ResumeVisibilityRequest;
 import com.newlecture.resuit.dto.BlogIntegrationRequest;
 import com.newlecture.resuit.dto.BlogPostResponse;
+import com.newlecture.resuit.dto.BlogVerifyStartResponse;
 import com.newlecture.resuit.dto.GithubContributionsResponse;
 import com.newlecture.resuit.dto.IntegrationResponse;
 import com.newlecture.resuit.dto.PinnedReposRequest;
@@ -20,8 +21,12 @@ import com.newlecture.resuit.service.CurrentUserResolver;
 import com.newlecture.resuit.service.GithubContributionService;
 import com.newlecture.resuit.service.ProfileIntegrationService;
 import com.newlecture.resuit.service.ProfileService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -129,8 +134,11 @@ public class UserController {
 	}
 
 	@GetMapping("/{username}/github/contributions")
-	public GithubContributionsResponse getGithubContributions(@PathVariable String username) {
-		return githubContributions.getContributions(username);
+	public GithubContributionsResponse getGithubContributions(
+			@PathVariable String username,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+		return githubContributions.getContributions(username, from, to);
 	}
 
 	@PutMapping("/me/github/pinned-repos")
@@ -153,11 +161,42 @@ public class UserController {
 		return integrations.getIntegrations(currentUser.requireUserId(username));
 	}
 
+	@PostMapping("/me/integrations/github/sync")
+	public IntegrationResponse syncGithubIntegration(
+			@RequestHeader(value = "X-Username", required = false) String username) {
+		return integrations.syncGithub(currentUser.requireUserId(username));
+	}
+
+	@PostMapping("/me/integrations/blog/sync")
+	public IntegrationResponse syncBlogIntegration(
+			@RequestHeader(value = "X-Username", required = false) String username) {
+		return integrations.syncBlog(currentUser.requireUserId(username));
+	}
+
 	@PutMapping("/me/integrations/blog")
 	public IntegrationResponse updateBlogIntegration(
 			@RequestHeader(value = "X-Username", required = false) String username,
 			@RequestBody BlogIntegrationRequest request) {
 		return integrations.connectBlog(currentUser.requireUserId(username), request);
+	}
+
+	@PostMapping("/me/integrations/blog/verify")
+	public BlogVerifyStartResponse startBlogVerify(
+			@RequestHeader(value = "X-Username", required = false) String username,
+			@RequestBody BlogIntegrationRequest request,
+			HttpServletRequest httpRequest,
+			HttpServletResponse httpResponse) {
+		return integrations.startBlogVerify(
+				currentUser.requireUserId(username), request, httpRequest, httpResponse);
+	}
+
+	@PostMapping("/me/integrations/blog/verify/confirm")
+	public IntegrationResponse confirmBlogVerify(
+			@RequestHeader(value = "X-Username", required = false) String username,
+			HttpServletRequest httpRequest,
+			HttpServletResponse httpResponse) {
+		return integrations.confirmBlogVerify(
+				currentUser.requireUserId(username), httpRequest, httpResponse);
 	}
 
 	@DeleteMapping("/me/integrations/{provider}")

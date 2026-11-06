@@ -1,117 +1,76 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAppState } from '../context/AppStateContext.jsx';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Avatar from '../components/common/Avatar.jsx';
-import Badge from '../components/common/Badge.jsx';
+import Badge, { POST_TYPE_BADGE } from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
-import '../components/feed/PostCard.css';
+import { PostImage, PostVideo } from '../components/feed/PostEmbeds.jsx';
+import PostContent from '../components/feed/PostContent.jsx';
+import LikeButton from '../components/feed/LikeButton.jsx';
+import CommentsSection from '../components/feed/CommentsSection.jsx';
+import PostOwnerActions from '../components/feed/PostOwnerActions.jsx';
+import './ThreadPage.css';
 
-export default function ThreadPage({ id }) {
-  const { me, threads, addAnswer } = useAppState();
-  const thread = threads[id];
-  const [draft, setDraft] = useState('');
-  const [helpful, setHelpful] = useState({});
+export default function ThreadPage({ initialPost, error }) {
+  const router = useRouter();
+  const { me, loggedIn } = useAppState();
+  const [updatedPost, setUpdatedPost] = useState(null);
+  const [refreshing, startTransition] = useTransition();
+  const post = updatedPost || initialPost;
+  const badge = post && POST_TYPE_BADGE[post.type];
 
-  if (!thread) {
-    return (
-      <>
-        <MainColumn>
-          <div className="page-head">
-            <Link href="/" className="icon-btn icon-btn--plain" aria-label="뒤로"><Icon name="back" /></Link>
-            <h1>게시글</h1>
-          </div>
-          <div className="empty">게시글을 찾을 수 없어요.</div>
-        </MainColumn>
-        <RightAside label="추후 활용 영역" />
-      </>
-    );
-  }
-
-  const submit = () => {
-    if (!draft.trim()) return;
-    addAnswer(thread.id, draft.trim());
-    setDraft('');
-  };
-
-  return (
-    <>
-      <MainColumn>
-        <div className="page-head">
-          <Link href="/" className="icon-btn icon-btn--plain" aria-label="뒤로"><Icon name="back" /></Link>
-          <h1>게시글</h1>
-        </div>
-
-        <article className="section">
-          <div className="row" style={{ gap: 12 }}>
-            <Avatar initial={thread.initial} color={thread.av} size={48} />
-            <div className="grow"><div className="bold">{thread.author}</div><div className="muted" style={{ fontSize: 14 }}>@{thread.handle}</div></div>
-            <Badge tone="question" size="md">질문</Badge>
-          </div>
-          <p style={{ fontSize: 20 }}>{thread.body}</p>
-          <div className="row-wrap">{(thread.tags || []).map((t) => <span key={t} className="small" style={{ color: 'var(--accent-text)' }}>#{t}</span>)}</div>
-          <div className="muted" style={{ fontSize: 14 }}>{thread.time}</div>
-          <div className="row muted" style={{ gap: 20, padding: '12px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', fontSize: 14 }}>
-            <span><strong style={{ color: 'var(--text)' }}>{thread.answers.length}</strong> 답변</span>
-            <span><strong style={{ color: 'var(--text)' }}>{thread.reposts}</strong> 리포스트</span>
-            <span><strong style={{ color: 'var(--text)' }}>{thread.likes}</strong> 좋아요</span>
+  return <>
+    <MainColumn>
+      <div className="page-head">
+        <Link href="/" className="icon-btn icon-btn--plain" aria-label="피드로 돌아가기"><Icon name="back" /></Link>
+        <h1>게시글</h1>
+      </div>
+      {!post ? <div className="empty">
+        <p role="alert">{error || '게시글을 찾을 수 없어요.'}</p>
+        <Button variant="outline" disabled={refreshing} onClick={() => startTransition(() => router.refresh())}>
+          {refreshing ? '불러오는 중…' : '다시 시도'}
+        </Button>
+      </div> : <>
+        <article className="thread-post">
+          <header className="thread-post__header">
+            <Avatar initial={post.initial} src={post.profileImage} size={48} />
+            <div className="thread-post__author">
+              <Link href={`/${encodeURIComponent(post.handle)}`}><strong>{post.author}</strong></Link>
+              <span className="small muted">@{post.handle}</span>
+            </div>
+            {badge && <Badge tone={badge.tone}>{badge.label}</Badge>}
+          </header>
+          <PostContent content={post.body} textClassName="thread-post__text" />
+          {post.image && <PostImage src={post.image} alt={post.imageAlt} />}
+          {post.video && <PostVideo src={post.video} alt={`${post.author}님의 첨부 영상`} />}
+          {post.blogPostUrl && <a className="embed" href={post.blogPostUrl} target="_blank" rel="noopener noreferrer">블로그 원문 보기</a>}
+          {post.repoUrl && <a className="embed" href={post.repoUrl} target="_blank" rel="noopener noreferrer">{post.repoFullName}</a>}
+          <p className="thread-post__time">{post.time}</p>
+          {loggedIn && post.handle === me.handle && <PostOwnerActions post={post} onUpdated={setUpdatedPost}
+            onDeleted={() => { router.replace('/'); router.refresh(); }} />}
+          <div className="thread-post__actions" aria-label="게시글 반응">
+            <a href="#thread-reply" className="icon-btn icon-btn--plain" aria-label="댓글 작성란으로 이동"><Icon name="msg" /></a>
+            <button className="icon-btn icon-btn--plain" disabled aria-label="리포스트 준비 중" title="리포스트 준비 중"><Icon name="repeat" /></button>
+            <LikeButton post={post} />
           </div>
         </article>
-
-        <div className="post-card" style={{ padding: '16px 24px' }}>
-          <Avatar initial={me.initial} color={me.av} size={40} />
-          <div className="post-card__body" style={{ gap: 10 }}>
-            <label htmlFor="answer" className="small muted">@{thread.handle} 님에게 답변</label>
-            <textarea
-              id="answer" rows={2} placeholder="경험을 바탕으로 답변을 남겨 주세요." value={draft} onChange={(e) => setDraft(e.target.value)}
-              style={{ border: 0, outline: 'none', background: 'none', resize: 'none', fontSize: 17, padding: 0 }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}><Button onClick={submit} disabled={!draft.trim()}>답변</Button></div>
-          </div>
-        </div>
-
-        {thread.answers.map((a) => {
-          const on = !!helpful[a.id];
-          return (
-            <article key={a.id} className="post-card" style={{ padding: '16px 24px' }}>
-              <Avatar initial={a.initial} color={a.av} size={40} company={a.company} />
-              <div className="post-card__body" style={{ gap: 6 }}>
-                <header className="post-card__head">
-                  <strong>{a.author}</strong>
-                  {a.sharerBadge && <Badge tone="sharer">{a.sharerBadge}</Badge>}
-                  <span className="muted">@{a.handle} · {a.time}</span>
-                  {a.accepted && <Badge tone="accepted">작성자가 채택</Badge>}
-                </header>
-                <p className="post-card__text">{a.body}</p>
-                <div className="post-card__actions" style={{ gap: 24 }}>
-                  <button
-                    type="button" className="post-card__action" aria-pressed={on}
-                    onClick={() => setHelpful((m) => ({ ...m, [a.id]: !m[a.id] }))}
-                    style={on ? { color: 'var(--accent-text)', fontWeight: 700 } : undefined}
-                  >
-                    <Icon name="thumb" size={17} />도움돼요 {(a.likes || 0) + (on ? 1 : 0)}
-                  </button>
-                  <button type="button" className="post-card__action">답글</button>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </MainColumn>
-
-      <RightAside>
-        <section className="card" style={{ gap: 14 }}>
-          <h2>비슷한 질문</h2>
-          <span className="small muted">아직 비슷한 질문이 없어요.</span>
-        </section>
-        <section className="card" style={{ gap: 8 }}>
-          <h2>질문 작성자</h2>
-          <Link href="/profile" className="bold" style={{ textDecoration: 'none' }}>{thread.author} @{thread.handle}</Link>
-        </section>
-      </RightAside>
-    </>
-  );
+        <CommentsSection key={post.id} post={post} />
+      </>}
+    </MainColumn>
+      <RightAside showReviews label="리뷰 추천 및 보조 정보">
+          <section className="card" style={{ gap: 14 }}>
+            <h2>비슷한 질문</h2>
+            <span className="small muted">아직 비슷한 질문이 없어요.</span>
+          </section>
+          {post && <section className="card" style={{ gap: 8 }}>
+            <h2>게시글 작성자</h2>
+            <Link href={`/${encodeURIComponent(post.handle)}`} className="bold" style={{ textDecoration: 'none' }}>{post.author} @{post.handle}</Link>
+          </section>}
+        </RightAside>
+  </>;
 }

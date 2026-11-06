@@ -5,11 +5,14 @@
 ## 화면·API
 
 - 화면: `/profile/verification`, 프로필의 기업 이메일 인증 버튼으로 이동.
+- `GET /api/v1/verifications/me` → 내 기업 이메일 인증 상태 (`type`, `status`, `email`, `verifiedAt`, `expiresAt`).
+  - `status`: `NONE` | `PENDING` | `EXPIRED` | `VERIFIED`. 완료 이력이 있으면 `VERIFIED`를 우선한다.
+  - 완료(`VERIFIED`) 시 `expiresAt`은 null이다. ERD에 인증 유지 기간 컬럼이 없어 코드 만료만 `expiresAt`에 담는다.
 - `POST /api/v1/verifications/email`, JSON: `{"email":"user@example.com"}`.
 - 성공: verificationId, expiresAt, resendAfterSeconds(60).
 - `POST /api/v1/verifications/email/confirm`, JSON: `{"verificationId":1,"code":"123456"}`.
 - 성공: verificationId, email, verifiedAt.
-- 두 API 모두 인증된 Principal 이름을 users.username으로 조회한다. 요청에서 사용자 ID나 권한을 받지 않는다.
+- 발급·확인 API는 인증된 Principal 이름을 users.username으로 조회한다. 상태 조회는 로그인 사용자(세션 또는 `X-Username`) 기준으로 조회한다. 요청에서 사용자 ID나 권한을 받지 않는다.
 
 ## 처리 규칙
 

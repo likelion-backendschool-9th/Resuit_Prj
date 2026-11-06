@@ -134,6 +134,7 @@ erDiagram
     Badge |o..o{ User : "대표 배지 (displayed_badge_id)"
     CommonResume |o..o{ User : "대표 이력서 (pinned_common_resume_id)"
     User ||..o{ Verification : "인증"
+    User ||--o{ UserCareer : "경력"
 
     User {
       uuid id PK "아이디"
@@ -149,6 +150,18 @@ erDiagram
       bigint displayed_badge_id FK "표시할 배지"
       boolean is_subscribed "구독 여부 (확인 필요)"
       timestamptz created_at "가입일"
+      timestamptz updated_at "수정일"
+    }
+    UserCareer {
+      bigint id PK "아이디"
+      uuid user_id FK "유저"
+      varchar company_name "회사명"
+      varchar job_title "직무"
+      date start_date "시작일"
+      date end_date "종료일, 없으면 재직 중"
+      text description "설명"
+      int display_order "표시 순서"
+      timestamptz created_at "작성일"
       timestamptz updated_at "수정일"
     }
     Integration {
@@ -539,6 +552,7 @@ erDiagram
 | `user_badges` | `user_id`, `badge_id`, `acquired_at`, `is_eligible`, `status`; 선택 `continuous_since`, `grace_until`, `expires_at` | PK는 `(user_id, badge_id)`라서 같은 종류의 현재 배지 상태를 한 줄로 관리한다. 리뷰어 배지는 분기 평가에서 `ACTIVE → GRACE → EXPIRED`로 전환하며, 기업 필터에는 `ACTIVE`만 포함한다. 유예·만료 배지도 프로필 이력에는 표시할 수 있다. 자세한 규칙은 [배지 갱신 규칙](./badge-renewal.md)에 있다. |
 | `user_badge_history` | `id`, `user_id`, `badge_id`, `active_from`, `active_until` | 리뷰어 배지가 유예 상태로 내려갈 때 끝난 활성 기간을 기록한다. 같은 배지를 나중에 다시 받아도 지난 인증 기간을 유지한다. |
 | `verifications` | `id`, `user_id`, `type`, `email`, `code_hash`, `expires_at`, `created_at`; 선택 `verified_at` | `type IN ('COMPANY_EMAIL','EMPLOYEE')`. 인증 코드를 보낼 때마다 새 행을 만든다. 확인할 때는 그 회원·종류의 가장 최근 행이 만료 전이고 해시가 일치해야 한다. 성공하면 `verified_at`을 기록한다. 현직자 인증(`EMPLOYEE`)이 끝나면 `mentors` 행을 만들고 현직자 배지를 지급한다. 인증 상태 조회는 `verified_at`이 있는 행이 있는지로 판단한다. |
+| `user_careers` | `id`, `user_id`, `company_name`, `job_title`, `start_date`, `display_order`, `created_at`; 선택 `end_date`, `description`, `updated_at` | 회원이 프로필에 적는 경력이다. `jobs.career`, `mentors.career_years`와 연결하지 않는다. `end_date`가 없으면 재직 중이고, 있으면 시작일보다 빠를 수 없다(서비스에서 검사). `display_order`는 1부터이며 회원 안에서 겹치지 않는다(`UNIQUE(user_id, display_order)`). 프로필 수정은 목록 전체를 바꾸므로 한 트랜잭션에서 기존 행을 지우고 새로 넣는다. 최대 20개다. 회원을 지우면 경력도 지운다. |
 
 `users.widgets`는 켜진 위젯을 표시 순서대로 담은 배열이다. 예: `["GRASS", "PINNED_RESUME"]`. 목록에 없는 위젯은 꺼진 것이다. 위젯 종류는 Java enum으로 관리하며 지금 화면에는 GitHub 잔디(`GRASS`)와 대표 이력서(`PINNED_RESUME`)가 있다.
 
