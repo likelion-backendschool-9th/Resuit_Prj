@@ -63,6 +63,16 @@ export default function ThreadPage({ initialPost, error }) {
         <CommentsSection key={post.id} post={post} />
       </>}
     </MainColumn>
-    <RightAside label="검색 및 추후 활용 영역"><SearchBox /></RightAside>
+      <RightAside showReviews label="베스트 리뷰 및 명예의 전당" />
+      <RightAside showReviews label="리뷰 추천 및 보조 정보">
+          <section className="card" style={{ gap: 14 }}>
+            <h2>비슷한 질문</h2>
+            <span className="small muted">아직 비슷한 질문이 없어요.</span>
+          </section>
+          <section className="card" style={{ gap: 8 }}>
+            <h2>질문 작성자</h2>
+            <Link href="/profile" className="bold" style={{ textDecoration: 'none' }}>{thread.author} @{thread.handle}</Link>
+          </section>
+        </RightAside>
   </>;
 }

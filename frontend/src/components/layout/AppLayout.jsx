@@ -1,3 +1,4 @@
+import ReviewHighlights from '../reviews/ReviewHighlights.jsx';
 import LeftNav from './LeftNav.jsx';
 import './AppLayout.css';
 
@@ -17,10 +18,11 @@ export function MainColumn({ children }) {
 }
 
 // label 만 주고 children 을 비워 두면 "추후 활용 영역"으로 폭만 차지한다.
-export function RightAside({ children, label }) {
+export function RightAside({ children, label, showReviews = false }) {
   return (
     <aside className="right-aside" aria-label={label}>
       {children}
+      {showReviews && <ReviewHighlights />}
     </aside>
   );
 }
