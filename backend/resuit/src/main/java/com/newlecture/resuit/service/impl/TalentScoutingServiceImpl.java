@@ -1,7 +1,5 @@
 package com.newlecture.resuit.service.impl;
 
-import java.util.UUID;
-
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,26 +13,22 @@ import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.entity.CommonResume;
 import com.newlecture.resuit.repository.CommonResumeRepository;
 import com.newlecture.resuit.repository.UserRepository;
-import com.newlecture.resuit.repository.VerificationRepository;
 import com.newlecture.resuit.service.TalentScoutingService;
 
 @Service
 @Transactional(readOnly = true)
 public class TalentScoutingServiceImpl implements TalentScoutingService {
 
-	private static final String COMPANY_EMAIL = "company_email";
+	private static final String COMPANY = "COMPANY";
 
 	private final CommonResumeRepository commonResumeRepository;
 	private final UserRepository userRepository;
-	private final VerificationRepository verificationRepository;
 
 	public TalentScoutingServiceImpl(
 			CommonResumeRepository commonResumeRepository,
-			UserRepository userRepository,
-			VerificationRepository verificationRepository) {
+			UserRepository userRepository) {
 		this.commonResumeRepository = commonResumeRepository;
 		this.userRepository = userRepository;
-		this.verificationRepository = verificationRepository;
 	}
 
 	@Override
@@ -57,13 +51,10 @@ public class TalentScoutingServiceImpl implements TalentScoutingService {
 
 	// 기업 회원 판별은 이 메서드 하나에만 둔다. 기준이 바뀌면 여기만 고치면 된다.
 	private void requireCompany(String username) {
-		UUID userId = userRepository.findByUsername(username)
-				.map(user -> user.getId())
+		String role = userRepository.findByUsername(username)
+				.map(user -> user.getRole())
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-		// 재발송하면 최신 행은 미인증이 되므로, 완료된 기록이 하나라도 있는지로 판별한다.
-		if (verificationRepository
-				.findFirstByUserIdAndTypeAndVerifiedAtIsNotNullOrderByVerifiedAtDesc(userId, COMPANY_EMAIL)
-				.isEmpty()) {
+		if (!COMPANY.equals(role)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 		}
 	}
