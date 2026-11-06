@@ -1,0 +1,6 @@
+.media-attachments { display: flex; flex-direction: column; gap: 12px; }
+.media-attachments:empty { display: none; }
+.media-attachments__item { position: relative; margin: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.media-attachments__item img, .media-attachments__item video { display: block; width: 100%; max-height: 360px; object-fit: contain; background: var(--bg-sub); }
+.media-attachments__item figcaption { padding: 8px 12px; font-size: 12px; color: var(--text-sub); overflow-wrap: anywhere; }
+.media-attachments__item .media-attachments__remove { position: absolute; top: 8px; right: 8px; color: var(--text); background: var(--bg); border: 1px solid var(--line); box-shadow: var(--shadow); }

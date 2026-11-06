@@ -34,6 +34,7 @@ public class SecurityConfiguration {
         }
         http.authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/v1/auth/session", "/api/oauth2/**", "/api/login/**", "/error").permitAll()
+            .requestMatchers(HttpMethod.GET, "/media/image/**", "/media/video/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**", "/api/v1/jobs/**", "/api/v1/posts/**",
                     "/api/v1/users/*/tweets", "/api/v1/users/*/feedbacks",
                     "/api/v1/users/*/github/repos", "/api/v1/users/*/github/contributions",

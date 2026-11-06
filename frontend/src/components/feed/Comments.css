@@ -1,0 +1,46 @@
+.comment-form, .comment-item { display: flex; gap: 12px; padding: 20px; border-bottom: 1px solid var(--line); }
+.comment-form__body { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 10px; }
+.comment-form__input { width: 100%; border: 0; background: none; color: var(--text); font: inherit; font-size: 18px; resize: vertical; }
+.comment-form__input:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.comment-form__footer { display: flex; justify-content: flex-end; gap: 8px; }
+.comment-item__header, .comment-item__controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.comment-item__text, .comment-modal__text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+.comment-item__replies { padding-left: 20px; border-left: 1px solid var(--line); }
+.comment-item__replies .comment-item__replies { padding-left: 0; }
+.comment-item .comment-form { padding: 0; border: 0; }
+.comment-modal { width: min(600px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); color: var(--text); cursor: default; }
+.comment-modal::backdrop { background: color-mix(in srgb, var(--text) 40%, transparent); }
+.comment-modal__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; }
+.comment-modal__header h2 { font-size: 18px; }
+.comment-modal__post { display: flex; gap: 12px; padding: 16px 20px; }
+.comment-modal__text { max-height: 180px; overflow: auto; }
+
+.comment-item { position: relative; }
+.comment-item--connected::after {
+  content: '';
+  position: absolute;
+  top: 68px;
+  bottom: 0;
+  left: 39px;
+  width: 2px;
+  background: var(--line-strong);
+}
+.comment-item__reply-target { color: var(--accent-text); font-size: 13px; }
+.comment-item__reply-actions { display: flex; align-items: center; }
+.comment-item__reply-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  margin-left: -10px;
+  border: 0;
+  border-radius: var(--radius);
+  color: var(--text-sub);
+  background: none;
+  font-size: 13px;
+}
+.comment-item__reply-button:hover:not(:disabled),
+.comment-item__reply-button[aria-expanded='true'] { color: var(--accent-text); background: var(--accent-bg); }
+.comment-item__reply-composer { padding-left: 20px; }
+.comment-item__reply-composer .comment-form { background: var(--bg-sub); }

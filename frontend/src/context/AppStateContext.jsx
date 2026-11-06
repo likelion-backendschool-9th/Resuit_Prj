@@ -29,6 +29,7 @@ export function AppStateProvider({ children }) {
   const member = session?.user;
   const me = member
     ? {
+        id: member.id,
         name: member.nickname || member.username,
         handle: member.username,
         initial: (member.nickname || member.username).slice(0, 1),
@@ -87,6 +88,7 @@ export function AppStateProvider({ children }) {
           ...list,
         ]),
       liked,
+      setPostLiked: (key, value) => setLiked((previous) => ({ ...previous, [key]: value })),
       toggleLike: (id) => setLiked((m) => ({ ...m, [id]: !m[id] })),
       following,
       setFollowState: (handle, value) => setFollowing((m) => ({ ...m, [handle]: !!value })),

@@ -1,4 +1,5 @@
 .post-card {
+  position: relative;
   display: flex;
   gap: 12px;
   padding: 16px 20px;
@@ -24,7 +25,7 @@
 }
 .post-card__question-link:hover { color: var(--question); opacity: 0.85; }
 
-.post-card__actions { display: flex; gap: 28px; flex-wrap: wrap; color: var(--text-sub); font-size: 13px; }
+.post-card__actions { display: flex; justify-content: flex-start; align-items: center; gap: 16px; flex-wrap: nowrap; color: var(--text-sub); font-size: 13px; }
 .post-card__action {
   display: inline-flex;
   align-items: center;
@@ -37,3 +38,13 @@
 }
 .post-card__action:hover { color: var(--accent-text); }
 .post-card__action.is-liked { color: var(--like); }
+
+.post-card--linked { cursor: pointer; }
+.post-card__detail-link { color: inherit; text-decoration: none; }
+.post-card__detail-link:hover { color: inherit; }
+.post-card__detail-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+.post-card--owned .post-card__head { padding-right: 36px; }
+.post-card__action { justify-content: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; }
+.post-card__action:disabled { cursor: default; }
+.post-card__action:disabled:hover { color: inherit; }
