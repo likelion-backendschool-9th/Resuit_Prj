@@ -20,6 +20,9 @@ public interface CommonResumeRepository extends JpaRepository<CommonResume, Long
 
     Optional<CommonResume> findByIdAndUserIdAndIsPublicTrue(Long id, UUID userId);
 
+    // 이 회원에게 공개 이력서가 하나라도 있는지 확인한다. 채용 제안은 인재 찾기에 보이는 회원(공개 이력서 있음)에게만 보낸다.
+    boolean existsByUserIdAndIsPublicTrue(UUID userId);
+
     @EntityGraph(attributePaths = "user")
     // IN 조회는 순서를 보장하지 않으므로, 서비스에서 검색 결과 순서대로 다시 정렬한다.
     List<CommonResume> findByIdIn(Collection<Long> ids);

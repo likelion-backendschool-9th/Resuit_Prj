@@ -1,10 +1,11 @@
 package com.newlecture.resuit.controller;
 
 import java.security.Principal;
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,12 +15,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.newlecture.resuit.dto.CompanyOfferCreateRequest;
+import com.newlecture.resuit.dto.CompanyOfferResponse;
 import com.newlecture.resuit.dto.CompanySubscriptionRequest;
 import com.newlecture.resuit.dto.CompanySubscriptionResponse;
 import com.newlecture.resuit.dto.TalentResumeQuery;
 import com.newlecture.resuit.dto.TalentSearchCondition;
 import com.newlecture.resuit.dto.TalentSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
+import com.newlecture.resuit.service.CompanyOfferService;
 import com.newlecture.resuit.service.CompanySubscriptionService;
 import com.newlecture.resuit.service.TalentScoutingService;
 
@@ -31,11 +35,13 @@ public class TalentScoutingController {
 
 	private final TalentScoutingService talentScoutingService;
 	private final CompanySubscriptionService subscriptionService;
+	private final CompanyOfferService offerService;
 
 	public TalentScoutingController(TalentScoutingService talentScoutingService,
-			CompanySubscriptionService subscriptionService) {
+			CompanySubscriptionService subscriptionService, CompanyOfferService offerService) {
 		this.talentScoutingService = talentScoutingService;
 		this.subscriptionService = subscriptionService;
+		this.offerService = offerService;
 	}
 
 	@GetMapping("/company/talents")
@@ -55,14 +61,16 @@ public class TalentScoutingController {
 	}
 
 	@PostMapping("/company/offers")
-	public ResponseEntity<Void> createCompanyOffer(
-			@RequestBody(required = false) Map<String, Object> offerRequest) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<CompanyOfferResponse> createCompanyOffer(
+			@Valid @RequestBody CompanyOfferCreateRequest request,
+			Principal principal) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(offerService.send(principal.getName(), request));
 	}
 
 	@GetMapping("/users/me/offers")
-	public ResponseEntity<Void> getReceivedOffers() {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<List<CompanyOfferResponse>> getReceivedOffers(
+			Principal principal) {
+		return ResponseEntity.ok(offerService.getReceived(principal.getName()));
 	}
 
 	@GetMapping("/company/subscription")
