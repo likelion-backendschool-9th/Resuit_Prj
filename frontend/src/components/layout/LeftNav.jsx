@@ -21,10 +21,13 @@ const RESUME_CHILDREN = [
   { to: '/reviews/best', label: '베스트 리뷰' },
   { to: '/reviews/hall-of-fame', label: '명예의 전당' }
 ];
+const COMPANY_CHILDREN = [
+  { to: '/company/jobs', label: '내가 작성한 공고' },
+  { to: '/company/post', label: '공고 작성' },
+];
 const ITEMS_BOTTOM = [
   { to: '/threads/1', icon: 'bell', label: '알림' },
   { to: '/profile', icon: 'user', label: '프로필' },
-  { to: '/company/post', icon: 'plus', label: '공고 작성', tag: '회사' },
   { to: '/talent', icon: 'talent', label: '인재 찾기', pill: '기업' }
 ];
 
@@ -46,6 +49,9 @@ export default function LeftNav() {
   const inResume = RESUME_CHILDREN.some((c) => pathname.startsWith(c.to));
   // undefined 면 "지금 이력서 화면에 있으면 펼침"을 따른다.
   const [resumeOpen, setResumeOpen] = useState();
+  const inCompany = COMPANY_CHILDREN.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+  const [companyExpanded, setCompanyExpanded] = useState(null);
+  const companyOpen = companyExpanded?.pathname === pathname ? companyExpanded.open : inCompany;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const open = resumeOpen === undefined ? inResume : resumeOpen;
 
@@ -78,7 +84,22 @@ export default function LeftNav() {
         </div>
       )}
 
-      {ITEMS_BOTTOM.map((it) => <NavItem key={it.to} item={it} pathname={pathname} />)}
+      {ITEMS_BOTTOM.slice(0, 2).map((it) => <NavItem key={it.to} item={it} pathname={pathname} />)}
+
+      <button type="button" className={`nav-item nav-item--button nav-item--company${inCompany ? ' is-active' : ''}`}
+        aria-expanded={companyOpen} aria-controls="company-nav"
+        onClick={() => setCompanyExpanded({ pathname, open: !companyOpen })}>
+        <Icon name="job" size={22} />공고 관리<span className="nav-item__pill">기업</span>
+        <Icon name="chevronDown" size={16} className={`nav-item__chevron${companyOpen ? ' is-open' : ''}`} />
+      </button>
+      <div id="company-nav" className="nav-sub" hidden={!companyOpen}>
+        {COMPANY_CHILDREN.map((item) => {
+          const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+          return <Link key={item.to} href={item.to} aria-current={active ? 'page' : undefined}
+            className={`nav-sub__item${active ? ' is-active' : ''}`}>{item.label}</Link>;
+        })}
+      </div>
+      {ITEMS_BOTTOM.slice(2).map((it) => <NavItem key={it.to} item={it} pathname={pathname} />)}
 
       <button type="button" className="nav-item nav-item--button" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((v) => !v)}>
         <Icon name="settings" size={22} />

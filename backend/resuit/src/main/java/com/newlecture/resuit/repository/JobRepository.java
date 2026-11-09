@@ -12,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 import com.newlecture.resuit.entity.Job;
 
 public interface JobRepository extends JpaRepository<Job, Long> {
+    Page<Job> findByCompany_IdAndDeletedAtIsNullOrderByUpdatedAtDescIdDesc(UUID companyId, Pageable pageable);
+
     Page<Job> findByCompany_IdAndStatusAndDeletedAtIsNullOrderByUpdatedAtDescIdDesc(
             UUID companyId, String status, Pageable pageable);
     Optional<Job> findByIdAndCompany_IdAndStatusAndDeletedAtIsNull(Long id, UUID companyId, String status);
