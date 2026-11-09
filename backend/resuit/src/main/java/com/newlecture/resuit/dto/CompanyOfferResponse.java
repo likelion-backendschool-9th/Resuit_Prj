@@ -9,6 +9,8 @@ public record CompanyOfferResponse(
 		Long id,
 		// 보낸 기업 회원. 회사 이름은 기업 회원의 닉네임(nickname)으로 보여 준다.
 		UserSummary company,
+		// 보낸 기업의 인증 이메일(기업 회원 전환 때 입력한 회사 도메인 이메일). 인증을 취소했으면 null이다.
+		String companyEmail,
 		UserSummary user,
 		JobRef job,
 		String message,
@@ -20,12 +22,14 @@ public record CompanyOfferResponse(
 			String title) {
 	}
 
-	public static CompanyOfferResponse from(CompanyOffer offer) {
+	// 채용 제안 엔티티를 응답 DTO로 바꾼다. 기업 인증 이메일은 서비스에서 찾아 넘긴다.
+	public static CompanyOfferResponse from(CompanyOffer offer, String companyEmail) {
 		JobRef job = offer.getJob() == null ? null
 				: new JobRef(offer.getJob().getId(), offer.getJob().getTitle());
 		return new CompanyOfferResponse(
 				offer.getId(),
 				UserSummary.from(offer.getCompany()),
+				companyEmail,
 				UserSummary.from(offer.getUser()),
 				job,
 				offer.getMessage(),

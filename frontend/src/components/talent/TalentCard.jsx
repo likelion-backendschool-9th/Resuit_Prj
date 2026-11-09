@@ -48,7 +48,8 @@ export default function TalentCard({ person, loadResume, sendOffer }) {
   const [composing, setComposing] = useState(false);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const [offered, setOffered] = useState(false);
+  // 이미 제안을 보낸 회원이면 처음부터 "제안 보냄"으로 보여 준다. 제안은 한 번만 보낼 수 있다.
+  const [offered, setOffered] = useState(Boolean(person.offered));
   const [offerError, setOfferError] = useState('');
 
   const chips = [...person.badges.flatMap(badgeChips), ...historyChips(person.badgeHistory)];
@@ -78,6 +79,12 @@ export default function TalentCard({ person, loadResume, sendOffer }) {
       setOffered(true);
       setComposing(false);
     } catch (err) {
+      // 이미 제안을 보낸 회원이면(409) 제안 보냄으로 바꾼다.
+      if (err.status === 409) {
+        setOffered(true);
+        setComposing(false);
+        return;
+      }
       setOfferError(err.message);
     } finally {
       setSending(false);

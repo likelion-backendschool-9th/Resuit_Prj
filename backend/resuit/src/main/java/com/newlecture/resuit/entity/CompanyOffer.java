@@ -41,4 +41,9 @@ public class CompanyOffer extends BaseCreatedEntity {
 
     @Column(name = "status", nullable = false, length = 20)
     private String status;
+
+    // 받은 사람이 승낙(ACCEPTED)하거나 거절(DECLINED)한다.
+    public void respond(String status) {
+        this.status = status;
+    }
 }

@@ -21,11 +21,13 @@ public record TalentSummary(
 		// 가진 배지(ACTIVE, GRACE, EXPIRED). 프로필 응답과 같은 모양이라 재사용한다.
 		List<ProfileResponse.BadgeSummary> badges,
 		List<ProfileResponse.BadgeHistorySummary> badgeHistory,
-		ReviewerBadgePolicy.Activity activity) {
+		ReviewerBadgePolicy.Activity activity,
+		// 조회한 기업이 이 회원에게 이미 채용 제안을 보냈는지. 제안은 한 번만 보낼 수 있다.
+		boolean offered) {
 
 	public static TalentSummary of(CommonResume resume, String career, int contributions, long posts,
 			List<ProfileResponse.BadgeSummary> badges, List<ProfileResponse.BadgeHistorySummary> badgeHistory,
-			ReviewerBadgePolicy.Activity activity) {
+			ReviewerBadgePolicy.Activity activity, boolean offered) {
 		return new TalentSummary(
 				UserSummary.from(resume.getUser()),
 				resume.getField(),
@@ -35,7 +37,7 @@ public record TalentSummary(
 				resume.getUser().getRegion(),
 				career, contributions, posts,
 				skills(resume),
-				badges, badgeHistory, activity);
+				badges, badgeHistory, activity, offered);
 	}
 
 	private static List<String> skills(CommonResume resume) {
