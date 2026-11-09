@@ -24,7 +24,13 @@ import com.newlecture.resuit.dto.CreateJobRequest;
 import com.newlecture.resuit.dto.SaveJobDraftRequest;
 import com.newlecture.resuit.dto.JobDetailResponse;
 import com.newlecture.resuit.dto.GeneralJobApplicationRequest;
-import com.newlecture.resuit.dto.JobApplicationResponse;
+import com.newlecture.resuit.dto.JobApplicationCommand;
+import com.newlecture.resuit.dto.JobApplicationCommonResponse;
+import com.newlecture.resuit.dto.JobApplicationTargetResponse;
+import com.newlecture.resuit.dto.MyJobApplicationResponse;
+import com.newlecture.resuit.dto.JobErrorResponse;
+import org.springframework.http.CacheControl;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import com.newlecture.resuit.dto.SpecialJobApplicationRequest;
 import com.newlecture.resuit.service.JobService;
 import com.newlecture.resuit.service.JobApplicationService;
@@ -77,20 +83,26 @@ public class JobController {
 		return jobService.getJob(id);
 	}
 
+    @GetMapping("/{jobId}/applications/me")
+    public ResponseEntity<MyJobApplicationResponse> getMyApplication(@PathVariable Long jobId, Principal principal) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(jobApplicationService.getMyApplication(jobId, principal.getName()));
+    }
+
 	@PostMapping("/{jobId}/applications")
-	public JobApplicationResponse applyForJob(
+	public JobApplicationCommonResponse applyForJob(
 			@PathVariable Long jobId,
 			@Valid @RequestBody GeneralJobApplicationRequest applicationRequest,
 			Principal principal) {
-		return jobApplicationService.applyForGeneralJob(jobId, applicationRequest, principal.getName());
+		return jobApplicationService.applyForGeneralJob(new JobApplicationCommand(jobId, applicationRequest.commonResumeId(), principal.getName()));
 	}
 
 	@PostMapping("/{jobId}/special-applications")
-	public JobApplicationResponse applyForSpecialJob(
+	public JobApplicationTargetResponse applyForSpecialJob(
 			@PathVariable Long jobId,
 			@Valid @RequestBody SpecialJobApplicationRequest applicationRequest,
 			Principal principal) {
-		return jobApplicationService.applyForSpecialJob(jobId, applicationRequest, principal.getName());
+		return jobApplicationService.applyForSpecialJob(new JobApplicationCommand(jobId, applicationRequest.targetResumeId(), principal.getName()));
 	}
 
 	@DeleteMapping("/{jobId}/applications")
@@ -122,4 +134,10 @@ public class JobController {
 	public void deleteJob(@PathVariable Long jobId, Principal principal) {
 		jobService.deleteJob(jobId, principal.getName());
 	}
+    // 공고 컨트롤러에만 적용하여 다른 도메인의 예외 응답 계약은 유지한다.
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public JobErrorResponse invalidRequest(IllegalArgumentException exception) {
+        return new JobErrorResponse("INVALID_JOB_REQUEST", exception.getMessage());
+    }
 }
