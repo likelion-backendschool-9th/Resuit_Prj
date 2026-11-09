@@ -17,7 +17,4 @@ public class SocialAccount extends BaseCreatedEntity {
     @Column(nullable = false, length = 20) private String provider;
     @Column(nullable = false, length = 255) private String subject;
 
-    public void assignUser(User user) {
-        this.user = user;
-    }
 }
