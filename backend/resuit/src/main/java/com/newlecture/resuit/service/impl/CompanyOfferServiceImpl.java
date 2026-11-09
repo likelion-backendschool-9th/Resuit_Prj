@@ -1,6 +1,11 @@
 package com.newlecture.resuit.service.impl;
 
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -8,22 +13,27 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.newlecture.resuit.dto.CompanyOfferCreateRequest;
+import com.newlecture.resuit.dto.CompanyOfferReply;
 import com.newlecture.resuit.dto.CompanyOfferResponse;
 import com.newlecture.resuit.entity.CompanyOffer;
 import com.newlecture.resuit.entity.Job;
 import com.newlecture.resuit.entity.User;
+import com.newlecture.resuit.entity.Verification;
 import com.newlecture.resuit.repository.CommonResumeRepository;
 import com.newlecture.resuit.repository.CompanyOfferRepository;
 import com.newlecture.resuit.repository.JobRepository;
 import com.newlecture.resuit.repository.UserRepository;
+import com.newlecture.resuit.repository.VerificationRepository;
 import com.newlecture.resuit.service.CompanyMemberGuard;
 import com.newlecture.resuit.service.CompanyOfferService;
 
 @Service
 public class CompanyOfferServiceImpl implements CompanyOfferService {
 
-    // 처음 보낸 제안의 상태. 수락(ACCEPTED)·거절(DECLINED)은 아직 없다.
+    // 처음 보낸 제안의 상태. 받은 사람이 응답하면 ACCEPTED(승낙)나 DECLINED(거절)가 된다.
     private static final String SENT = "SENT";
+    // 기업 이메일 인증 기록의 종류(CompanyVerificationServiceImpl과 같은 값)
+    private static final String COMPANY_EMAIL = "company_email";
     private static final String DRAFT = "DRAFT";
 
     private final CompanyOfferRepository offers;
@@ -31,14 +41,17 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
     private final JobRepository jobs;
     private final CommonResumeRepository resumes;
     private final CompanyMemberGuard companyGuard;
+    // 기업 이메일 인증 기록. 제안에 보낸 기업의 인증 이메일을 붙일 때 읽는다.
+    private final VerificationRepository verifications;
 
     public CompanyOfferServiceImpl(CompanyOfferRepository offers, UserRepository users, JobRepository jobs,
-            CommonResumeRepository resumes, CompanyMemberGuard companyGuard) {
+            CommonResumeRepository resumes, CompanyMemberGuard companyGuard, VerificationRepository verifications) {
         this.offers = offers;
         this.users = users;
         this.jobs = jobs;
         this.resumes = resumes;
         this.companyGuard = companyGuard;
+        this.verifications = verifications;
     }
 
     @Override
@@ -52,6 +65,12 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
         User target = users.findById(request.userId())
                 .filter(user -> resumes.existsByUserIdAndIsPublicTrue(user.getId()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "제안을 보낼 회원을 찾을 수 없습니다."));
+        // 같은 회사가 동시에 두 번 보내도 한 건만 저장되도록 기업 회원 행을 잠그고 중복을 확인한다.
+        users.findWithLockById(company.getId());
+        // 같은 회원에게는 제안을 한 번만 보낼 수 있다. 응답(승낙·거절)과 상관없이 다시 보낼 수 없다.
+        if (offers.existsByCompany_IdAndUser_Id(company.getId(), target.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 이 회원에게 채용 제안을 보냈습니다.");
+        }
         // 공고는 선택이다. 넣었으면 내 회사의, 삭제되지 않은, 임시 저장이 아닌 공고여야 한다.
         Job job = request.jobId() == null ? null : findMyJob(request.jobId(), company);
         CompanyOffer offer = offers.save(CompanyOffer.builder()
@@ -61,7 +80,7 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
                 .message(request.message().trim())
                 .status(SENT)
                 .build());
-        return CompanyOfferResponse.from(offer);
+        return toResponses(List.of(offer)).get(0);
     }
 
     @Override
@@ -69,9 +88,7 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
     public List<CompanyOfferResponse> getReceived(String username) {
         User me = users.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-        return offers.findByUser_IdOrderByIdDesc(me.getId()).stream()
-                .map(CompanyOfferResponse::from)
-                .toList();
+        return toResponses(offers.findByUser_IdOrderByIdDesc(me.getId()));
     }
 
     // 우리 회사가 보낸 제안을 최신순으로 돌려준다. 기업 회원만 볼 수 있다.
@@ -80,9 +97,43 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
     public List<CompanyOfferResponse> getSent(String username) {
         User company = companyGuard.requireCompany(username);
         // 받은 회원·공고를 함께 읽어 응답 DTO로 바꾼다. 받은 제안과 같은 모양이라 DTO를 재사용한다.
-        return offers.findByCompany_IdOrderByIdDesc(company.getId()).stream()
-                .map(CompanyOfferResponse::from)
+        return toResponses(offers.findByCompany_IdOrderByIdDesc(company.getId()));
+    }
+
+    // 받은 제안에 응답한다. 받은 사람만, 아직 응답하지 않은(SENT) 제안에만 한 번 응답할 수 있다.
+    @Override
+    @Transactional
+    public CompanyOfferResponse respond(CompanyOfferReply reply) {
+        User me = users.findByUsername(reply.username())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        // 내가 받은 제안이 아니면 없는 제안처럼 404다.
+        CompanyOffer offer = offers.findByIdAndUser_Id(reply.offerId(), me.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "제안을 찾을 수 없습니다."));
+        // 이미 승낙·거절한 제안은 바꿀 수 없다.
+        if (!SENT.equals(offer.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 응답한 제안입니다.");
+        }
+        offer.respond(reply.status());
+        return toResponses(List.of(offer)).get(0);
+    }
+
+    // 제안 목록을 응답으로 바꾼다. 보낸 기업들의 인증 이메일을 한 번에 읽어 붙인다.
+    private List<CompanyOfferResponse> toResponses(List<CompanyOffer> list) {
+        Map<UUID, String> emails = companyEmails(list.stream().map(o -> o.getCompany().getId()).distinct().toList());
+        return list.stream()
+                .map(offer -> CompanyOfferResponse.from(offer, emails.get(offer.getCompany().getId())))
                 .toList();
+    }
+
+    // 기업 회원별 유효한(취소하지 않은) 인증 이메일. 여러 번 인증했으면 가장 최근 것을 쓴다.
+    private Map<UUID, String> companyEmails(Collection<UUID> companyIds) {
+        if (companyIds.isEmpty()) {
+            return Map.of();
+        }
+        return verifications.findByUserIdInAndTypeAndVerifiedAtIsNotNullAndRevokedAtIsNull(companyIds, COMPANY_EMAIL).stream()
+                .collect(Collectors.groupingBy(v -> v.getUser().getId(),
+                        Collectors.collectingAndThen(Collectors.maxBy(Comparator.comparing(Verification::getVerifiedAt)),
+                                v -> v.map(Verification::getEmail).orElse(null))));
     }
 
     // 내 회사의 공개된 공고를 찾는다. 남의 공고, 삭제된 공고, 임시 저장 공고는 없는 공고처럼 404다.

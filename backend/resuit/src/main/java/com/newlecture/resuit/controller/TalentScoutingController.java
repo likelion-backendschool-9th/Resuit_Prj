@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.newlecture.resuit.dto.CompanyOfferCreateRequest;
+import com.newlecture.resuit.dto.CompanyOfferReply;
+import com.newlecture.resuit.dto.CompanyOfferRespondRequest;
 import com.newlecture.resuit.dto.CompanyOfferResponse;
 import com.newlecture.resuit.dto.CompanySubscriptionRequest;
 import com.newlecture.resuit.dto.CompanySubscriptionResponse;
@@ -77,6 +80,15 @@ public class TalentScoutingController {
 	public ResponseEntity<List<CompanyOfferResponse>> getReceivedOffers(
 			Principal principal) {
 		return ResponseEntity.ok(offerService.getReceived(principal.getName()));
+	}
+
+	// 받은 제안 응답: PATCH /api/v1/users/me/offers/{offerId}  {"status":"ACCEPTED"|"DECLINED"}
+	@PatchMapping("/users/me/offers/{offerId}")
+	public ResponseEntity<CompanyOfferResponse> respondToOffer(
+			@PathVariable Long offerId,
+			@Valid @RequestBody CompanyOfferRespondRequest request,
+			Principal principal) {
+		return ResponseEntity.ok(offerService.respond(new CompanyOfferReply(offerId, principal.getName(), request.status())));
 	}
 
 	@GetMapping("/company/subscription")

@@ -26,6 +26,9 @@
 .talent-teaser__btn { min-height: 32px; }
 
 .talent-card { display: flex; gap: 14px; padding: 18px 24px; border-bottom: 1px solid var(--line); }
+.talent-card__avatar { flex: 0 0 auto; align-self: flex-start; border-radius: 50%; }
+.talent-card__name { font-size: 16px; font-weight: 700; color: var(--text); }
+.talent-card__name:hover { text-decoration: underline; }
 .talent-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .talent-card__stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--text-sub); }
 .talent-card__stats strong { color: var(--text); }
