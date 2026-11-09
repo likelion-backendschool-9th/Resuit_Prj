@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { MainColumn, RightAside } from '@/components/layout/AppLayout.jsx';
 import Button from '@/components/common/Button.jsx';
 import OfferItem from '@/components/offers/OfferItem.jsx';
-import { getReceivedOffers, getSentOffers } from '@/services/offers.js';
+import { getReceivedOffers, getSentOffers, respondToOffer } from '@/services/offers.js';
 
 // 화면 종류별 문구와 불러오는 함수. 받은 제안은 일반 회원, 보낸 제안은 기업 회원이 본다.
 const BOXES = {
@@ -36,6 +36,12 @@ export default function OffersPage({ box = 'received' }) {
     return () => { active = false; };
   }, [config]);
 
+  // 받은 제안에 승낙·거절하고, 서버가 돌려준 제안으로 목록의 그 줄을 바꾼다.
+  async function respond(offer, status) {
+    const updated = await respondToOffer(offer.id, status);
+    setOffers((list) => list.map((item) => (item.id === updated.id ? updated : item)));
+  }
+
   return <>
     <MainColumn>
       <div className="page-title"><h1>{config.title}</h1></div>
@@ -52,7 +58,7 @@ export default function OffersPage({ box = 'received' }) {
       ) : offers.length === 0 ? (
         <div className="empty">{config.empty}</div>
       ) : (
-        offers.map((offer) => <OfferItem key={offer.id} offer={offer} box={box} />)
+        offers.map((offer) => <OfferItem key={offer.id} offer={offer} box={box} onRespond={box === 'received' ? respond : undefined} />)
       )}
     </MainColumn>
     <RightAside label={`${config.title} 안내`} />

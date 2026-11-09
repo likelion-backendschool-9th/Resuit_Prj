@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Link from 'next/link';
 import Avatar from '../common/Avatar.jsx';
 import Badge from '../common/Badge.jsx';
 import Button from '../common/Button.jsx';
@@ -39,6 +40,7 @@ function historyChips(history) {
 export default function TalentCard({ person, loadResume, sendOffer }) {
   const { user } = person;
   const name = user.nickname || user.username;
+  const profileHref = `/${encodeURIComponent(user.username)}`;
   // 이력서 펼침과 불러온 이력서(처음 펼칠 때 한 번만 부른다)
   const [open, setOpen] = useState(false);
   const [resume, setResume] = useState(null);
@@ -46,7 +48,8 @@ export default function TalentCard({ person, loadResume, sendOffer }) {
   const [composing, setComposing] = useState(false);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const [offered, setOffered] = useState(false);
+  // 이미 제안을 보낸 회원이면 처음부터 "제안 보냄"으로 보여 준다. 제안은 한 번만 보낼 수 있다.
+  const [offered, setOffered] = useState(Boolean(person.offered));
   const [offerError, setOfferError] = useState('');
 
   const chips = [...person.badges.flatMap(badgeChips), ...historyChips(person.badgeHistory)];
@@ -76,6 +79,12 @@ export default function TalentCard({ person, loadResume, sendOffer }) {
       setOffered(true);
       setComposing(false);
     } catch (err) {
+      // 이미 제안을 보낸 회원이면(409) 제안 보냄으로 바꾼다.
+      if (err.status === 409) {
+        setOffered(true);
+        setComposing(false);
+        return;
+      }
       setOfferError(err.message);
     } finally {
       setSending(false);
@@ -84,10 +93,13 @@ export default function TalentCard({ person, loadResume, sendOffer }) {
 
   return (
     <article className="talent-card">
-      <Avatar initial={name.slice(0, 1)} color={avatarColor(user.username)} src={user.profileImageUrl} size={48} />
+      {/* 프로필 사진과 이름을 누르면 그 회원의 프로필(/아이디)로 이동한다. */}
+      <Link href={profileHref} className="talent-card__avatar" aria-label={`${name} 프로필 보기`}>
+        <Avatar initial={name.slice(0, 1)} color={avatarColor(user.username)} src={user.profileImageUrl} size={48} />
+      </Link>
       <div className="talent-card__body">
         <div className="row-wrap" style={{ gap: 6 }}>
-          <strong style={{ fontSize: 16 }}>{name}</strong>
+          <Link href={profileHref} className="talent-card__name">{name}</Link>
           <span className="small muted">@{user.username}</span>
           <Badge tone="general">{[FIELD_LABEL[person.field], CAREER_LABEL[person.career]].filter(Boolean).join(' · ')}</Badge>
           <span className="xs muted" style={{ marginLeft: 'auto' }}>{person.updatedAt?.slice(0, 10)} 업데이트</span>

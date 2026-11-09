@@ -4,7 +4,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,6 +30,7 @@ import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.entity.UserBadge;
 import com.newlecture.resuit.repository.BestReviewRepository;
 import com.newlecture.resuit.repository.CommonResumeRepository;
+import com.newlecture.resuit.repository.CompanyOfferRepository;
 import com.newlecture.resuit.repository.GithubContributionStatRepository;
 import com.newlecture.resuit.repository.ReviewerActivityRepository;
 import com.newlecture.resuit.repository.TalentSearchRepository;
@@ -49,6 +52,7 @@ public class TalentScoutingServiceImpl implements TalentScoutingService {
 	// 배지 근거(채택 수, 서로 다른 요청자 수). 배지 진행도 화면과 같은 쿼리를 재사용한다.
 	private final ReviewerActivityRepository reviewerActivities;
 	private final BestReviewRepository bestReviews;
+	private final CompanyOfferRepository offerRepository;
 
 	public TalentScoutingServiceImpl(
 			CommonResumeRepository commonResumeRepository,
@@ -57,7 +61,8 @@ public class TalentScoutingServiceImpl implements TalentScoutingService {
 			CompanySubscriptionService subscriptionService,
 			GithubContributionStatRepository contributionStats,
 			ReviewerActivityRepository reviewerActivities,
-			BestReviewRepository bestReviews) {
+			BestReviewRepository bestReviews,
+			CompanyOfferRepository offerRepository) {
 		this.commonResumeRepository = commonResumeRepository;
 		this.talentSearchRepository = talentSearchRepository;
 		this.companyGuard = companyGuard;
@@ -65,6 +70,7 @@ public class TalentScoutingServiceImpl implements TalentScoutingService {
 		this.contributionStats = contributionStats;
 		this.reviewerActivities = reviewerActivities;
 		this.bestReviews = bestReviews;
+		this.offerRepository = offerRepository;
 	}
 
 	@Override
@@ -93,6 +99,9 @@ public class TalentScoutingServiceImpl implements TalentScoutingService {
 				.collect(Collectors.groupingBy(h -> h.getUser().getId(),
 						Collectors.mapping(h -> new ProfileResponse.BadgeHistorySummary(h.getBadge().getId(),
 								h.getBadge().getName(), h.getActiveFrom(), h.getActiveUntil()), Collectors.toList())));
+		// 이 기업이 이미 제안을 보낸 회원
+		Set<UUID> offered = userIds.isEmpty() ? Set.of()
+				: new HashSet<>(offerRepository.findOfferedUserIds(company.getId(), userIds));
 		// 배지 근거를 셀 기간. 배지 평가와 같은 6개월 창이다.
 		EvaluationWindow window = ReviewerBadgePolicy.windowEndingAt(now, false);
 
@@ -108,7 +117,7 @@ public class TalentScoutingServiceImpl implements TalentScoutingService {
 					careerLevel(careerDays.getOrDefault(id, 0L)),
 					contributions.getOrDefault(id, 0),
 					postCounts.getOrDefault(id, 0L),
-					owned, history.getOrDefault(id, List.of()), activity);
+					owned, history.getOrDefault(id, List.of()), activity, offered.contains(id));
 		}).toList();
 
 		// 분야 탭 옆에 보여 줄 인원 수(상세 필터 반영)
