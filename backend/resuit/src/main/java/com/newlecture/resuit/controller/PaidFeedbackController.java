@@ -1,7 +1,6 @@
 package com.newlecture.resuit.controller;
 
 import java.security.Principal;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -17,6 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.newlecture.resuit.dto.CreditBalanceResponse;
+import com.newlecture.resuit.dto.CreditPaymentConfirmRequest;
+import com.newlecture.resuit.dto.CreditPaymentCreateRequest;
+import com.newlecture.resuit.dto.CreditPaymentOrderResponse;
+import com.newlecture.resuit.dto.CreditPaymentResultResponse;
 import com.newlecture.resuit.dto.CreditTransactionResponse;
 import com.newlecture.resuit.dto.MentorDetailResponse;
 import com.newlecture.resuit.dto.MentorSummary;
@@ -27,6 +30,7 @@ import com.newlecture.resuit.dto.PaidFeedbackResponseCreateRequest;
 import com.newlecture.resuit.dto.PaidFeedbackResponseSummary;
 import com.newlecture.resuit.dto.PaidFeedbackSearchCondition;
 import com.newlecture.resuit.dto.PaidFeedbackSummary;
+import com.newlecture.resuit.service.CreditPaymentService;
 import com.newlecture.resuit.service.CreditService;
 import com.newlecture.resuit.service.MentorService;
 import com.newlecture.resuit.service.PaidFeedbackService;
@@ -40,14 +44,17 @@ public class PaidFeedbackController {
 	private final MentorService mentorService;
 	private final PaidFeedbackService paidFeedbackService;
 	private final CreditService creditService;
+	private final CreditPaymentService creditPaymentService;
 
 	public PaidFeedbackController(
 			MentorService mentorService,
 			PaidFeedbackService paidFeedbackService,
-			CreditService creditService) {
+			CreditService creditService,
+			CreditPaymentService creditPaymentService) {
 		this.mentorService = mentorService;
 		this.paidFeedbackService = paidFeedbackService;
 		this.creditService = creditService;
+		this.creditPaymentService = creditPaymentService;
 	}
 
 	@GetMapping("/mentors")
@@ -107,8 +114,16 @@ public class PaidFeedbackController {
 	}
 
 	@PostMapping("/credit-payments")
-	public ResponseEntity<Void> createCreditPayment(
-			@RequestBody(required = false) Map<String, Object> paymentRequest) {
-		return ResponseEntity.ok().build();
+	public ResponseEntity<CreditPaymentOrderResponse> createCreditPayment(
+			@Valid @RequestBody CreditPaymentCreateRequest request,
+			Principal principal) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(creditPaymentService.create(principal.getName(), request));
+	}
+
+	@PostMapping("/credit-payments/confirm")
+	public ResponseEntity<CreditPaymentResultResponse> confirmCreditPayment(
+			@Valid @RequestBody CreditPaymentConfirmRequest request,
+			Principal principal) {
+		return ResponseEntity.ok(creditPaymentService.confirm(principal.getName(), request));
 	}
 }

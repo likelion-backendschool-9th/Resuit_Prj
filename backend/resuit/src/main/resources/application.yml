@@ -15,6 +15,11 @@ resuit:
     root: ${RESUIT_MEDIA_ROOT:src/main/media}
   integration:
     token-secret: ${INTEGRATION_TOKEN_SECRET:}
+  # 토스페이먼츠 API 개별 연동 키(test_ck_, test_sk_). 값은 .env에만 둔다.
+  toss:
+    client-key: ${TOSS_CLIENT_KEY:}
+    secret-key: ${TOSS_SECRET_KEY:}
+    api-base-url: ${TOSS_API_BASE_URL:https://api.tosspayments.com}
 
 server:
   servlet:

@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.newlecture.resuit.dto.CreditBalanceResponse;
 import com.newlecture.resuit.dto.CreditTransactionResponse;
+import com.newlecture.resuit.entity.CreditPayment;
 import com.newlecture.resuit.entity.PaidFeedbackRequest;
 
 public interface CreditService {
@@ -16,4 +17,6 @@ public interface CreditService {
 	void use(PaidFeedbackRequest request);
 
 	void earn(PaidFeedbackRequest request);
+
+	int charge(CreditPayment payment);
 }
