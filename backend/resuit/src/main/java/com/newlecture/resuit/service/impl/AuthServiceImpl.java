@@ -88,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
         var linked = socialAccounts.findByUser_Id(user.getId()).stream()
                 .map(account -> account.getProvider()).sorted().toList();
         return new AuthAccountResponse(
-                new SessionMemberResponse(user.getId(), user.getUsername(), user.getNickname()),
+                new SessionMemberResponse(user.getId(), user.getUsername(), user.getNickname(), user.getRole()),
                 linked, user.hasPasswordLogin());
     }
 
