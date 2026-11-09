@@ -82,7 +82,14 @@ export default function ProfileEditPage() {
   }, [localPreview]);
 
   const updateCareer = (key, patch) => {
-    setCareers((rows) => rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+    setCareers((rows) => rows.map((row) => {
+      if (row.key !== key) return row;
+      const next = { ...row, ...patch };
+      if (next.startDate && next.endDate && next.endDate < next.startDate) {
+        next.endDate = '';
+      }
+      return next;
+    }));
   };
 
   const beginCareer = () => {
@@ -360,6 +367,7 @@ export default function ProfileEditPage() {
                         <input
                           type="date"
                           value={item.endDate}
+                          min={item.startDate || undefined}
                           disabled={!loggedIn || data.loading}
                           onChange={(event) => updateCareer(item.key, { endDate: event.target.value })}
                         />

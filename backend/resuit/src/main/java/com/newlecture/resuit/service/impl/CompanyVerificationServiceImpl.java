@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CompanyVerificationServiceImpl implements CompanyVerificationService {
     private static final String TYPE = "company_email";
     private static final String COMPANY_ROLE = "COMPANY";
+    private static final String USER_ROLE = "USER";
     // 메일 코드 없이 바로 인증하므로 저장할 코드가 없다. code_hash 컬럼이 NOT NULL이라 이 값을 넣는다.
     private static final String NO_CODE = "NONE";
     private final UserRepository users;
@@ -53,10 +54,23 @@ public class CompanyVerificationServiceImpl implements CompanyVerificationServic
     }
 
     @Override
+    @Transactional
+    public MyStatusResponse cancel(String username) {
+        var user = authenticatedUser(username);
+        var active = verifications.findByUserIdAndTypeAndVerifiedAtIsNotNullAndRevokedAtIsNull(user.getId(), TYPE);
+        if (!active.isEmpty()) {
+            var revokedAt = now();
+            active.forEach(verification -> verification.revoke(revokedAt));
+            user.changeRole(USER_ROLE);
+        }
+        return new MyStatusResponse(TYPE, "NONE", null, null);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public MyStatusResponse getMyStatus(UUID userId) {
         return verifications
-                .findFirstByUserIdAndTypeAndVerifiedAtIsNotNullOrderByVerifiedAtDesc(userId, TYPE)
+                .findFirstByUserIdAndTypeAndVerifiedAtIsNotNullAndRevokedAtIsNullOrderByVerifiedAtDesc(userId, TYPE)
                 .map(v -> new MyStatusResponse(TYPE, "VERIFIED", v.getEmail(), v.getVerifiedAt()))
                 .orElseGet(() -> new MyStatusResponse(TYPE, "NONE", null, null));
     }

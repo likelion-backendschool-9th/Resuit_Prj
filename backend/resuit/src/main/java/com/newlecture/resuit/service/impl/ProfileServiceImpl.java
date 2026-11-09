@@ -347,7 +347,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .toList();
         // 공개 프로필에는 기업 인증 여부만 담는다. 이메일은 /verifications/me 전용이다.
         var companyVerification = verifications
-                .findFirstByUserIdAndTypeAndVerifiedAtIsNotNullOrderByVerifiedAtDesc(id, "company_email");
+                .findFirstByUserIdAndTypeAndVerifiedAtIsNotNullAndRevokedAtIsNullOrderByVerifiedAtDesc(id, "company_email");
         boolean companyVerified = companyVerification.isPresent();
         LocalDateTime companyVerifiedAt = companyVerification.map(v -> v.getVerifiedAt()).orElse(null);
         return new ProfileResponse(id, user.getUsername(), user.getNickname(),

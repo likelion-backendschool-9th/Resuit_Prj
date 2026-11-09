@@ -24,7 +24,7 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
   const isLiked = !!liked[post.id];
   const typeBadge = POST_TYPE_BADGE[post.type];
   const job = post.type === 'job' ? post.job : null;
-  const detailLink = post.source === 'api' ? `/threads/${post.id}` : null;
+  const detailLink = post.detailLink || (post.source === 'api' ? `/threads/${post.id}` : null);
   const threadLink = post.threadId ? `/threads/${post.threadId}` : null;
 
   return (
