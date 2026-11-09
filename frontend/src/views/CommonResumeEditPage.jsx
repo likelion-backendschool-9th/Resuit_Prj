@@ -10,6 +10,7 @@ import { ChipRadioGroup } from '../components/common/Chip.jsx';
 import TocLink from '../components/resume/TocLink.jsx';
 import { TextField, TextAreaField } from '../components/resume/ResumeFields.jsx';
 import SkillsEditor from '../components/resume/SkillsEditor.jsx';
+import ItemListEditor from '../components/resume/ItemListEditor.jsx';
 import './ResumeEditPage.css';
 
 const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
@@ -32,8 +33,17 @@ const SECTIONS = [
   { id: 'introduction', label: '자기소개', filled: (c) => String(c.introduction ?? '').trim() !== '' }
 ];
 
-const EMPTY = <span className="small muted">아직 작성하지 않았어요</span>;
-const awardText = (a) => (typeof a === 'string' ? a : [a.title, a.date].filter(Boolean).join(' · '));
+const MAX_PROJECTS = 20;
+const MAX_AWARDS = 20;
+// 특화 이력서가 프로젝트를 고를 때 id로 구분하므로 새 프로젝트에도 id를 붙인다
+const newProject = () => ({ id: `p-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, title: '', desc: '' });
+const newAward = () => ({ title: '', date: '' });
+
+// 예전 데이터의 문자열 수상은 { title, date } 모양으로 맞춘다
+const normalize = (content) => ({
+  ...content,
+  ...(Array.isArray(content.awards) && { awards: content.awards.map((a) => (typeof a === 'string' ? { title: a, date: '' } : a)) })
+});
 
 // 공통 이력서 편집 (WBS 3.6). 상세(3.8)로 불러와 섹션별로 고친 뒤 수정 API로 저장한다.
 export default function CommonResumeEditPage({ id }) {
@@ -49,7 +59,7 @@ export default function CommonResumeEditPage({ id }) {
     }
     const controller = new AbortController();
     getCommonResume(id, controller.signal)
-      .then((detail) => setDraft({ title: detail.title, field: detail.field || '', content: detail.content || {} }))
+      .then((detail) => setDraft({ title: detail.title, field: detail.field || '', content: normalize(detail.content || {}) }))
       .catch((err) => { if (!controller.signal.aborted) setError(err.message); });
     return () => controller.abort();
   }, [id]);
@@ -126,18 +136,39 @@ export default function CommonResumeEditPage({ id }) {
 
           <section id="projects" className="resume-block">
             <div className="resume-block__head"><h2>프로젝트</h2></div>
-            {!content.projects?.length ? EMPTY : content.projects.map((p, i) => (
-              <div key={p.id || i} className="resume-project">
-                <span><span className="bold" style={{ display: 'block' }}>{p.title}</span><span className="small muted">{p.desc}</span></span>
-              </div>
-            ))}
+            <ItemListEditor
+              items={content.projects || []} onChange={(v) => changeContent('projects', v)}
+              createItem={newProject} itemLabel="프로젝트" max={MAX_PROJECTS} emptyText="아직 작성한 프로젝트가 없어요"
+              renderItem={(p, update, i) => (
+                <>
+                  <TextField id={`project-${i}-title`} label="프로젝트 이름" max={100} placeholder="예: 스터디 매칭 웹앱" value={p.title} onChange={(v) => update({ title: v })} />
+                  <TextAreaField id={`project-${i}-desc`} label="프로젝트 설명" max={1000} rows={3} placeholder="사용한 기술, 팀 규모, 맡은 일과 결과를 적어 주세요." value={p.desc} onChange={(v) => update({ desc: v })} />
+                  {p.evidence?.length > 0 && (
+                    <div className="row-wrap" style={{ gap: 6 }}>
+                      <span className="xs bold muted">근거</span>
+                      {p.evidence.map((ev) => {
+                        const type = String(ev.type).toLowerCase();
+                        return <span key={ev.label} className={`evidence-chip evidence-chip--${type}`}><Icon name={type === 'repo' ? 'repo' : 'rss'} size={14} />{ev.label}</span>;
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            />
           </section>
 
           <section id="awards" className="resume-block">
             <div className="resume-block__head"><h2>수상</h2></div>
-            {!content.awards?.length ? EMPTY : (
-              <ul className="stack" style={{ gap: 6, paddingLeft: 18, fontSize: 14 }}>{content.awards.map((a, i) => <li key={i}>{awardText(a)}</li>)}</ul>
-            )}
+            <ItemListEditor
+              items={content.awards || []} onChange={(v) => changeContent('awards', v)}
+              createItem={newAward} itemLabel="수상" max={MAX_AWARDS} emptyText="아직 작성한 수상 이력이 없어요"
+              renderItem={(a, update, i) => (
+                <div className="resume-fields">
+                  <TextField id={`award-${i}-title`} label="수상 이름" max={100} placeholder="예: 교내 해커톤 우수상" value={a.title} onChange={(v) => update({ title: v })} />
+                  <TextField id={`award-${i}-date`} label="받은 날" max={20} placeholder="예: 2025-11" value={a.date} onChange={(v) => update({ date: v })} />
+                </div>
+              )}
+            />
           </section>
 
           <section id="introduction" className="resume-block">

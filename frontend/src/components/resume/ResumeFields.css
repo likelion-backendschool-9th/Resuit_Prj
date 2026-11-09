@@ -9,3 +9,8 @@
 .resume-skill__remove:hover { background: var(--bg); color: var(--text); }
 .resume-skill-add { display: flex; gap: 8px; }
 .resume-skill-add .input { flex: 1; min-width: 0; }
+
+.resume-item { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); }
+.resume-item__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.resume-item__head .icon-btn:disabled { opacity: 0.35; cursor: default; }
+.resume-item__head .icon-btn:disabled:hover { background: none; }
