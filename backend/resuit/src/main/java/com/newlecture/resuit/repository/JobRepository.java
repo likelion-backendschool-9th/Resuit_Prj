@@ -19,6 +19,14 @@ public interface JobRepository extends JpaRepository<Job, Long> {
             select j from Job j
             where j.deletedAt is null
               and upper(j.status) in ('OPEN', 'CLOSED')
+            order by j.createdAt desc, j.id desc
+            """)
+    Page<Job> findPublicJobs(Pageable pageable);
+
+    @Query("""
+            select j from Job j
+            where j.deletedAt is null
+              and upper(j.status) in ('OPEN', 'CLOSED')
               and (:type is null or upper(j.type) = upper(:type))
             order by j.createdAt desc, j.id desc
             """)

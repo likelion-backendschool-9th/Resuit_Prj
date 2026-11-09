@@ -23,8 +23,8 @@
 
 1. 인증: 검증된 Principal.getName()으로 users.username을 전달한다. 사용자 UUID를 전달하는 방식으로 결정되면 리뷰·기업 인증의 조회 경계를 함께 수정한다. 브라우저의 mock 로그인 상태는 서버 인증이 아니다.
 2. 피드백: feedback_comments.comment_id / feedback_id / user_id 관계를 사용한다. 화면의 mock ID를 그대로 서버에 보내지 않는다. 한 요청당 채택 한 개 제약은 다른 경로의 채택 구현에도 적용해야 한다.
-3. DB: 공용 DB는 현재 엔티티와 스키마를 먼저 비교한다. database/migrations/001_one_accepted_review.sql, 002_verification_attempts.sql, 003_best_review_selection.sql, 004_social_accounts.sql은 수동 적용 파일이며 자동 migration 실행기는 없다. 기존 중복 채택을 삭제하거나 공용 DB에 ddl-auto=update를 적용하지 않는다.
-4. 기업 기능: 도메인은 제한하지 않고 이메일 수신 확인만 company_email 인증 완료로 기록한다. users.role은 자동 변경하지 않는다. 기업 기능 인가에 무엇을 사용할지 기업 담당자와 정해야 한다.
+3. DB: 공용 DB는 현재 엔티티와 스키마를 먼저 비교한다. database/migrations/001_one_accepted_review.sql, 002_verification_attempts.sql, 003_best_review_selection.sql, 004_social_accounts.sql과 기업 이메일 도메인 초기 데이터 파일은 수동 적용 대상이며 자동 migration 실행기는 없다. 기존 중복 채택을 삭제하거나 공용 DB에 ddl-auto=update를 적용하지 않는다.
+4. 기업 기능: `company_email_domains`에 등록된 도메인만 기업 이메일 인증을 허용하고, 인증 완료 시 users.role을 COMPANY로 변경한다. 도메인 초기 데이터는 `docs/migrations/2026-11-06-company-email-domains.sql`에 있다.
 5. 메일: SMTP 정보·발신 주소·코드 비밀키를 설정하고 실제 수신을 확인한다. 설정은 company-verification.md 참고.
 
 ## 현재 로컬 환경

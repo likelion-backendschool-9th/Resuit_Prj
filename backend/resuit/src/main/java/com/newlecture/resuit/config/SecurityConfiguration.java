@@ -96,7 +96,8 @@ public class SecurityConfiguration {
             }
         }
         http.authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/v1/jobs/me/**", "/api/v1/users/me", "/api/v1/users/me/**").authenticated()
+            .requestMatchers("/api/v1/jobs/me/**", "/api/v1/jobs/*/applications/me").authenticated()
+            .requestMatchers("/api/v1/users/me", "/api/v1/users/me/**").authenticated()
             .requestMatchers(HttpMethod.POST, "/api/v1/users/login", "/api/v1/users/signup").permitAll()
             .requestMatchers("/api/v1/auth/session", "/api/oauth2/**", "/api/login/**", "/error").permitAll()
             .requestMatchers(HttpMethod.GET, "/media/image/**", "/media/video/**").permitAll()
