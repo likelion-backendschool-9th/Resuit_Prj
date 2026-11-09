@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
 import Badge from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
@@ -8,57 +8,120 @@ import Icon from '../components/common/Icon.jsx';
 import Tabs from '../components/common/Tabs.jsx';
 import TalentCard from '../components/talent/TalentCard.jsx';
 import TalentFilters from '../components/talent/TalentFilters.jsx';
+import { CAREER_LABEL, REGION_LABEL, TALENT_FIELDS } from '../components/talent/labels.js';
+import { getCompanySubscription, getTalentResume, getTalents, sendCompanyOffer, startProTrial } from '../services/talents.js';
 import './TalentSearchPage.css';
 
-const TALENTS = [];
-const FIELDS = [{ id: 'all', label: '전체' }, { id: '백엔드', label: '백엔드' }, { id: '프론트엔드', label: '프론트엔드' }, { id: '풀스택', label: '풀스택' }];
+const FIELDS = [{ id: 'all', label: '전체' }, ...TALENT_FIELDS];
 const NO_FILTERS = { badgeOnly: false, skills: [], career: 'all', streak: false, github: false, writer: false, region: 'all' };
+const PAGE_SIZE = 20;
 const MIN_STREAK = 2;
 const MIN_GITHUB = 500;
 const MIN_POSTS = 5;
 
-const activeBadges = (p) => p.badges.filter((b) => b.status === 'active');
-
-function matches(p, f) {
-  return (!f.badgeOnly || activeBadges(p).length > 0)
-    && (!f.streak || activeBadges(p).some((b) => b.streak >= MIN_STREAK))
-    && f.skills.every((k) => p.skills.includes(k))
-    && (f.career === 'all' || p.career === f.career)
-    && (!f.github || p.github >= MIN_GITHUB)
-    && (!f.writer || p.posts >= MIN_POSTS)
-    && (f.region === 'all' || p.region === f.region);
+// 서버 streak은 "지난 분기 수"라서, 이번 분기를 포함한 2분기 연속은 streak=1이다.
+function toQuery(tab, f, page) {
+  return {
+    field: tab === 'all' ? undefined : tab,
+    badge: f.badgeOnly ? 'active' : undefined,
+    streak: f.streak ? MIN_STREAK - 1 : undefined,
+    skills: f.skills,
+    career: f.career === 'all' ? undefined : f.career,
+    minContrib: f.github ? MIN_GITHUB : undefined,
+    minPosts: f.writer ? MIN_POSTS : undefined,
+    region: f.region === 'all' ? undefined : f.region,
+    page,
+    size: PAGE_SIZE
+  };
 }
 
 function activeLabels(f) {
   return [
     f.badgeOnly && '인증 배지',
     ...f.skills,
-    f.career !== 'all' && f.career,
+    f.career !== 'all' && CAREER_LABEL[f.career],
     f.streak && `연속 인증 ${MIN_STREAK}분기+`,
     f.github && `GitHub ${MIN_GITHUB}+`,
     f.writer && `기술 글 ${MIN_POSTS}+`,
-    f.region !== 'all' && f.region
+    f.region !== 'all' && REGION_LABEL[f.region]
   ].filter(Boolean);
 }
 
+const dateText = (value) => (value ? new Date(value).toLocaleDateString('ko-KR') : '');
+
 export default function TalentSearchPage() {
-  const [pro, setPro] = useState(false);
+  const [subscription, setSubscription] = useState(null);
+  const [planError, setPlanError] = useState('');
+  const [trialBusy, setTrialBusy] = useState(false);
   const [tab, setTab] = useState('all');
   const [filters, setFilters] = useState(NO_FILTERS);
   const [lockMessage, setLockMessage] = useState(false);
+  const [result, setResult] = useState(null);
+  const [people, setPeople] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
 
-  const count = (id) => TALENTS.filter((p) => id === 'all' || p.field === id).length;
-  const tabs = FIELDS.map((f) => ({ id: f.id, label: <>{f.label} <span className="xs muted">{count(f.id)}</span></> }));
-
-  const byField = TALENTS.filter((p) => tab === 'all' || p.field === tab);
+  const pro = !!subscription?.pro;
+  // 무료 등급이면 상세 필터를 서버에 보내지 않는다(보내면 403이다).
   const applied = pro ? filters : NO_FILTERS;
-  const people = byField.filter((p) => matches(p, applied));
-  const labels = activeLabels(applied);
+  const appliedKey = JSON.stringify(applied);
 
-  const togglePro = () => {
-    setPro((v) => !v);
-    setLockMessage(false);
-  };
+  useEffect(() => {
+    let active = true;
+    getCompanySubscription()
+      .then((data) => { if (active) setSubscription(data); })
+      .catch((err) => { if (active) setPlanError(err.message); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError(null);
+    getTalents(toQuery(tab, JSON.parse(appliedKey), 0))
+      .then((data) => {
+        if (!active) return;
+        setResult(data);
+        setPeople(data.content);
+      })
+      .catch((err) => { if (active) setError(err); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [tab, appliedKey]);
+
+  async function loadMore() {
+    setLoadingMore(true);
+    try {
+      const data = await getTalents(toQuery(tab, applied, result.page + 1));
+      setResult(data);
+      setPeople((list) => [...list, ...data.content]);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  async function startTrial() {
+    setTrialBusy(true); setPlanError('');
+    try {
+      setSubscription(await startProTrial());
+      setLockMessage(false);
+    } catch (err) {
+      setPlanError(err.message);
+    } finally {
+      setTrialBusy(false);
+    }
+  }
+
+  const counts = result?.fieldCounts || {};
+  const tabs = FIELDS.map((f) => ({ id: f.id, label: <>{f.label} <span className="xs muted">{counts[f.id === 'all' ? 'ALL' : f.id] ?? 0}</span></> }));
+  const labels = activeLabels(applied);
+  const blocked = error && (error.status === 401 || error.status === 403);
+  const canTrial = !pro && subscription?.trialAvailable;
+
+  const loadResume = (person) => getTalentResume(person.user.id, person.resumeId);
+  const sendOffer = (person, message) => sendCompanyOffer({ userId: person.user.id, message });
 
   return (
     <>
@@ -66,34 +129,56 @@ export default function TalentSearchPage() {
         <div className="page-title" style={{ alignItems: 'center', justifyContent: 'flex-start', gap: 10 }}>
           <h1>인재 찾기</h1>
           <Badge tone="invert" size="md">기업 회원 전용</Badge>
-          <span className="small muted" style={{ marginLeft: 'auto' }}>
-            <strong style={{ color: pro ? 'var(--accent-text)' : 'var(--text)' }}>{pro ? '기업 Pro 체험 중' : '무료'}</strong>
-          </span>
-        </div>
-        <p className="page-desc">구직자가 프로필에서 공개로 설정한 이력서만 보여요. 인증 배지는 분기마다 갱신되고, 다음 평가는 2027년 1월 1일이에요.</p>
-
-        <Tabs items={tabs} value={tab} onChange={setTab} label="분야" />
-
-        <div className="talent-result">
-          <span className="text-2" style={{ fontSize: 14 }}>공개 이력서 <strong style={{ color: 'var(--text)' }}>{people.length}</strong>명</span>
-          {labels.length > 0 && (
-            <div className="row-wrap" style={{ gap: 6 }}>
-              {labels.map((label) => <Badge key={label} tone="accent" size="md">{label}</Badge>)}
-              <button type="button" className="talent-result__clear" onClick={() => setFilters(NO_FILTERS)}>필터 지우기</button>
-            </div>
+          {subscription && (
+            <span className="small muted" style={{ marginLeft: 'auto' }}>
+              <strong style={{ color: pro ? 'var(--accent-text)' : 'var(--text)' }}>
+                {pro ? (subscription.trial ? `기업 Pro 체험 중 · ${dateText(subscription.trialEndsAt)}까지` : '기업 Pro') : '무료'}
+              </strong>
+            </span>
           )}
         </div>
+        <p className="page-desc">구직자가 프로필에서 공개로 설정한 이력서만 보여요. 인증 배지는 분기마다 갱신돼요.</p>
 
-        {!pro && (
-          <div className="talent-teaser">
-            <Icon name="lock" size={18} />
-            <span className="talent-teaser__text">이 중 <strong>활성 인증 배지 보유자 {byField.filter((p) => activeBadges(p).length > 0).length}명</strong> · 배지 필터와 상세 필터는 기업 Pro에서 쓸 수 있어요.</span>
-            <Button variant="dark" size="sm" className="talent-teaser__btn" onClick={togglePro}>Pro 체험하기</Button>
+        {blocked ? (
+          <div className="talent-notice">
+            <p className="text-2">{error.status === 401 ? '로그인한 뒤 볼 수 있어요.' : '기업 회원만 볼 수 있어요. 회사 이메일을 인증하면 기업 회원으로 바뀌어요.'}</p>
+            <Button to={error.status === 401 ? '/login' : '/profile/verification'} variant="primary" size="sm">
+              {error.status === 401 ? '로그인하기' : '기업 이메일 인증하기'}
+            </Button>
           </div>
-        )}
+        ) : (
+          <>
+            <Tabs items={tabs} value={tab} onChange={setTab} label="분야" />
 
-        {people.map((p) => <TalentCard key={p.id} person={p} />)}
-        {people.length === 0 && <div className="empty">조건에 맞는 공개 이력서가 없어요. 필터를 줄여 보세요.</div>}
+            <div className="talent-result">
+              <span className="text-2" style={{ fontSize: 14 }}>공개 이력서 <strong style={{ color: 'var(--text)' }}>{result?.totalElements ?? 0}</strong>명</span>
+              {labels.length > 0 && (
+                <div className="row-wrap" style={{ gap: 6 }}>
+                  {labels.map((label) => <Badge key={label} tone="accent" size="md">{label}</Badge>)}
+                  <button type="button" className="talent-result__clear" onClick={() => setFilters(NO_FILTERS)}>필터 지우기</button>
+                </div>
+              )}
+            </div>
+
+            {subscription && !pro && (
+              <div className="talent-teaser">
+                <Icon name="lock" size={18} />
+                <span className="talent-teaser__text">배지 필터와 상세 필터는 <strong>기업 Pro</strong>에서 쓸 수 있어요.</span>
+                {canTrial && <Button variant="dark" size="sm" className="talent-teaser__btn" onClick={startTrial} disabled={trialBusy}>Pro 체험하기</Button>}
+              </div>
+            )}
+
+            {loading && <div className="empty">불러오는 중…</div>}
+            {!loading && error && <div className="empty" role="alert">{error.message}</div>}
+            {!loading && !error && people.map((p) => <TalentCard key={p.resumeId} person={p} loadResume={loadResume} sendOffer={sendOffer} />)}
+            {!loading && !error && people.length === 0 && <div className="empty">조건에 맞는 공개 이력서가 없어요. 필터를 줄여 보세요.</div>}
+            {!loading && result?.hasNext && (
+              <div className="talent-more">
+                <Button variant="outline" size="sm" onClick={loadMore} disabled={loadingMore}>{loadingMore ? '불러오는 중…' : '더 보기'}</Button>
+              </div>
+            )}
+          </>
+        )}
       </MainColumn>
 
       <RightAside>
@@ -110,8 +195,11 @@ export default function TalentSearchPage() {
             <div className={`talent-plan${pro ? '' : ' is-on'}`}><strong>무료</strong><span>분야별 조회</span><span>이력서 열람</span><span>채용 제안</span></div>
             <div className={`talent-plan${pro ? ' is-on' : ''}`}><strong>기업 Pro</strong><span>+ 인증 배지 필터</span><span>+ 기술 · 경력 필터</span><span>+ 연속 인증 · 활동 근거</span><span>+ 지역</span></div>
           </div>
-          <Button variant={pro ? 'outline' : 'dark'} className="talent-plans__btn" onClick={togglePro}>{pro ? '무료로 돌아가기' : '기업 Pro 체험하기'}</Button>
-          <span className="xs muted">실제 결제 없이 등급만 바뀌는 체험이에요. 가격은 [미정].</span>
+          {canTrial && <Button variant="dark" className="talent-plans__btn" onClick={startTrial} disabled={trialBusy}>{trialBusy ? '체험을 시작하는 중…' : '기업 Pro 14일 체험하기'}</Button>}
+          {subscription && !pro && !subscription.trialAvailable && <span className="small muted">체험 기간이 끝났어요.</span>}
+          {pro && subscription.trial && <span className="small muted">{dateText(subscription.trialEndsAt)}까지 체험 중이에요.</span>}
+          {planError && <p role="alert" className="small talent-card__error">{planError}</p>}
+          <span className="xs muted">실제 결제 없이 등급만 바뀌는 체험이에요. 체험은 한 번만 할 수 있고, 가격은 [미정].</span>
         </section>
       </RightAside>
     </>
