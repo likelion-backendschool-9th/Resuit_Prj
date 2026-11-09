@@ -15,6 +15,7 @@ import com.newlecture.resuit.dto.PaidFeedbackResponseCommand;
 import com.newlecture.resuit.dto.PaidFeedbackResponseSummary;
 import com.newlecture.resuit.dto.PaidFeedbackSearchCondition;
 import com.newlecture.resuit.dto.PaidFeedbackSummary;
+import com.newlecture.resuit.dto.resume.ResumePreviewResponse;
 import com.newlecture.resuit.entity.CommonResume;
 import com.newlecture.resuit.entity.Mentor;
 import com.newlecture.resuit.entity.PaidFeedbackRequest;
@@ -138,6 +139,23 @@ public class PaidFeedbackServiceImpl implements PaidFeedbackService {
 	private User findUser(String username) {
 		return userRepository.findByUsername(username)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+	}
+
+	// 요청에 붙은 이력서. 현직자가 피드백을 쓰려면 요청자의 이력서를 봐야 하는데,
+	// 이력서 미리보기(GET /resumes/{id})는 공개 이력서나 게시판 요청에 올린 이력서만 보여 주므로 따로 둔다.
+	@Override
+	public ResumePreviewResponse getRequestResume(Long id, String username) {
+		PaidFeedbackRequest request = findRequest(id);
+		// 요청자와 그 요청의 현직자만 볼 수 있다.
+		if (!request.getRequester().getUsername().equals(username) && !isMentor(request, username)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+		}
+		// 공통·특화 이력서 중 요청에 붙은 쪽을 피드백 게시판 미리보기와 같은 모양으로 돌려준다.
+		if (request.getCommonResume() != null) {
+			return ResumePreviewResponse.from(request.getCommonResume());
+		}
+		TargetResume resume = request.getTargetResume();
+		return ResumePreviewResponse.of(resume, targetResumeRepository.findQuestions(resume.getJob().getId()));
 	}
 
 	private boolean isMentor(PaidFeedbackRequest request, String username) {

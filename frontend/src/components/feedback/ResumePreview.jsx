@@ -13,7 +13,8 @@ const isEmpty = (value) => value == null || (Array.isArray(value) ? value.length
 const awardText = (award) => (typeof award === 'string' ? award : [award.title || award.name, award.desc || award.date].filter(Boolean).join(' · '));
 
 // 피드백 게시판 카드 안에서 펼치는 이력서 미리보기 (WBS 4.5). 요청자가 봐 달라고 한 섹션은 강조한다.
-export default function ResumePreview({ type, id, requested = [] }) {
+// load를 넘기면 그 함수로 이력서를 읽는다(유료 피드백의 요청 이력서처럼 미리보기 API로 볼 수 없는 경우).
+export default function ResumePreview({ type, id, requested = [], load }) {
   const [resume, setResume] = useState(null);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
@@ -21,7 +22,7 @@ export default function ResumePreview({ type, id, requested = [] }) {
   useEffect(() => {
     const controller = new AbortController();
     setError('');
-    getResumePreview(type, id, controller.signal)
+    (load ? load(controller.signal) : getResumePreview(type, id, controller.signal))
       .then(setResume)
       .catch((err) => { if (!controller.signal.aborted) setError(err.message); });
     return () => controller.abort();
