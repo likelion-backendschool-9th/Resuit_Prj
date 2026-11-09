@@ -38,6 +38,7 @@ public class CommonResume extends BaseTimeEntity {
     @Column(name = "content", columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> content;
 
+
     @Builder.Default
     @Column(name = "is_public", nullable = false)
     private boolean isPublic = false;
@@ -48,6 +49,7 @@ public class CommonResume extends BaseTimeEntity {
         this.field = field;
         this.content = Objects.requireNonNull(content);
     }
+
 
     public void setPublic(boolean isPublic) {
         this.isPublic = isPublic;

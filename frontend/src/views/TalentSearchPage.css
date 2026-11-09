@@ -101,3 +101,5 @@
 .talent-plan { display: flex; flex-direction: column; gap: 4px; padding: 10px; border-radius: 10px; border: 2px solid var(--line); background: var(--bg); color: var(--text-2); }
 .talent-plan.is-on { border-color: var(--accent); background: var(--accent-bg); }
 .talent-plans__btn { min-height: 42px; }
+
+.talent-card__photo { width: 72px; height: 90px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--line); }
