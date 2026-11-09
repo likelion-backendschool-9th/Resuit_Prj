@@ -24,6 +24,7 @@ const RESUME_CHILDREN = [
 ];
 const COMPANY_CHILDREN = [
   { to: '/company/jobs', label: '내가 작성한 공고' },
+  { to: '/company/applications', label: '지원 현황' },
   { to: '/company/post', label: '공고 작성' },
 ];
 const ITEMS_BOTTOM = [

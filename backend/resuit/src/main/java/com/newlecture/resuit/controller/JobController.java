@@ -1,12 +1,33 @@
 package com.newlecture.resuit.controller;
 
+import com.newlecture.resuit.dto.CompanyApplicantsResponse;
+import com.newlecture.resuit.dto.CompanyApplicationDetailResponse;
+import com.newlecture.resuit.dto.CompanyApplicationQuery;
+import com.newlecture.resuit.dto.CompanyApplicationsQuery;
+import com.newlecture.resuit.dto.CreateJobRequest;
+import com.newlecture.resuit.dto.GeneralJobApplicationRequest;
+import com.newlecture.resuit.dto.JobApplicationCommand;
+import com.newlecture.resuit.dto.JobApplicationCommonResponse;
+import com.newlecture.resuit.dto.JobApplicationTargetResponse;
+import com.newlecture.resuit.dto.JobDetailResponse;
+import com.newlecture.resuit.dto.JobErrorResponse;
+import com.newlecture.resuit.dto.JobResponse;
+import com.newlecture.resuit.dto.MyJobApplicationResponse;
+import com.newlecture.resuit.dto.PostedJobSummary;
+import com.newlecture.resuit.dto.SaveJobDraftRequest;
+import com.newlecture.resuit.dto.SpecialJobApplicationRequest;
+import com.newlecture.resuit.service.JobApplicationService;
+import com.newlecture.resuit.service.JobService;
+import jakarta.validation.Valid;
 import java.security.Principal;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,25 +36,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import jakarta.validation.Valid;
-
-import com.newlecture.resuit.dto.JobResponse;
-import com.newlecture.resuit.dto.CreateJobRequest;
-import com.newlecture.resuit.dto.SaveJobDraftRequest;
-import com.newlecture.resuit.dto.JobDetailResponse;
-import com.newlecture.resuit.dto.GeneralJobApplicationRequest;
-import com.newlecture.resuit.dto.JobApplicationCommand;
-import com.newlecture.resuit.dto.JobApplicationCommonResponse;
-import com.newlecture.resuit.dto.JobApplicationTargetResponse;
-import com.newlecture.resuit.dto.MyJobApplicationResponse;
-import com.newlecture.resuit.dto.JobErrorResponse;
-import org.springframework.http.CacheControl;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import com.newlecture.resuit.dto.SpecialJobApplicationRequest;
-import com.newlecture.resuit.service.JobService;
-import com.newlecture.resuit.service.JobApplicationService;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/jobs")
@@ -45,6 +50,48 @@ public class JobController {
 		this.jobService = jobService;
 		this.jobApplicationService = jobApplicationService;
 	}
+
+    @GetMapping("/me/posted")
+    public ResponseEntity<Page<PostedJobSummary>> getPostedJobs(Principal principal,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+            .body(jobService.getPostedJobs(principal.getName(), applicationPage(page, size)));
+    }
+
+    @GetMapping("/me/posted/{jobId}/applications")
+    public ResponseEntity<CompanyApplicantsResponse> getApplicants(@PathVariable Long jobId,
+            Principal principal, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(jobApplicationService.getCompanyApplicants(
+            new CompanyApplicationsQuery(jobId, principal.getName(), applicationPage(page, size))));
+    }
+
+    @GetMapping("/me/posted/{jobId}/applications/{applicationId}")
+    public ResponseEntity<CompanyApplicationDetailResponse> getApplication(@PathVariable Long jobId,
+            @PathVariable Long applicationId, Principal principal) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(jobApplicationService.getCompanyApplication(
+            new CompanyApplicationQuery(jobId, applicationId, principal.getName())));
+    }
+
+    @GetMapping("/me/posted/{jobId}/applications/{applicationId}/photo")
+    public ResponseEntity<byte[]> getApplicationPhoto(@PathVariable Long jobId,
+            @PathVariable Long applicationId, Principal principal) {
+        var photo = jobApplicationService.getCompanyApplicationPhoto(
+            new CompanyApplicationQuery(jobId, applicationId, principal.getName()));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+            .contentType(MediaType.parseMediaType(photo.contentType())).body(photo.content());
+    }
+
+    private PageRequest applicationPage(int page, int size) {
+        if (page < 0 || size < 1 || size > 100)
+            throw new IllegalArgumentException("page는 0 이상, size는 1~100이어야 합니다.");
+        return PageRequest.of(page, size);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<JobErrorResponse> applicationError(ResponseStatusException exception) {
+        return ResponseEntity.status(exception.getStatusCode()).cacheControl(CacheControl.noStore())
+            .body(new JobErrorResponse("JOB_REQUEST_FAILED", exception.getReason()));
+    }
 
     @GetMapping("/me")
     public ResponseEntity<Page<JobResponse>> getMyJobs(Principal principal,

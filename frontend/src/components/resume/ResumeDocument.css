@@ -1,0 +1,29 @@
+.resume-document {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-sub);
+}
+.resume-document--state { align-items: flex-start; gap: 8px; }
+.resume-document__block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.resume-document__block.is-requested { border-color: var(--special-line); }
+.resume-document__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.resume-document__head h3 { font-size: 15px; font-weight: 700; }
+.resume-document__basic { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.resume-document__basic dd { margin: 0; font-weight: 500; }
+.resume-document__skill { font-size: 13px; padding: 4px 10px; border-radius: var(--radius-sm); background: var(--bg-muted); }
+.resume-document__list { padding-left: 18px; font-size: 14px; line-height: 1.7; }
+.resume-document__text { font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+
+.resume-document__photo { width: 120px; max-height: 160px; object-fit: contain; align-self: flex-start; border-radius: var(--radius); }
+.resume-document { overflow-wrap: anywhere; }

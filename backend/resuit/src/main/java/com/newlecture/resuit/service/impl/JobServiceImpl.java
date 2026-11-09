@@ -1,30 +1,30 @@
 package com.newlecture.resuit.service.impl;
 
+import com.newlecture.resuit.dto.CreateJobRequest;
+import com.newlecture.resuit.dto.JobDetailResponse;
+import com.newlecture.resuit.dto.JobResponse;
+import com.newlecture.resuit.dto.PostedJobSummary;
+import com.newlecture.resuit.dto.SaveJobDraftRequest;
+import com.newlecture.resuit.entity.Job;
+import com.newlecture.resuit.entity.JobQuestion;
+import com.newlecture.resuit.entity.User;
+import com.newlecture.resuit.repository.JobApplicationRepository;
+import com.newlecture.resuit.repository.JobQuestionRepository;
+import com.newlecture.resuit.repository.JobRepository;
+import com.newlecture.resuit.repository.UserRepository;
+import com.newlecture.resuit.service.JobService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.server.ResponseStatusException;
-import com.newlecture.resuit.dto.CreateJobRequest;
-import com.newlecture.resuit.dto.SaveJobDraftRequest;
-import com.newlecture.resuit.entity.User;
-import com.newlecture.resuit.entity.JobQuestion;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.newlecture.resuit.dto.JobResponse;
-import com.newlecture.resuit.dto.JobDetailResponse;
-import com.newlecture.resuit.repository.UserRepository;
-import com.newlecture.resuit.entity.Job;
-import com.newlecture.resuit.repository.JobRepository;
-import com.newlecture.resuit.repository.JobQuestionRepository;
-import com.newlecture.resuit.service.JobService;
-
-import lombok.RequiredArgsConstructor;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +33,30 @@ public class JobServiceImpl implements JobService {
 
 	private final JobRepository jobRepository;
 	private final JobQuestionRepository jobQuestionRepository;
-	private final UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final JobApplicationRepository applications;
+
+    @Override
+    public Page<PostedJobSummary> getPostedJobs(String username, Pageable pageable) {
+        var company = requireCompany(username);
+        var jobs = jobRepository.findPostedByCompany(company.getId(), pageable);
+        if (jobs.isEmpty()) return jobs.map(job -> PostedJobSummary.from(job, 0));
+        var counts = applications.countActiveByJobs(jobs.stream().map(Job::getId).toList()).stream()
+            .collect(Collectors.toMap(
+                JobApplicationRepository.ApplicationCount::getJobId,
+                JobApplicationRepository.ApplicationCount::getApplicationCount));
+        return jobs.map(job -> PostedJobSummary.from(job, counts.getOrDefault(job.getId(), 0L)));
+    }
+
+    @Override
+    public Job requireOwnedPostedJob(Long jobId, String username) {
+        var company = requireCompany(username);
+        var job = jobRepository.findPublicJobById(jobId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "게시한 공고를 찾을 수 없습니다."));
+        if (!job.getCompany().getId().equals(company.getId()))
+            throw new AccessDeniedException("본인이 작성한 공고의 지원 현황만 조회할 수 있습니다.");
+        return job;
+    }
 
     @Override
     @Transactional

@@ -49,3 +49,14 @@
 - `/me/drafts`는 작성 화면의 임시저장 선택 용도로 유지한다. `/me`는 공고 관리 화면에서
   전체 상태를 조회하는 용도다. 공개 목록 `/jobs`는 다른 회사 공고도 포함하며 초안을 제외한다.
 - 목록은 서버 페이지네이션을 사용한다. 임시저장은 편집 화면으로, 공개 공고는 상세·관리 화면으로 연결한다.
+
+## 기업 지원현황
+
+- 공고 관리 하위 메뉴: **지원 현황** → `/company/applications`.
+- `/company/applications/[jobId]`: 해당 공고 지원자 목록과 지원자 수.
+- `/company/applications/[jobId]/[applicationId]`: 제출 당시 스냅샷·문항 답변·보존 사진.
+- 기존 공고 작성 화면은 유지한다. 하위 화면은 URL로 이동하며 공통 AppLayout, MainColumn, RightAside를 사용한다. 비공개 화면은 robots.index=false다.
+- `CompanyApplicationsPage`는 인증 상태, 페이지 상태와 데이터 로딩을 담당한다. `services/jobs.js`가 API를 호출하고, `CompanyApplications` 도메인 컴포넌트가 응답을 표시한다.
+- 기존 JobCard/Avatar/Badge/Button을 재사용한다. `ResumeDocument`는 props로 받은 자료만 표시하는 공통 읽기 전용 컴포넌트이며 피드백 ResumePreview에서도 사용한다. 기업 화면에서 편집용 이력서 API는 호출하지 않는다.
+- 공고 목록에는 초안·삭제 공고를 표시하지 않는다. 지원 목록/수에는 취소 건을 제외한다. 만료된 건은 지원 기록만 표시하고 상세 API의 410도 안내한다.
+- 목록은 20개씩 페이지 전환하며 로딩·실패·빈 목록·미로그인·기업 권한 없음 상태를 표시한다. 각 상세 응답에 필요한 공고/지원자 정보가 포함되어 추가 조회가 없다.

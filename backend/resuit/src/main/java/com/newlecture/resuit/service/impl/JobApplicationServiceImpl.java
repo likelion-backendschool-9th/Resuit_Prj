@@ -1,9 +1,15 @@
 package com.newlecture.resuit.service.impl;
 
+import com.newlecture.resuit.dto.CompanyApplicantSummary;
+import com.newlecture.resuit.dto.CompanyApplicantsResponse;
+import com.newlecture.resuit.dto.CompanyApplicationDetailResponse;
+import com.newlecture.resuit.dto.CompanyApplicationQuery;
+import com.newlecture.resuit.dto.CompanyApplicationsQuery;
 import com.newlecture.resuit.dto.JobApplicationCommand;
 import com.newlecture.resuit.dto.JobApplicationCommonResponse;
 import com.newlecture.resuit.dto.JobApplicationTargetResponse;
 import com.newlecture.resuit.dto.MyJobApplicationResponse;
+import com.newlecture.resuit.dto.PostedJobSummary;
 import com.newlecture.resuit.dto.resume.SubmittedPhotoResponse;
 import com.newlecture.resuit.dto.resume.SubmittedResumeResponse;
 import com.newlecture.resuit.dto.resume.SubmittedResumeSummary;
@@ -16,6 +22,7 @@ import com.newlecture.resuit.repository.JobRepository;
 import com.newlecture.resuit.repository.TargetResumeRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.JobApplicationService;
+import com.newlecture.resuit.service.JobService;
 import com.newlecture.resuit.service.MediaService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,6 +47,49 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final TargetResumeRepository targetResumeRepository;
     private final UserRepository userRepository;
     private final MediaService media;
+    private final JobService jobs;
+
+    @Override
+    public CompanyApplicantsResponse getCompanyApplicants(CompanyApplicationsQuery query) {
+        var job = jobs.requireOwnedPostedJob(query.jobId(), query.username());
+        var now = LocalDateTime.now();
+        var applicants = jobApplicationRepository.findActiveApplicants(job.getId(), query.pageable())
+            .map(a -> CompanyApplicantSummary.from(a, now));
+        return new CompanyApplicantsResponse(
+            PostedJobSummary.from(job, applicants.getTotalElements()), applicants);
+    }
+
+    @Override
+    @Transactional
+    public CompanyApplicationDetailResponse getCompanyApplication(CompanyApplicationQuery query) {
+        var application = requireCompanyApplication(query);
+        var job = application.getJob();
+        var photoUrl = "/api/v1/jobs/me/posted/" + job.getId() + "/applications/" + application.getId() + "/photo";
+        return new CompanyApplicationDetailResponse(
+            PostedJobSummary.from(job,
+                jobApplicationRepository.countByJobIdAndCanceledAtIsNullAndStatus(job.getId(), "APPLIED")),
+            CompanyApplicantSummary.from(application, LocalDateTime.now()),
+            SubmittedResumeResponse.from(application, photoUrl));
+    }
+
+    @Override
+    @Transactional
+    public SubmittedPhotoResponse getCompanyApplicationPhoto(CompanyApplicationQuery query) {
+        return readSubmittedPhoto(requireCompanyApplication(query));
+    }
+
+    private JobApplication requireCompanyApplication(CompanyApplicationQuery query) {
+        jobs.requireOwnedPostedJob(query.jobId(), query.username());
+        // Serialize file reads with snapshot cleanup. Never fall back to the editable source resume.
+        var application = jobApplicationRepository.findLockedById(query.applicationId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "지원 내역이 없습니다."));
+        if (!application.getJob().getId().equals(query.jobId()) || application.getCanceledAt() != null
+                || !"APPLIED".equals(application.getStatus()))
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "지원 내역이 없습니다.");
+        if (!application.hasAvailableSnapshot(LocalDateTime.now()))
+            throw new ResponseStatusException(HttpStatus.GONE, "제출 이력서의 보존 기간이 만료되었습니다.");
+        return application;
+    }
 
 	@Override
 	@Transactional
@@ -177,7 +227,10 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Override
     @Transactional
     public SubmittedPhotoResponse getSubmittedPhoto(Long id, String username) {
-        var application = getRestorableApplication(id, username);
+        return readSubmittedPhoto(getRestorableApplication(id, username));
+    }
+
+    private SubmittedPhotoResponse readSubmittedPhoto(JobApplication application) {
         if (application.getSnapshotPhotoKey() == null)
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "제출 사진이 없습니다.");
         return new SubmittedPhotoResponse(
