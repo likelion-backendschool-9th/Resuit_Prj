@@ -136,7 +136,9 @@ public class JobServiceImpl implements JobService {
 	@Override
 	public Page<JobResponse> getJobs(String type, Pageable pageable) {
 		String filterType = type == null || type.isBlank() ? null : type.trim();
-		Page<Job> jobs = jobRepository.findPublicJobs(filterType, pageable);
+		Page<Job> jobs = filterType == null
+				? jobRepository.findPublicJobs(pageable)
+				: jobRepository.findPublicJobs(filterType, pageable);
 		return jobs.map(JobResponse::from);
 	}
 
