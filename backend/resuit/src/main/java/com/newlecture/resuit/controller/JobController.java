@@ -46,6 +46,17 @@ public class JobController {
 		this.jobApplicationService = jobApplicationService;
 	}
 
+    @GetMapping("/me")
+    public ResponseEntity<Page<JobResponse>> getMyJobs(Principal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new IllegalArgumentException("page는 0 이상, size는 1~100이어야 합니다.");
+        }
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(jobService.getMyJobs(principal.getName(), PageRequest.of(page, size)));
+    }
+
     @PostMapping("/me/drafts")
     @ResponseStatus(HttpStatus.CREATED)
     public JobDetailResponse createDraft(@Valid @RequestBody SaveJobDraftRequest request, Principal principal) {

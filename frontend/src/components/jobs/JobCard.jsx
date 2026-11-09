@@ -5,10 +5,10 @@ import './JobCard.css';
 
 // 공고 카드. compact 는 피드 안에 들어가는 작은 형태(회사 줄 생략, meta · sub 는 게시글이 넘긴다).
 // 일반 공고: 상세에서 공통 이력서를 골라 지원 / 특화 공고: 상세에서 특화 이력서 작성
-export default function JobCard({ job, compact = false, meta, sub }) {
+export default function JobCard({ job, compact = false, meta, sub, actionTo, actionLabel = '공고 상세 보기' }) {
   const special = job.type === 'special';
 
-  const action = <Button variant={special ? 'primary' : 'accent-outline'} to={`/jobs/${job.id}`}>공고 상세 보기</Button>;
+  const action = <Button variant={special ? 'primary' : 'accent-outline'} to={actionTo || `/jobs/${job.id}`}>{actionLabel}</Button>;
 
   return (
     <article className={`job-card${special ? ' job-card--special' : ''}${compact ? ' job-card--compact' : ''}`}>

@@ -221,11 +221,18 @@ public class JobServiceImpl implements JobService {
         return JobDetailResponse.from(job, questions);
     }
 
+    @Override
+    public Page<JobResponse> getMyJobs(String username, Pageable pageable) {
+        var company = requireCompany(username);
+        return jobRepository.findByCompany_IdAndDeletedAtIsNullOrderByUpdatedAtDescIdDesc(
+                company.getId(), pageable).map(JobResponse::from);
+    }
+
     private User requireCompany(String username) {
         var company = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AccessDeniedException("기업 계정이 필요합니다."));
         if (!"COMPANY".equals(company.getRole())) {
-            throw new AccessDeniedException("기업 계정만 임시저장 공고를 관리할 수 있습니다.");
+            throw new AccessDeniedException("기업 계정만 본인의 공고를 관리할 수 있습니다.");
         }
         return company;
     }

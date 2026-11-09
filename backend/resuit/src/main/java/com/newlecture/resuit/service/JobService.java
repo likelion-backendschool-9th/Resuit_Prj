@@ -9,6 +9,8 @@ import com.newlecture.resuit.dto.SaveJobDraftRequest;
 import com.newlecture.resuit.dto.JobDetailResponse;
 
 public interface JobService {
+    Page<JobResponse> getMyJobs(String username, Pageable pageable);
+
     JobDetailResponse createDraft(SaveJobDraftRequest request, String username);
     JobDetailResponse updateDraft(Long jobId, SaveJobDraftRequest request, String username);
     Page<JobResponse> getDrafts(String username, Pageable pageable);
