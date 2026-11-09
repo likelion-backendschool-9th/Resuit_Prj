@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCommonResumes, getTargetResumes, getTargetResume, createTargetResume, updateTargetResume, deleteTargetResume } from '../services/resumes.js';
+import { applyWithTargetResume } from '../services/jobApplications.js';
 import Badge from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
@@ -17,6 +18,9 @@ const projectKey = (p, i) => p.id || `p${i}`;
 function fromApi(detail) {
   return {
     id: detail.id,
+    jobId: detail.job.id,
+    // SUBMITTED: 이 특화 이력서로 이미 지원했다
+    submitted: detail.status === 'SUBMITTED',
     header: `${detail.job.companyName} · ${detail.job.title}`,
     back: { href: '/resumes', label: '내 이력서로 돌아가기' },
     blank: !detail.commonResumeId,
@@ -89,8 +93,9 @@ export default function ResumeEditPage({ id, jobId, mode }) {
   const pickedCount = projects.filter((p, i) => picked[projectKey(p, i)]).length;
   const toc = { active: activeToc, onPick: setActiveToc };
 
-  async function save(after) {
-    if (!doc.id) { setSavedLabel('예시 화면이라 저장되지 않아요'); return; }
+  // 저장에 성공하면 true
+  async function save() {
+    if (!doc.id) { setSavedLabel('예시 화면이라 저장되지 않아요'); return false; }
     setSaving(true);
     try {
       const next = {
@@ -100,10 +105,30 @@ export default function ResumeEditPage({ id, jobId, mode }) {
       };
       await updateTargetResume(doc.id, { content: next });
       setSavedLabel('임시 저장됨 · 방금 전');
-      after?.();
+      return true;
     } catch (err) {
       setSavedLabel(err.message);
+      return false;
     } finally {
+      setSaving(false);
+    }
+  }
+
+  // 저장한 뒤 이 특화 이력서로 공고에 지원하고 공고 상세로 간다. 이미 지원했으면 저장만 하고 간다
+  async function submit() {
+    if (!doc.submitted) {
+      const left = total - done;
+      const ask = left > 0 ? `아직 답하지 않은 요구 문항이 ${left}개 있어요. 그래도 이 특화 이력서로 지원할까요?` : '이 특화 이력서로 지원할까요?';
+      if (!window.confirm(ask)) return;
+    }
+    if (!(await save())) return;
+    if (doc.submitted) { router.push(`/jobs/${doc.jobId}`); return; }
+    setSaving(true);
+    try {
+      await applyWithTargetResume(doc.jobId, doc.id);
+      router.push(`/jobs/${doc.jobId}`);
+    } catch (err) {
+      setSavedLabel(err.message);
       setSaving(false);
     }
   }
@@ -133,7 +158,7 @@ export default function ResumeEditPage({ id, jobId, mode }) {
             <ThemeToggle />
             {doc.id && <Button variant="outline" onClick={remove} disabled={saving}>삭제</Button>}
             <Button variant="outline" onClick={() => save()} disabled={saving}>임시 저장</Button>
-            <Button onClick={() => save(() => router.push('/resumes'))} disabled={saving}>제출하기</Button>
+            <Button onClick={submit} disabled={saving}>{doc.submitted ? '저장하고 공고 보기' : '저장하고 지원하기'}</Button>
           </div>
         </div>
       </header>
