@@ -26,6 +26,7 @@ import com.newlecture.resuit.repository.UserBadgeHistoryRepository;
 import com.newlecture.resuit.repository.UserBadgeRepository;
 import com.newlecture.resuit.repository.UserCareerRepository;
 import com.newlecture.resuit.repository.UserRepository;
+import com.newlecture.resuit.repository.VerificationRepository;
 import com.newlecture.resuit.service.MediaService;
 import com.newlecture.resuit.service.ProfileService;
 import com.newlecture.resuit.service.ReviewerBadgePolicy;
@@ -56,6 +57,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final UserBadgeRepository userBadges;
     private final UserBadgeHistoryRepository badgeHistory;
     private final UserCareerRepository careers;
+    private final VerificationRepository verifications;
     private final MediaService mediaService;
 
     @Override
@@ -343,11 +345,17 @@ public class ProfileServiceImpl implements ProfileService {
                         item.getJobTitle(), item.getStartDate(), item.getEndDate(),
                         item.getDescription(), item.getDisplayOrder()))
                 .toList();
+        // 공개 프로필에는 기업 인증 여부만 담는다. 이메일은 /verifications/me 전용이다.
+        var companyVerification = verifications
+                .findFirstByUserIdAndTypeAndVerifiedAtIsNotNullOrderByVerifiedAtDesc(id, "company_email");
+        boolean companyVerified = companyVerification.isPresent();
+        LocalDateTime companyVerifiedAt = companyVerification.map(v -> v.getVerifiedAt()).orElse(null);
         return new ProfileResponse(id, user.getUsername(), user.getNickname(),
                 user.getProfileImageUrl(), user.getSelfIntroduction(), user.getWidgets(),
                 follows.countByFollowingId(id), follows.countByFollowerId(id),
                 posts.countByUserIdAndDeletedAtIsNull(id), feedbacks.countByUserId(id),
-                isFollowing, resume, displayed, badges, history, careerItems);
+                isFollowing, resume, displayed, badges, history, careerItems,
+                companyVerified, companyVerifiedAt);
     }
 
     private ProfileResponse.BadgeSummary toBadgeSummary(UserBadge owned) {

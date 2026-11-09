@@ -12,7 +12,8 @@ public record ProfileResponse(
         long followers, long following, long posts, long feedbacks,
         boolean isFollowing, ResumeSummary pinnedResume,
         BadgeSummary displayedBadge, List<BadgeSummary> badges,
-        List<BadgeHistorySummary> badgeHistory, List<CareerResponse> careers) {
+        List<BadgeHistorySummary> badgeHistory, List<CareerResponse> careers,
+        boolean companyVerified, LocalDateTime companyVerifiedAt) {
 
     public record ResumeSummary(Long id, String title, String field) {
     }
