@@ -1,0 +1,12 @@
+.credits { padding: 20px; display: grid; gap: 28px; }
+.credits h2 { font-size: 17px; font-weight: 900; margin-bottom: 12px; }
+.credits__balance { display: grid; gap: 6px; }
+.credits__balance strong { font-size: 26px; font-weight: 900; color: var(--accent-text); }
+.credits__charge { display: grid; gap: 14px; }
+.credits__error { color: var(--danger); min-height: 1em; }
+.credits__list { display: grid; gap: 0; }
+.credits__item { display: grid; grid-template-columns: 56px 80px 1fr; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.credits__amount { font-weight: 800; color: var(--text); }
+.credits__amount.is-plus { color: var(--accent-text); }
+.credits-result { padding: 20px; display: grid; gap: 14px; justify-items: start; }
+.credits-result__error { color: var(--danger); }
