@@ -198,7 +198,7 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
           <div className="profile__head-row">
             {isOwner ? (
               <Button to="/profile/verification" variant="outline">
-                {profile?.companyVerified ? '기업 이메일 인증 관리' : '기업 이메일 인증'}
+                {profile?.companyVerified ? '현직자 인증 관리' : '현직자 인증'}
               </Button>
             ) : (
               <FollowButton
