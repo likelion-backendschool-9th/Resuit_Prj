@@ -4,13 +4,19 @@ import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
+import com.newlecture.resuit.dto.resume.RestoredResumeResponse;
+import com.newlecture.resuit.dto.resume.SubmittedResumeSummary;
 import com.newlecture.resuit.entity.CommonResume;
+import com.newlecture.resuit.entity.JobApplication;
+import com.newlecture.resuit.entity.SubmittedResume;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommonResumeRepository;
+import com.newlecture.resuit.repository.FeedbackBoardRepository;
 import com.newlecture.resuit.repository.FeedbackCommentRepository;
 import com.newlecture.resuit.repository.FeedbackRequestRepository;
 import com.newlecture.resuit.repository.FeedbackRequestSectionRepository;
-import com.newlecture.resuit.repository.FeedbackBoardRepository;
+import com.newlecture.resuit.repository.JobApplicationRepository;
+import com.newlecture.resuit.repository.TargetResumeRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CommonResumeService;
 import com.newlecture.resuit.service.CommonResumeService.InvalidResumeException;
@@ -18,7 +24,7 @@ import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenExceptio
 import com.newlecture.resuit.service.CommonResumeService.ResumeInUseException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
-
+import com.newlecture.resuit.service.MediaService;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -41,7 +47,22 @@ public class CommonResumeServiceImpl implements CommonResumeService {
     private final FeedbackRequestRepository feedbackRequests;
     private final FeedbackRequestSectionRepository feedbackSections;
     private final FeedbackCommentRepository feedbackComments;
+    private final TargetResumeRepository targetResumes;
     private final UserRepository users;
+    private final JobApplicationRepository applications;
+    private final MediaService media;
+
+    @Override
+    @Transactional
+    public RestoredResumeResponse restore(JobApplication application) {
+        var snapshot = application.getSubmittedResumeSnapshot();
+        var title = SubmittedResumeSummary.restoreTitle(application);
+        var resume = CommonResume.builder().user(application.getUser()).title(title).field(snapshot.field())
+            .content(SubmittedResume.copyContent(snapshot.content()))
+            .photoUrl(media.restoreResumePhoto(application.getSnapshotPhotoKey(), application.getUser().getId())).build();
+        resumes.saveAndFlush(resume);
+        return new RestoredResumeResponse(resume.getId(), "COMMON", title);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -74,6 +95,7 @@ public class CommonResumeServiceImpl implements CommonResumeService {
             .user(user)
             .title(validTitle(request.title()))
             .field(validField(request.field()))
+            .photoUrl(media.prepareResumePhoto(request.photoUrl(), user.getId()))
             .content(request.content() == null ? new LinkedHashMap<>() : request.content())
             .build();
         return CommonResumeDetailResponse.from(resumes.save(resume));
@@ -91,6 +113,7 @@ public class CommonResumeServiceImpl implements CommonResumeService {
             request.title() == null ? resume.getTitle() : validTitle(request.title()),
             request.field() == null ? resume.getField() : validField(request.field()),
             request.content() == null ? resume.getContent() : request.content());
+        if (request.photoUrl() != null) resume.updatePhoto(media.prepareResumePhoto(request.photoUrl(), user.getId()));
         resumes.flush();
         return CommonResumeDetailResponse.from(resume);
     }
@@ -99,7 +122,7 @@ public class CommonResumeServiceImpl implements CommonResumeService {
     @Override
     @Transactional
     public void delete(Long resumeId, String username) {
-        var user = currentUser(username);
+        var user = users.findWithLockByUsername(username).orElseThrow(UnauthenticatedUserException::new);
         var resume = ownedResume(resumeId, user);
         var requests = feedbackRequests.findByCommonResume_IdOrderByIdAsc(resumeId);
         if (requests.stream().anyMatch(request -> feedbackComments.existsByFeedbackRequest_Id(request.getId()))) {
@@ -116,6 +139,8 @@ public class CommonResumeServiceImpl implements CommonResumeService {
                 user.pinResume(null);
                 users.flush();
             }
+            applications.detachCommon(resumeId);
+            targetResumes.detachCommonResume(resumeId);
             resumes.delete(resume);
             resumes.flush();
         } catch (DataIntegrityViolationException e) {

@@ -34,3 +34,6 @@ export const deleteTargetResume = (id) => request(`/target-resumes/${id}`, { met
 
 // 피드백 게시판의 이력서 미리보기 (WBS 4.5). type: COMMON | TARGET
 export const getResumePreview = (type, id, signal) => request(`/resumes/${id}?type=${type}`, { signal });
+
+// Snapshot copies are returned with the main resume list; restoring creates a new editable draft.
+export const restoreSubmittedResume = (applicationId) => request(`/users/me/resume-submissions/${applicationId}/restore`, { method: 'POST' });

@@ -21,7 +21,7 @@ import './ResumeEditPage.css';
 const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
 // 분야를 비우면('') 수정 API가 분야를 지운다
 const FIELD_OPTIONS = [{ id: 'FRONTEND', label: '프론트엔드' }, { id: 'BACKEND', label: '백엔드' }, { id: '', label: '정하지 않음' }];
-const MAX_TITLE = 40;
+const MAX_TITLE = 100;
 const MAX_INTRODUCTION = 2000;
 
 // 공통 이력서 항목. id는 섹션 위치, 이름은 목차와 제목에 쓴다 (docs/database-design.md 이력서 content)

@@ -193,6 +193,19 @@ export default function ResumeEditPage({ id, jobId, mode }) {
               : '공통 이력서에서 불러온 내용이에요. 이 회사에 맞춰 고쳐도 원래 공통 이력서는 바뀌지 않아요.'}
           </div>
 
+          {content.submittedQuestions?.length > 0 && (
+            <details className="resume-block">
+              <summary>불러온 제출 당시 문항과 답변</summary>
+              <p className="small muted">이전 제출 자료입니다. 재지원할 때는 아래의 현재 회사 요구 문항을 확인해 주세요.</p>
+              {content.submittedQuestions.map((question) => (
+                <div key={question.id}>
+                  <h3>{question.content}</h3>
+                  <p className="resume-edit__historic-answer">{content.submittedAnswers?.find((answer) => answer.questionId === question.id)?.answer || '답변 없음'}</p>
+                </div>
+              ))}
+            </details>
+          )}
+
           <section id="basic" className="resume-block">
             <div className="resume-block__head"><h2>기본 정보</h2>{!blank && <Badge tone="loaded">공통에서 불러옴</Badge>}</div>
             <BasicInfoFields basic={content.basic} onChange={(v) => changeContent('basic', v)} />

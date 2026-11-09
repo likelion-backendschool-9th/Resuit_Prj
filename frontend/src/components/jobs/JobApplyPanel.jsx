@@ -95,8 +95,11 @@ function Applied({ job, application, resumes, onCanceled }) {
       <div className="job-applied__rows">
         <span className="muted">지원 일시</span><span>{timeText(application.appliedAt)}</span>
         <span className="muted">제출한 이력서</span>
-        <span>{common ? '공통 이력서' : '특화 이력서'} · <Link href={resumeHref} className="text-link">{resumeName}</Link></span>
+        <span>{common ? '공통 이력서' : '특화 이력서'} · {application.resumeId
+          ? <Link href={resumeHref} className="text-link">{resumeName} (원본 편집)</Link>
+          : <span>원본 이력서 삭제됨</span>}</span>
       </div>
+      <p className="small muted">제출 당시 자료는 3개월 동안 보존됩니다. 원본을 수정해도 제출 내용은 바뀌지 않아요.</p>
       {confirming ? (
         <div className="row-wrap" style={{ gap: 8 }}>
           <span className="small">지원을 취소할까요? 공고가 모집 중이면 다시 지원할 수 있어요.</span>

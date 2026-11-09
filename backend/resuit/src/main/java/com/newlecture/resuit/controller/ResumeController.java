@@ -1,8 +1,6 @@
 package com.newlecture.resuit.controller;
 
-import java.security.Principal;
-import java.util.List;
-
+import com.newlecture.resuit.dto.AdoptFeedbackResponse;
 import com.newlecture.resuit.dto.feedback.FeedbackCommentCreateCommand;
 import com.newlecture.resuit.dto.feedback.FeedbackCommentCreateRequest;
 import com.newlecture.resuit.dto.feedback.FeedbackCommentResponse;
@@ -14,25 +12,31 @@ import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
+import com.newlecture.resuit.dto.resume.RestoredResumeResponse;
 import com.newlecture.resuit.dto.resume.ResumeListResponse;
 import com.newlecture.resuit.dto.resume.ResumePreviewCondition;
 import com.newlecture.resuit.dto.resume.ResumePreviewResponse;
+import com.newlecture.resuit.dto.resume.SubmittedResumeResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeCreateRequest;
 import com.newlecture.resuit.dto.resume.TargetResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeSummary;
 import com.newlecture.resuit.dto.resume.TargetResumeUpdateCommand;
 import com.newlecture.resuit.dto.resume.TargetResumeUpdateRequest;
-import com.newlecture.resuit.dto.AdoptFeedbackResponse;
 import com.newlecture.resuit.service.CommonResumeService;
 import com.newlecture.resuit.service.FeedbackAdoptionService;
 import com.newlecture.resuit.service.FeedbackBoardService;
 import com.newlecture.resuit.service.FeedbackRequestService;
+import com.newlecture.resuit.service.JobApplicationService;
 import com.newlecture.resuit.service.ResumeService;
 import com.newlecture.resuit.service.ReviewService;
 import com.newlecture.resuit.service.TargetResumeService;
 import jakarta.validation.Valid;
+import java.security.Principal;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,13 +49,48 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1")
 public class ResumeController {
 
-	private final ResumeService resumeService;
+    private final JobApplicationService applications;
+
+    @PostMapping("/users/me/resume-submissions/{applicationId}/restore")
+    public ResponseEntity<RestoredResumeResponse> restoreSubmission(
+            @PathVariable Long applicationId, Principal principal) {
+        return ResponseEntity.status(HttpStatus.CREATED).cacheControl(CacheControl.noStore())
+            .body(resumeService.restoreSubmission(applicationId, username(principal)));
+    }
+
+    @GetMapping("/users/me/resume-submissions/{applicationId}")
+    public ResponseEntity<SubmittedResumeResponse> submittedResume(
+            @PathVariable Long applicationId, Principal principal) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+            .body(applications.getSubmittedResume(applicationId, username(principal)));
+    }
+
+    @GetMapping("/users/me/resume-submissions/{applicationId}/photo")
+    public ResponseEntity<byte[]> submittedPhoto(@PathVariable Long applicationId, Principal principal) {
+        var photo = applications.getSubmittedPhoto(applicationId, username(principal));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+            .contentType(MediaType.parseMediaType(photo.contentType()))
+            .body(photo.content());
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ResumeErrorResponse> submissionError(ResponseStatusException e) {
+        return ResponseEntity.status(e.getStatusCode()).body(new ResumeErrorResponse("SUBMISSION_UNAVAILABLE", e.getReason()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ResumeErrorResponse> invalidPhoto(IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(new ResumeErrorResponse("INVALID_RESUME", e.getMessage()));
+    }
+
+    private final ResumeService resumeService;
 	private final FeedbackRequestService feedbackRequestService;
 	private final CommonResumeService commonResumeService;
 	private final TargetResumeService targetResumeService;
@@ -60,7 +99,7 @@ public class ResumeController {
 
 	@GetMapping("/resumes")
 	public ResponseEntity<ResumeListResponse> getAllResumes(Principal principal) {
-		return ResponseEntity.ok(resumeService.getMyResumes(username(principal)));
+		return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(resumeService.getMyResumes(username(principal)));
 	}
 
 	@GetMapping("/feedback-requests")

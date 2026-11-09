@@ -77,3 +77,5 @@
   .resume-edit__actions { width: 100%; }
   .resume-edit__status-slot { order: -1; flex-basis: 100%; min-width: 0; justify-content: flex-end; }
 }
+
+.resume-edit__historic-answer { white-space: pre-wrap; overflow-wrap: anywhere; }
