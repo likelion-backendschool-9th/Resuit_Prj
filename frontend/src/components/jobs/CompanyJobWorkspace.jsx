@@ -7,15 +7,15 @@ import JobRequestState from './JobRequestState.jsx';
 import useJobResource from './useJobResource.js';
 import { getJob, getJobDraft, getJobDrafts } from '@/services/jobs.js';
 
-function SelectedEditor({ id, draft, owner, onSaved }) {
+function SelectedEditor({ id, draft, owner, onSaved, onPreviewChange }) {
   const load = useCallback((signal) => id ? (draft ? getJobDraft(id, { signal }) : getJob(id, { signal })) : Promise.resolve({ fresh: true }), [id, draft]);
   const state = useJobResource(load);
   if (state.loading || state.error) return <JobRequestState {...state} />;
   if (id && state.data?.company.username !== owner) return <p className="empty" role="alert">본인이 작성한 공고만 수정할 수 있어요.</p>;
-  return <><JobEditor key={id || 'new'} job={id ? state.data : null} onSaved={onSaved} />{id && draft && <JobOwnerActions job={state.data} onDeleted={onSaved} />}</>;
+  return <><JobEditor key={id || 'new'} job={id ? state.data : null} onSaved={onSaved} onPreviewChange={onPreviewChange} />{id && draft && <JobOwnerActions job={state.data} onDeleted={onSaved} />}</>;
 }
 
-export default function CompanyJobWorkspace({ id, draft, owner }) {
+export default function CompanyJobWorkspace({ id, draft, owner, onPreviewChange }) {
   const [page, setPage] = useState(0);
   const load = useCallback((signal) => getJobDrafts(page, { signal }), [page]);
   const state = useJobResource(load);
@@ -30,6 +30,6 @@ export default function CompanyJobWorkspace({ id, draft, owner }) {
       </details>
     </div>
     {state.loading ? <p className="empty" role="status">기업 계정 권한을 확인하고 있어요.</p> : state.error ? <div className="section"><p role="alert">{state.error}</p><Button variant="outline" onClick={state.retry}>다시 확인</Button><Button to="/profile/verification" variant="outline">기업 인증</Button></div>
-      : <SelectedEditor key={`${draft ? 'draft' : 'job'}-${id || 'new'}`} id={id} draft={draft} owner={owner} onSaved={state.retry} />}
+      : <SelectedEditor key={`${draft ? 'draft' : 'job'}-${id || 'new'}`} id={id} draft={draft} owner={owner} onSaved={state.retry} onPreviewChange={onPreviewChange} />}
   </>;
 }
