@@ -199,7 +199,8 @@ export default function TalentSearchPage() {
           {subscription && !pro && !subscription.trialAvailable && <span className="small muted">체험 기간이 끝났어요.</span>}
           {pro && subscription.trial && <span className="small muted">{dateText(subscription.trialEndsAt)}까지 체험 중이에요.</span>}
           {planError && <p role="alert" className="small talent-card__error">{planError}</p>}
-          <span className="xs muted">실제 결제 없이 등급만 바뀌는 체험이에요. 체험은 한 번만 할 수 있고, 가격은 [미정].</span>
+          <Button to="/company/pro" variant="outline" className="talent-plans__btn">기업 Pro 결제하기</Button>
+          <span className="xs muted">기업 Pro는 1개월 49,000원, 3개월 129,000원 이용권이에요. 체험은 14일, 한 번만 할 수 있어요.</span>
         </section>
       </RightAside>
     </>
