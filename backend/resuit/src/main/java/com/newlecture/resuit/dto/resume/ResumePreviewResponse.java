@@ -17,19 +17,20 @@ public record ResumePreviewResponse(
     String title,
     String field,
     Map<String, Object> content,
+    String photoUrl,
     JobInfo job,
     List<JobInfo.Question> questions,
     LocalDateTime updatedAt
 ) {
     public static ResumePreviewResponse from(CommonResume resume) {
         return new ResumePreviewResponse("COMMON", resume.getId(), FeedbackAuthor.of(resume.getUser()),
-            resume.getTitle(), resume.getField(), resume.getContent(), null, List.of(), resume.getUpdatedAt());
+            resume.getTitle(), resume.getField(), resume.getContent(), resume.getPhotoUrl(), null, List.of(), resume.getUpdatedAt());
     }
 
     public static ResumePreviewResponse of(TargetResume resume, List<JobQuestion> questions) {
         var base = resume.getCommonResume();
         return new ResumePreviewResponse("TARGET", resume.getId(), FeedbackAuthor.of(resume.getUser()),
-            resume.getTitle(), base == null ? null : base.getField(), resume.getContent(),
+            resume.getTitle(), base == null ? null : base.getField(), resume.getContent(), resume.getPhotoUrl(),
             JobInfo.from(resume.getJob()), questions.stream().map(JobInfo.Question::from).toList(),
             resume.getUpdatedAt());
     }

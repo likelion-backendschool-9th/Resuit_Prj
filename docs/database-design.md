@@ -326,6 +326,7 @@ erDiagram
       varchar field "직무 분야"
       jsonb content "이력서 내용"
       boolean is_public "공개 여부"
+      varchar photo_url "이력서 사진 주소"
       timestamptz created_at "작성일"
       timestamptz updated_at "수정일"
     }
@@ -336,6 +337,7 @@ erDiagram
       bigint common_resume_id FK "바탕이 된 공통 이력서"
       varchar title "제목"
       jsonb content "이력서 내용과 문항 답변"
+      varchar photo_url "이력서 사진 주소"
       timestamptz created_at "작성일"
       timestamptz updated_at "수정일"
     }
@@ -577,8 +579,8 @@ erDiagram
 | `jobs` | `id`, `company_id`, `type`, `title`, `status`, `created_at`; 선택 `location`, `employment_type`, `career`, `description`, `requirements`, `preferred`, `deadline`, `updated_at`, `deleted_at` | `type IN ('GENERAL','SPECIAL')`, `status IN ('DRAFT','OPEN','CLOSED')`. 작성자는 `role='COMPANY'` 회원이다(서비스에서 검사). 임시 저장(2.10)은 `DRAFT`이며 작성한 기업만 본다. 목록(2.1)은 `OPEN`·`CLOSED` 공고를 `type`으로 거른다. 마감일이 지난 `OPEN` 공고는 조회할 때 마감으로 취급한다. 삭제(2.12)는 `deleted_at`을 기록한다. |
 | `job_questions` | `id`, `job_id`, `content`, `order_no`; 선택 `char_limit` | 특화 공고에서만 쓴다. 문항 순서는 공고 안에서 겹치지 않는다(`UNIQUE(job_id, order_no)`). 문항 추가·수정·삭제(2.9)는 공고 저장 요청에 함께 들어온다. |
 | `job_applications` | `id`, `job_id`, `user_id`, `status`, `applied_at`; 선택 `common_resume_id`, `target_resume_id`, `canceled_at` | `status IN ('APPLIED','CANCELED')`. 공통 이력서와 특화 이력서 중 정확히 하나만 값이 있다(CHECK). 일반 공고는 공통 이력서, 특화 공고는 같은 공고의 특화 이력서로 지원하며 이력서는 본인 것이어야 한다(서비스에서 검사). 한 사람은 공고 하나에 한 줄만 가진다(`UNIQUE(job_id, user_id)`). 취소(2.6)는 `CANCELED`와 `canceled_at`을 기록하고, 다시 지원하면 같은 줄을 `APPLIED`로 되돌린다. `OPEN` 공고에만 지원할 수 있다. |
-| `common_resumes` | `id`, `user_id`, `title`, `content`, `is_public`, `created_at`; 선택 `field`, `updated_at` | `field IN ('FRONTEND','BACKEND')`. 한 사람이 여러 개 만든다(3.4). `is_public`은 기본값 거짓이며 참인 이력서만 기업 인재 검색에서 열람한다. 지원·피드백 요청·특화 이력서에 쓰인 이력서는 FK 때문에 삭제(3.7)할 수 없으므로 화면에서 안내한다. 대표 이력서로 고정된 이력서를 지우면 먼저 고정을 푼다. |
-| `target_resumes` | `id`, `job_id`, `user_id`, `title`, `content`, `created_at`; 선택 `common_resume_id`, `updated_at` | 특화 공고(`type='SPECIAL'`)용이다(서비스에서 검사). 공통 이력서를 바탕으로 만들면(`mode=base`) 그 시점의 내용을 복사하고 `common_resume_id`에 출처를 남긴다. 처음부터 쓰면(`mode=blank`) `common_resume_id`는 NULL이다. 이후 공통 이력서를 고쳐도 특화 이력서는 바뀌지 않는다. |
+| `common_resumes` | `id`, `user_id`, `title`, `content`, `is_public`, `created_at`; 선택 `field`, `updated_at`, `photo_url` | `field IN ('FRONTEND','BACKEND')`. 한 사람이 여러 개 만든다(3.4). `is_public`은 기본값 거짓이며 참인 이력서만 기업 인재 검색에서 열람한다. 지원·피드백 요청·특화 이력서에 쓰인 이력서는 FK 때문에 삭제(3.7)할 수 없으므로 화면에서 안내한다. 대표 이력서로 고정된 이력서를 지우면 먼저 고정을 푼다. 이력서 사진은 `photo_url`에 `/media/image/{회원ID}/파일` 주소로 저장하고, 파일은 백엔드 미디어 폴더(`resuit.media.root`)에 둔다. 이미지 업로드(`POST /media/images`)로 임시 폴더에 올린 뒤 이력서를 저장할 때 정식 폴더로 옮긴다. |
+| `target_resumes` | `id`, `job_id`, `user_id`, `title`, `content`, `created_at`; 선택 `common_resume_id`, `updated_at`, `photo_url` | 특화 공고(`type='SPECIAL'`)용이다(서비스에서 검사). 공통 이력서를 바탕으로 만들면(`mode=base`) 그 시점의 내용을 복사하고 `common_resume_id`에 출처를 남긴다. 처음부터 쓰면(`mode=blank`) `common_resume_id`는 NULL이다. 이후 공통 이력서를 고쳐도 특화 이력서는 바뀌지 않는다. 이력서 사진은 `photo_url`에 `/media/image/{회원ID}/파일` 주소로 저장하고, 파일은 백엔드 미디어 폴더(`resuit.media.root`)에 둔다. 이미지 업로드(`POST /media/images`)로 임시 폴더에 올린 뒤 이력서를 저장할 때 정식 폴더로 옮긴다. 공통 이력서에서 시작하면 그 사진 주소를 복사하고, 그 뒤로는 따로 바꾼다. |
 
 이력서 내용(`content`)은 다음 구조의 JSON이다. 특화 이력서는 여기에 요구 문항 답변 `answers`가 더해진다.
 

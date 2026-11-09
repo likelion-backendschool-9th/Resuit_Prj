@@ -22,6 +22,7 @@ import com.newlecture.resuit.service.CommonResumeService.ResumeInUseException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
 import com.newlecture.resuit.service.MediaService;
+import com.newlecture.resuit.service.ResumePhotoResolver;
 import com.newlecture.resuit.service.TargetResumeService;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,6 +45,7 @@ public class TargetResumeServiceImpl implements TargetResumeService {
     private final UserRepository users;
     private final JobApplicationRepository applications;
     private final MediaService media;
+    private final ResumePhotoResolver photos;
 
     @Override
     @Transactional
@@ -135,7 +137,7 @@ public class TargetResumeServiceImpl implements TargetResumeService {
         resume.update(
             request.title() == null ? resume.getTitle() : validTitle(request.title()),
             request.content() == null ? resume.getContent() : request.content());
-        if (request.photoUrl() != null) resume.updatePhoto(media.prepareResumePhoto(request.photoUrl(), user.getId()));
+        if (request.photoUrl() != null) resume.updatePhoto(photos.resolve(user.getId(), request.photoUrl()));
         resumes.flush();
         return TargetResumeDetailResponse.of(resume, questions, isSubmitted(resume, user));
     }

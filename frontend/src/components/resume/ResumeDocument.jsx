@@ -30,7 +30,7 @@ export default function ResumeDocument({ resume, type, requested = [] }) {
 
   return (
     <div className="resume-document">
-      {resume.photoUrl && <img className="resume-document__photo" src={resume.photoUrl} alt="제출 당시 지원자 사진" />}
+      {resume.photoUrl && <img className="resume-document__photo" src={resume.photoUrl} alt="이력서 사진" />}
       {block('BASIC', (
         <dl className="resume-document__basic">
           {BASIC_FIELDS.filter(([k]) => !isEmpty(basic[k])).map(([k, label]) => (

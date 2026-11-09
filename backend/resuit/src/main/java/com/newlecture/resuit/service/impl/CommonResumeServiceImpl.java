@@ -19,6 +19,7 @@ import com.newlecture.resuit.repository.JobApplicationRepository;
 import com.newlecture.resuit.repository.TargetResumeRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CommonResumeService;
+import com.newlecture.resuit.service.ResumePhotoResolver;
 import com.newlecture.resuit.service.CommonResumeService.InvalidResumeException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeInUseException;
@@ -51,6 +52,7 @@ public class CommonResumeServiceImpl implements CommonResumeService {
     private final UserRepository users;
     private final JobApplicationRepository applications;
     private final MediaService media;
+    private final ResumePhotoResolver photos;
 
     @Override
     @Transactional
@@ -95,7 +97,7 @@ public class CommonResumeServiceImpl implements CommonResumeService {
             .user(user)
             .title(validTitle(request.title()))
             .field(validField(request.field()))
-            .photoUrl(media.prepareResumePhoto(request.photoUrl(), user.getId()))
+            .photoUrl(photos.resolve(user.getId(), request.photoUrl()))
             .content(request.content() == null ? new LinkedHashMap<>() : request.content())
             .build();
         return CommonResumeDetailResponse.from(resumes.save(resume));
@@ -113,7 +115,7 @@ public class CommonResumeServiceImpl implements CommonResumeService {
             request.title() == null ? resume.getTitle() : validTitle(request.title()),
             request.field() == null ? resume.getField() : validField(request.field()),
             request.content() == null ? resume.getContent() : request.content());
-        if (request.photoUrl() != null) resume.updatePhoto(media.prepareResumePhoto(request.photoUrl(), user.getId()));
+        if (request.photoUrl() != null) resume.updatePhoto(photos.resolve(user.getId(), request.photoUrl()));
         resumes.flush();
         return CommonResumeDetailResponse.from(resume);
     }
