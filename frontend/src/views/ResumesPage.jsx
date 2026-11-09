@@ -45,7 +45,8 @@ export default function ResumesPage() {
   const [renaming, setRenaming] = useState(null);
   const [draftName, setDraftName] = useState('');
   const [targetResumes, setTargetResumes] = useState([]);
-  const writing = targetResumes.filter((r) => r.status === 'WRITING').length;
+  const [savedId, setSavedId] = useState(null);
+  const writing =targetResumes.filter((r) => r.status === 'WRITING').length;
   const submitted = targetResumes.filter((r) => r.status === 'SUBMITTED').length;
 
   // 공통·특화 목록을 대표 API 하나로 받는다 (WBS 3.1)
@@ -59,6 +60,20 @@ export default function ResumesPage() {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [retry]);
+
+  // 공통 이력서 편집에서 "저장하고 나가기"로 오면(?saved=ID) 그 이력서에 저장 안내를 잠깐 띄우고 주소에서 지운다
+  useEffect(() => {
+    const saved = new URLSearchParams(window.location.search).get('saved');
+    if (!saved) return;
+    setSavedId(saved);
+    window.history.replaceState(null, '', '/resumes');
+  }, []);
+
+  useEffect(() => {
+    if (!savedId) return undefined;
+    const timer = setTimeout(() => setSavedId(null), 5000);
+    return () => clearTimeout(timer);
+  }, [savedId]);
 
   // 작업 하나를 실행하는 동안 같은 이력서의 버튼을 막고, 실패하면 안내 문구를 보여 준다
   async function run(id, action) {
@@ -166,6 +181,12 @@ export default function ResumesPage() {
                       <IconButton label={`「${r.title}」 삭제`} className="common-resume__remove" onClick={() => removeCommon(r.id)} disabled={busy}><Icon name="trash" size={16} /></IconButton>
                     </div>
                   </div>
+                  {String(r.id) === savedId && (
+                    <div className="request-notice" role="status">
+                      <Icon name="check" size={18} />
+                      <span className="request-notice__text">「{r.title}」 이력서를 저장했어요.</span>
+                    </div>
+                  )}
                   {requested && (
                     <div className="request-notice" role="status">
                       <Icon name="check" size={18} />

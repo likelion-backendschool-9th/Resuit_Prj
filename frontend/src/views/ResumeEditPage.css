@@ -23,6 +23,15 @@
 .resume-edit__toc-group.is-req { color: var(--special); padding-top: 14px; }
 .resume-edit__form { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 .resume-edit__side { flex: 1 1 260px; max-width: 100%; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 88px; }
+.resume-edit__status-slot { display: inline-flex; justify-content: flex-end; min-width: 168px; }
+.resume-edit__status { display: inline-flex; align-items: center; gap: 4px; color: var(--text-sub); }
+.resume-edit__status.is-dirty { color: var(--special); font-weight: 500; }
+.resume-edit__status.is-saved { color: var(--accent-text); }
+.resume-edit__status.is-alert { color: var(--danger); font-weight: 500; }
+/* 버튼 글씨가 "저장"↔"저장됨", "나가기"↔"저장하고 나가기"로 바뀌어도 폭이 같게 둔다 */
+.resume-edit__save { min-width: 100px; }
+.resume-edit__leave { min-width: 136px; }
+.resume-edit__bar .btn.is-saved { border-color: var(--accent-line); color: var(--accent-text); }
 .resume-edit__note { padding: 16px; border-radius: var(--radius); background: var(--bg-muted); color: var(--text-2); font-size: 14px; }
 
 .resume-block {
@@ -66,6 +75,11 @@
 .evidence-chip--add { border: 1px dashed var(--accent); background: var(--bg); color: var(--accent-text); font-weight: 700; }
 
 
+.resume-edit__actions { flex-wrap: wrap; justify-content: flex-end; }
+
 @media (max-width: 800px) {
   .resume-edit__toc, .resume-edit__side { position: static; flex-basis: 100%; }
+  /* 좁은 화면에서는 저장 상태를 버튼 위 한 줄로 올린다 */
+  .resume-edit__actions { width: 100%; }
+  .resume-edit__status-slot { order: -1; flex-basis: 100%; min-width: 0; justify-content: flex-end; }
 }
