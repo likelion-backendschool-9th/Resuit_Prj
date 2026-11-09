@@ -2,9 +2,11 @@ package com.newlecture.resuit.repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -12,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import com.newlecture.resuit.dto.TalentSearchCondition;
+import com.newlecture.resuit.entity.UserBadge;
+import com.newlecture.resuit.entity.UserBadgeHistory;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -50,7 +54,6 @@ public class TalentSearchRepository {
 	private EntityManager em;
 
 	public Page<Long> searchResumeIds(TalentSearchCondition c, LocalDate today, LocalDateTime now) {
-		StringBuilder where = new StringBuilder();
 		Map<String, Object> params = new HashMap<>();
 
 		String fieldCond = c.field() == null ? "" : " AND o.field = :field";
@@ -58,11 +61,97 @@ public class TalentSearchRepository {
 			params.put("field", c.field());
 		}
 		// 회원별 가장 최근 공개 이력서 하나만 남긴다. 그래서 한 사람이 한 줄로 나온다.
-		where.append(" WHERE c.is_public = true")
-				.append(c.field() == null ? "" : " AND c.field = :field")
-				.append(" AND c.id = (SELECT MAX(o.id) FROM common_resumes o")
-				.append(" WHERE o.user_id = c.user_id AND o.is_public = true").append(fieldCond).append(")");
+		String where = " WHERE c.is_public = true"
+				+ (c.field() == null ? "" : " AND c.field = :field")
+				+ " AND c.id = (SELECT MAX(o.id) FROM common_resumes o"
+				+ " WHERE o.user_id = c.user_id AND o.is_public = true" + fieldCond + ")"
+				+ filters(c, today, now, params);
 
+		Pageable pageable = c.toPageable();
+
+		Query select = em.createNativeQuery("SELECT c.id" + FROM + where + " ORDER BY c.id DESC");
+		params.forEach(select::setParameter);
+		select.setFirstResult((int) pageable.getOffset());
+		select.setMaxResults(pageable.getPageSize());
+		List<Long> ids = ((List<?>) select.getResultList()).stream()
+				.map(id -> ((Number) id).longValue()).toList();
+
+		Query count = em.createNativeQuery("SELECT COUNT(*)" + FROM + where);
+		params.forEach(count::setParameter);
+		long total = ((Number) count.getSingleResult()).longValue();
+
+		return new PageImpl<>(ids, pageable, total);
+	}
+
+	// 분야 탭 옆에 보여 줄 인원 수. 상세 필터는 그대로 반영하고 분야 조건만 뺀다.
+	// 키 ALL은 전체 탭(회원별 최신 공개 이력서 기준), 나머지 키는 분야별(회원별 그 분야의 최신 공개 이력서 기준)이다.
+	public Map<String, Long> countByField(TalentSearchCondition c, LocalDate today, LocalDateTime now) {
+		Map<String, Object> params = new HashMap<>();
+		String filters = filters(c, today, now, params);
+		Map<String, Long> counts = new HashMap<>();
+
+		Query all = em.createNativeQuery("SELECT COUNT(*)" + FROM
+				+ " WHERE c.is_public = true AND c.id = (SELECT MAX(o.id) FROM common_resumes o"
+				+ " WHERE o.user_id = c.user_id AND o.is_public = true)" + filters);
+		params.forEach(all::setParameter);
+		counts.put("ALL", ((Number) all.getSingleResult()).longValue());
+
+		Query byField = em.createNativeQuery("SELECT c.field, COUNT(*)" + FROM
+				+ " WHERE c.is_public = true AND c.field IS NOT NULL AND c.id = (SELECT MAX(o.id) FROM common_resumes o"
+				+ " WHERE o.user_id = c.user_id AND o.is_public = true AND o.field = c.field)" + filters
+				+ " GROUP BY c.field");
+		params.forEach(byField::setParameter);
+		for (Object row : byField.getResultList()) {
+			Object[] r = (Object[]) row;
+			counts.put((String) r[0], ((Number) r[1]).longValue());
+		}
+		return counts;
+	}
+
+	// 회원별 경력 일수(겹친 기간은 한 번만). 카드의 경력 구간 표시에 쓴다. 필터와 같은 계산식이다.
+	public Map<UUID, Long> careerDays(Collection<UUID> userIds, LocalDate today) {
+		if (userIds.isEmpty()) {
+			return Map.of();
+		}
+		Query q = em.createNativeQuery("SELECT u.id, " + CAREER_DAYS + " FROM users u WHERE u.id IN (:ids)");
+		q.setParameter("ids", userIds);
+		q.setParameter("today", today);
+		return toMap(q.getResultList());
+	}
+
+	public Map<UUID, Long> postCounts(Collection<UUID> userIds) {
+		if (userIds.isEmpty()) {
+			return Map.of();
+		}
+		Query q = em.createNativeQuery("SELECT p.user_id, COUNT(*) FROM posts p"
+				+ " WHERE p.user_id IN (:ids) AND p.deleted_at IS NULL GROUP BY p.user_id");
+		q.setParameter("ids", userIds);
+		return toMap(q.getResultList());
+	}
+
+	// 여러 회원의 배지를 배지 정보와 함께 한 번에 읽는다. 회원마다 따로 읽지 않으려고 IN으로 묶는다.
+	public List<UserBadge> badges(Collection<UUID> userIds) {
+		if (userIds.isEmpty()) {
+			return List.of();
+		}
+		return em.createQuery("SELECT ub FROM UserBadge ub JOIN FETCH ub.badge WHERE ub.user.id IN :ids", UserBadge.class)
+				.setParameter("ids", userIds).getResultList();
+	}
+
+	public List<UserBadgeHistory> badgeHistory(Collection<UUID> userIds) {
+		if (userIds.isEmpty()) {
+			return List.of();
+		}
+		return em.createQuery("SELECT h FROM UserBadgeHistory h JOIN FETCH h.badge WHERE h.user.id IN :ids"
+				+ " ORDER BY h.activeUntil DESC", UserBadgeHistory.class)
+				.setParameter("ids", userIds).getResultList();
+	}
+
+	private static final String FROM = " FROM common_resumes c JOIN users u ON u.id = c.user_id";
+
+	// [Pro] 상세 필터 조건을 SQL 조각으로 만들고, 바인딩 값을 params에 넣는다. 목록과 탭 인원 수가 같이 쓴다.
+	private String filters(TalentSearchCondition c, LocalDate today, LocalDateTime now, Map<String, Object> params) {
+		StringBuilder where = new StringBuilder();
 		if (c.badge() != null) {
 			where.append(" AND EXISTS (SELECT 1 FROM user_badge ub WHERE ub.user_id = u.id AND ub.status = 'ACTIVE')");
 		}
@@ -101,21 +190,15 @@ public class TalentSearchRepository {
 			where.append(" AND u.region = :region");
 			params.put("region", c.region().name());
 		}
+		return where.toString();
+	}
 
-		String from = " FROM common_resumes c JOIN users u ON u.id = c.user_id";
-		Pageable pageable = c.toPageable();
-
-		Query select = em.createNativeQuery("SELECT c.id" + from + where + " ORDER BY c.id DESC");
-		params.forEach(select::setParameter);
-		select.setFirstResult((int) pageable.getOffset());
-		select.setMaxResults(pageable.getPageSize());
-		List<Long> ids = ((List<?>) select.getResultList()).stream()
-				.map(id -> ((Number) id).longValue()).toList();
-
-		Query count = em.createNativeQuery("SELECT COUNT(*)" + from + where);
-		params.forEach(count::setParameter);
-		long total = ((Number) count.getSingleResult()).longValue();
-
-		return new PageImpl<>(ids, pageable, total);
+	private static Map<UUID, Long> toMap(List<?> rows) {
+		Map<UUID, Long> map = new HashMap<>();
+		for (Object row : rows) {
+			Object[] r = (Object[]) row;
+			map.put((UUID) r[0], ((Number) r[1]).longValue());
+		}
+		return map;
 	}
 }
