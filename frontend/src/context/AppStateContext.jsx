@@ -1,7 +1,7 @@
 'use client';
 
 import { getAuthSession, logoutSession } from '../services/auth.js';
-import { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import { createContext, useContext, useMemo, useState, useEffect, useCallback } from 'react';
 import { GUEST_ME, MAX_PUBLIC_RESUMES } from '../data/constants.js';
 
 // 여러 화면이 함께 쓰는 상태. 실제 서비스에서는 서버 API + 캐시로 대체한다.
@@ -25,6 +25,11 @@ export function AppStateProvider({ children }) {
     });
     return () => abort.abort();
   }, []);
+  const refreshSession = useCallback(async () => {
+    const current = await getAuthSession();
+    setSession(current);
+    return current;
+  }, []);
   const loggedIn = session?.authenticated === true;
   const member = session?.user;
   const me = member
@@ -32,6 +37,8 @@ export function AppStateProvider({ children }) {
         id: member.id,
         name: member.nickname || member.username,
         handle: member.username,
+        // 회원 역할(USER, COMPANY, ADMIN). 좌측 메뉴를 역할별로 나눌 때 쓴다.
+        role: member.role,
         initial: (member.nickname || member.username).slice(0, 1),
         av: 'av1',
         github: '',
@@ -58,9 +65,8 @@ export function AppStateProvider({ children }) {
       authProviders: session?.providers || [],
       linkedProviders: session?.linkedProviders || [],
       loggedIn,
-      refreshSession: async () => {
-        setSession(await getAuthSession());
-      },
+      passwordLoginEnabled: session?.passwordLoginEnabled === true,
+      refreshSession,
       logout: async () => {
         await logoutSession();
         setSession(await getAuthSession());
@@ -211,7 +217,7 @@ export function AppStateProvider({ children }) {
         }),
     };
   }, [
-    session, authError, loggedIn, me, composeRequested, posts, liked, following,
+    session, authError, loggedIn, refreshSession, me, composeRequested, posts, liked, following,
     applied, commonResumes, publicResumeIds, feedbackRequests, threads,
   ]);
 

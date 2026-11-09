@@ -6,10 +6,12 @@ import Icon from '@/components/common/Icon.jsx';
 import JobHead from '@/components/jobs/JobHead.jsx';
 import JobOwnerActions from '@/components/jobs/JobOwnerActions.jsx';
 import JobRequestState from '@/components/jobs/JobRequestState.jsx';
+import JobApplyPanel from '@/components/jobs/JobApplyPanel.jsx';
 import useJobResource from '@/components/jobs/useJobResource.js';
 import { useAppState } from '@/context/AppStateContext.jsx';
 import { getJob } from '@/services/jobs.js';
 import '@/components/jobs/Jobs.css';
+import './JobDetailPage.css';
 
 export default function JobDetailPage({ id, initialJob = null }) {
   const { loggedIn, me } = useAppState();
@@ -20,7 +22,7 @@ export default function JobDetailPage({ id, initialJob = null }) {
     <JobRequestState {...state} />
     {state.data && !state.loading && !state.error && <><JobHead job={state.data} />
       {loggedIn && me.handle === state.data.company.username && <JobOwnerActions job={state.data} />}
-      <section className="section"><h3>지원 안내</h3><p className="muted">온라인 지원 기능은 준비 중입니다.</p></section>
+      <JobApplyPanel job={state.data} />
     </>}
   </MainColumn><RightAside showReviews label="공고 안내"><section className="card"><h2>공고 살펴보기</h2><p className="small muted">일반 공고는 공통 이력서로, 특화 공고는 회사 요구 문항을 담은 이력서로 지원하는 방식입니다.</p></section></RightAside></>;
 }

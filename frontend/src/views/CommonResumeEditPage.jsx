@@ -12,7 +12,10 @@ import { ChipRadioGroup } from '../components/common/Chip.jsx';
 import TocLink from '../components/resume/TocLink.jsx';
 import { TextField, TextAreaField } from '../components/resume/ResumeFields.jsx';
 import SkillsEditor from '../components/resume/SkillsEditor.jsx';
-import ItemListEditor from '../components/resume/ItemListEditor.jsx';
+import BasicInfoFields from '../components/resume/BasicInfoFields.jsx';
+import ProjectsEditor from '../components/resume/ProjectsEditor.jsx';
+import AwardsEditor from '../components/resume/AwardsEditor.jsx';
+import { normalizeContent, cleanContent } from '../components/resume/resumeContent.js';
 import './ResumeEditPage.css';
 
 const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
@@ -20,11 +23,6 @@ const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
 const FIELD_OPTIONS = [{ id: 'FRONTEND', label: '프론트엔드' }, { id: 'BACKEND', label: '백엔드' }, { id: '', label: '정하지 않음' }];
 const MAX_TITLE = 40;
 const MAX_INTRODUCTION = 2000;
-const BASIC_FIELDS = [
-  { key: 'name', label: '이름', max: 30, placeholder: '예: 이서연' },
-  { key: 'school', label: '학력', max: 100, placeholder: '예: OO대학교 컴퓨터공학과' },
-  { key: 'github', label: 'GitHub', max: 200, placeholder: '예: github.com/seoyeon-dev' }
-];
 
 // 공통 이력서 항목. id는 섹션 위치, 이름은 목차와 제목에 쓴다 (docs/database-design.md 이력서 content)
 const SECTIONS = [
@@ -35,39 +33,11 @@ const SECTIONS = [
   { id: 'introduction', label: '자기소개', filled: (c) => String(c.introduction ?? '').trim() !== '' }
 ];
 
-const MAX_PROJECTS = 20;
-const MAX_AWARDS = 20;
-// 특화 이력서가 프로젝트를 고를 때 id로 구분하므로 새 프로젝트에도 id를 붙인다
-const newProject = () => ({ id: `p-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, title: '', desc: '' });
-const newAward = () => ({ title: '', date: '' });
-
-// 예전 데이터의 문자열 수상은 { title, date } 모양으로 맞춘다
-const normalize = (content) => ({
-  ...content,
-  ...(Array.isArray(content.awards) && { awards: content.awards.map((a) => (typeof a === 'string' ? { title: a, date: '' } : a)) })
-});
-
 // 서버 응답을 화면에서 고치는 모양({ title, field, content })으로 바꾼다
-const fromDetail = (detail) => ({ title: detail.title, field: detail.field || '', content: normalize(detail.content || {}) });
+const fromDetail = (detail) => ({ title: detail.title, field: detail.field || '', content: normalizeContent(detail.content || {}) });
 
-const trim = (v) => String(v ?? '').trim();
-
-// 저장할 값: 앞뒤 공백을 지우고 이름·내용이 모두 빈 프로젝트와 수상은 뺀다.
-// 화면이 다루지 않는 content 값(프로젝트 근거 등)은 그대로 둔다.
-function toPayload({ title, field, content }) {
-  const { basic, projects, awards, introduction } = content;
-  return {
-    title: title.trim(),
-    field,
-    content: {
-      ...content,
-      ...(basic && { basic: Object.fromEntries(Object.entries(basic).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])) }),
-      ...(projects && { projects: projects.map((p) => ({ ...p, title: trim(p.title), desc: trim(p.desc) })).filter((p) => p.title || p.desc) }),
-      ...(awards && { awards: awards.map((a) => ({ ...a, title: trim(a.title), date: trim(a.date) })).filter((a) => a.title || a.date) }),
-      ...(introduction !== undefined && { introduction: trim(introduction) })
-    }
-  };
-}
+// 저장할 값: 이름과 content의 앞뒤 공백을 지우고 빈 프로젝트·수상은 뺀다
+const toPayload = ({ title, field, content }) => ({ title: title.trim(), field, content: cleanContent(content) });
 
 // 저장 시각을 "방금 전", "3분 전"처럼 보여 준다
 function agoText(time) {
@@ -185,7 +155,6 @@ export default function CommonResumeEditPage({ id }) {
   const change = (key, value) => { setAlertText(''); setDraft((d) => ({ ...d, [key]: value })); };
   // 화면이 다루지 않는 content 값(프로젝트 근거 등)은 그대로 두고 바꾼 항목만 덮는다
   const changeContent = (key, value) => { setAlertText(''); setDraft((d) => ({ ...d, content: { ...d.content, [key]: value } })); };
-  const changeBasic = (key, value) => changeContent('basic', { ...basic, [key]: value });
 
   return (
     <div className="resume-edit">
@@ -239,11 +208,7 @@ export default function CommonResumeEditPage({ id }) {
 
           <section id="basic" className="resume-block">
             <div className="resume-block__head"><h2>기본 정보</h2></div>
-            <div className="resume-fields">
-              {BASIC_FIELDS.map((f) => (
-                <TextField key={f.key} id={`basic-${f.key}`} label={f.label} max={f.max} placeholder={f.placeholder} value={basic[f.key]} onChange={(v) => changeBasic(f.key, v)} />
-              ))}
-            </div>
+            <BasicInfoFields basic={basic} onChange={(v) => changeContent('basic', v)} />
           </section>
 
           <section id="skills" className="resume-block">
@@ -253,39 +218,12 @@ export default function CommonResumeEditPage({ id }) {
 
           <section id="projects" className="resume-block">
             <div className="resume-block__head"><h2>프로젝트</h2></div>
-            <ItemListEditor
-              items={content.projects || []} onChange={(v) => changeContent('projects', v)}
-              createItem={newProject} itemLabel="프로젝트" max={MAX_PROJECTS} emptyText="아직 작성한 프로젝트가 없어요"
-              renderItem={(p, update, i) => (
-                <>
-                  <TextField id={`project-${i}-title`} label="프로젝트 이름" max={100} placeholder="예: 스터디 매칭 웹앱" value={p.title} onChange={(v) => update({ title: v })} />
-                  <TextAreaField id={`project-${i}-desc`} label="프로젝트 설명" max={1000} rows={3} placeholder="사용한 기술, 팀 규모, 맡은 일과 결과를 적어 주세요." value={p.desc} onChange={(v) => update({ desc: v })} />
-                  {p.evidence?.length > 0 && (
-                    <div className="row-wrap" style={{ gap: 6 }}>
-                      <span className="xs bold muted">근거</span>
-                      {p.evidence.map((ev) => {
-                        const type = String(ev.type).toLowerCase();
-                        return <span key={ev.label} className={`evidence-chip evidence-chip--${type}`}><Icon name={type === 'repo' ? 'repo' : 'rss'} size={14} />{ev.label}</span>;
-                      })}
-                    </div>
-                  )}
-                </>
-              )}
-            />
+            <ProjectsEditor projects={content.projects || []} onChange={(v) => changeContent('projects', v)} />
           </section>
 
           <section id="awards" className="resume-block">
             <div className="resume-block__head"><h2>수상</h2></div>
-            <ItemListEditor
-              items={content.awards || []} onChange={(v) => changeContent('awards', v)}
-              createItem={newAward} itemLabel="수상" max={MAX_AWARDS} emptyText="아직 작성한 수상 이력이 없어요"
-              renderItem={(a, update, i) => (
-                <div className="resume-fields">
-                  <TextField id={`award-${i}-title`} label="수상 이름" max={100} placeholder="예: 교내 해커톤 우수상" value={a.title} onChange={(v) => update({ title: v })} />
-                  <TextField id={`award-${i}-date`} label="받은 날" max={20} placeholder="예: 2025-11" value={a.date} onChange={(v) => update({ date: v })} />
-                </div>
-              )}
-            />
+            <AwardsEditor awards={content.awards || []} onChange={(v) => changeContent('awards', v)} />
           </section>
 
           <section id="introduction" className="resume-block">

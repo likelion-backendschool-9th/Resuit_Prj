@@ -33,7 +33,7 @@
   align-items: center;
   justify-content: center;
 }
-.q-item__text { flex: 1 1 260px; min-width: 0; border: 0; background: none; outline: none; font-size: 15px; }
+.q-item__text { flex: 1 1 180px; min-width: 0; border: 0; background: none; outline: none; font-size: 15px; }
 .q-item__remove { color: var(--text-sub); }
 .q-box__add {
   min-height: 44px;
@@ -43,4 +43,22 @@
   color: var(--special);
   font-size: 14px;
   font-weight: 700;
+}
+
+/* 원본 목업의 헤더와 피드 미리보기. API 데이터는 props로 표시한다. */
+.page-title.company-post__head { align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--line); }
+.company-post__preview-title { font-size: 17px; font-weight: 900; }
+.card.company-post__preview { gap: 10px; padding: 14px; overflow-wrap: anywhere; }
+.company-post__preview strong { font-size: 14px; }
+.company-post__preview-badge { align-self: flex-start; }
+.q-box__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px; }
+.q-box__head h2 { font-size: 17px; font-weight: 900; }
+.q-item__limit { display: flex; align-items: center; gap: 6px; }
+.q-item__limit input { width: 76px; min-height: 36px; padding: 4px 6px; font-size: 13px; border: 1px solid var(--special-line); border-radius: var(--radius-sm); background: var(--bg); }
+.q-item__text:focus-visible, .q-item__limit input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.job-editor > fieldset > .company-post__fieldset { min-width: 0; }
+@media (max-width: 600px) {
+  .q-item__text { flex-basis: calc(100% - 48px); }
+  .q-item__limit { margin-left: 38px; }
+  .q-item__remove { margin-left: auto; }
 }

@@ -4,23 +4,39 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCommonResumes, getTargetResumes, getTargetResume, createTargetResume, updateTargetResume, deleteTargetResume } from '../services/resumes.js';
+import { applyWithTargetResume } from '../services/jobApplications.js';
 import Badge from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
 import ThemeToggle from '../components/common/ThemeToggle.jsx';
 import TocLink from '../components/resume/TocLink.jsx';
+import BasicInfoFields from '../components/resume/BasicInfoFields.jsx';
+import SkillsEditor from '../components/resume/SkillsEditor.jsx';
+import { TextAreaField } from '../components/resume/ResumeFields.jsx';
+import ProjectsEditor from '../components/resume/ProjectsEditor.jsx';
+import AwardsEditor from '../components/resume/AwardsEditor.jsx';
+import { normalizeContent, cleanContent } from '../components/resume/resumeContent.js';
 import './ResumeEditPage.css';
 
-const projectKey = (p, i) => p.id || `p${i}`;
+const MAX_INTRODUCTION = 2000;
+
+// 프로젝트의 selected가 없으면 이 회사에 제출하는 것으로 본다
+const withSelected = (content) => ({
+  ...content,
+  ...(Array.isArray(content.projects) && { projects: content.projects.map((p) => ({ ...p, selected: p.selected !== false })) })
+});
 
 // 서버 응답을 화면에서 사용하는 모양으로 맞춘다
 function fromApi(detail) {
   return {
     id: detail.id,
+    jobId: detail.job.id,
+    // SUBMITTED: 이 특화 이력서로 이미 지원했다
+    submitted: detail.status === 'SUBMITTED',
     header: `${detail.job.companyName} · ${detail.job.title}`,
     back: { href: '/resumes', label: '내 이력서로 돌아가기' },
     blank: !detail.commonResumeId,
-    content: detail.content || {},
+    content: withSelected(normalizeContent(detail.content || {})),
     questions: detail.questions.map((q) => ({ key: q.id, text: q.content, limit: q.charLimit || undefined })),
     answers: Object.fromEntries((detail.content?.answers || []).map((a) => [a.questionId, a.answer || '']))
   };
@@ -33,7 +49,6 @@ export default function ResumeEditPage({ id, jobId, mode }) {
   const [doc, setDoc] = useState(null);
   const [error, setError] = useState('');
   const [answers, setAnswers] = useState({});
-  const [picked, setPicked] = useState({});
   const [savedLabel, setSavedLabel] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeToc, setActiveToc] = useState('q1');
@@ -44,7 +59,6 @@ export default function ResumeEditPage({ id, jobId, mode }) {
     const show = (next) => {
       setDoc(next);
       setAnswers(next.answers);
-      setPicked(Object.fromEntries((next.content.projects || []).map((p, i) => [projectKey(p, i), p.selected !== false])));
     };
 
     async function load() {
@@ -86,24 +100,47 @@ export default function ResumeEditPage({ id, jobId, mode }) {
   const projects = content.projects || [];
   const done = questions.filter((q) => (answers[q.key] || '').trim()).length;
   const total = questions.length;
-  const pickedCount = projects.filter((p, i) => picked[projectKey(p, i)]).length;
+  const pickedCount = projects.filter((p) => p.selected !== false).length;
   const toc = { active: activeToc, onPick: setActiveToc };
+  // 특화 이력서는 시작할 때 복사한 별도 내용이라 여기서 고쳐도 공통 이력서는 바뀌지 않는다
+  const changeContent = (key, value) => setDoc((d) => ({ ...d, content: { ...d.content, [key]: value } }));
 
-  async function save(after) {
-    if (!doc.id) { setSavedLabel('예시 화면이라 저장되지 않아요'); return; }
+  // 저장에 성공하면 true
+  async function save() {
+    if (!doc.id) { setSavedLabel('예시 화면이라 저장되지 않아요'); return false; }
     setSaving(true);
     try {
+      // 공백을 지우고 빈 프로젝트·수상은 뺀다. 프로젝트의 제출 여부(selected)는 그대로 남는다
       const next = {
-        ...content,
-        projects: projects.map((p, i) => ({ ...p, selected: !!picked[projectKey(p, i)] })),
+        ...cleanContent(content),
         answers: questions.map((q) => ({ questionId: q.key, answer: answers[q.key] || '' }))
       };
       await updateTargetResume(doc.id, { content: next });
       setSavedLabel('임시 저장됨 · 방금 전');
-      after?.();
+      return true;
     } catch (err) {
       setSavedLabel(err.message);
+      return false;
     } finally {
+      setSaving(false);
+    }
+  }
+
+  // 저장한 뒤 이 특화 이력서로 공고에 지원하고 공고 상세로 간다. 이미 지원했으면 저장만 하고 간다
+  async function submit() {
+    if (!doc.submitted) {
+      const left = total - done;
+      const ask = left > 0 ? `아직 답하지 않은 요구 문항이 ${left}개 있어요. 그래도 이 특화 이력서로 지원할까요?` : '이 특화 이력서로 지원할까요?';
+      if (!window.confirm(ask)) return;
+    }
+    if (!(await save())) return;
+    if (doc.submitted) { router.push(`/jobs/${doc.jobId}`); return; }
+    setSaving(true);
+    try {
+      await applyWithTargetResume(doc.jobId, doc.id);
+      router.push(`/jobs/${doc.jobId}`);
+    } catch (err) {
+      setSavedLabel(err.message);
       setSaving(false);
     }
   }
@@ -133,7 +170,7 @@ export default function ResumeEditPage({ id, jobId, mode }) {
             <ThemeToggle />
             {doc.id && <Button variant="outline" onClick={remove} disabled={saving}>삭제</Button>}
             <Button variant="outline" onClick={() => save()} disabled={saving}>임시 저장</Button>
-            <Button onClick={() => save(() => router.push('/resumes'))} disabled={saving}>제출하기</Button>
+            <Button onClick={submit} disabled={saving}>{doc.submitted ? '저장하고 공고 보기' : '저장하고 지원하기'}</Button>
           </div>
         </div>
       </header>
@@ -144,62 +181,48 @@ export default function ResumeEditPage({ id, jobId, mode }) {
           <TocLink target="basic" {...toc}>기본 정보</TocLink>
           <TocLink target="skills" {...toc}>기술 스택</TocLink>
           <TocLink target="projects" {...toc}>프로젝트</TocLink>
+          <TocLink target="awards" {...toc}>수상</TocLink>
+          <TocLink target="introduction" {...toc}>자기소개</TocLink>
           <div className="resume-edit__toc-group is-req">회사 요구 문항</div>
           {questions.map((q, i) => <TocLink key={q.key} target={`q${i + 1}`} {...toc}>문항 {i + 1}</TocLink>)}
         </nav>
 
         <main className="resume-edit__form">
-          {blank && <div className="resume-edit__note">빈 이력서로 시작했어요. 아래 항목을 이 회사에 맞춰 새로 작성해 주세요.</div>}
+          <div className="resume-edit__note">
+            {blank ? '빈 이력서로 시작했어요. 아래 항목을 이 회사에 맞춰 새로 작성해 주세요.'
+              : '공통 이력서에서 불러온 내용이에요. 이 회사에 맞춰 고쳐도 원래 공통 이력서는 바뀌지 않아요.'}
+          </div>
 
           <section id="basic" className="resume-block">
-            <div className="resume-block__head">
-              <h2>기본 정보</h2>
-              {!blank && <Badge tone="loaded">공통에서 불러옴</Badge>}
-              {!blank && <button type="button" className="resume-block__edit">이 이력서에서만 수정</button>}
-            </div>
-            {!content.basic ? <span className="small muted">아직 작성하지 않았어요</span> : (
-              <div className="grid-3" style={{ fontSize: 14 }}>
-                <div><div className="xs muted">이름</div><div style={{ fontWeight: 500 }}>{content.basic.name}</div></div>
-                <div><div className="xs muted">학력</div><div style={{ fontWeight: 500 }}>{content.basic.school}</div></div>
-                <div><div className="xs muted">GitHub</div><div style={{ fontWeight: 500 }}>{content.basic.github}</div></div>
-              </div>
-            )}
+            <div className="resume-block__head"><h2>기본 정보</h2>{!blank && <Badge tone="loaded">공통에서 불러옴</Badge>}</div>
+            <BasicInfoFields basic={content.basic} onChange={(v) => changeContent('basic', v)} />
           </section>
 
           <section id="skills" className="resume-block">
             <div className="resume-block__head"><h2>기술 스택</h2>{!blank && <Badge tone="loaded">공통에서 불러옴</Badge>}</div>
-            {!content.skills?.length ? <span className="small muted">아직 작성하지 않았어요</span> : (
-              <div className="row-wrap">{content.skills.map((s) => <span key={s} className="resume-skill">{s}</span>)}</div>
-            )}
+            <SkillsEditor skills={content.skills || []} onChange={(v) => changeContent('skills', v)} />
           </section>
 
           <section id="projects" className="resume-block">
-            <div className="resume-block__head"><h2>프로젝트</h2>{!blank && projects.length > 0 && <Badge tone="loaded">공통에서 불러옴 · {projects.length}개 중 {pickedCount}개 선택</Badge>}</div>
-            {!projects.length ? <span className="small muted">아직 작성하지 않았어요</span> : projects.map((p, i) => {
-              const key = projectKey(p, i);
-              return (
-                <div key={key} className="resume-project">
-                  <label className="resume-project__check">
-                    <input type="checkbox" checked={!!picked[key]} onChange={(e) => setPicked((m) => ({ ...m, [key]: e.target.checked }))} />
-                    <span><span className="bold" style={{ display: 'block' }}>{p.title}</span><span className="small muted">{p.desc}</span></span>
-                  </label>
-                  {p.evidence && (
-                    <div className="resume-project__evidence">
-                      <span className="xs bold muted">근거</span>
-                      {p.evidence.map((ev) => {
-                        const type = String(ev.type).toLowerCase();
-                        return (
-                          <Link key={ev.label} href="/profile" className={`evidence-chip evidence-chip--${type}`}>
-                            <Icon name={type === 'repo' ? 'repo' : 'rss'} size={14} />{ev.label}
-                          </Link>
-                        );
-                      })}
-                      {p.canAttach && <button type="button" className="evidence-chip evidence-chip--add">레포 · 블로그 글 첨부</button>}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            <div className="resume-block__head">
+              <h2>프로젝트</h2>
+              {projects.length > 0 && <Badge tone="loaded">{blank ? '' : '공통에서 불러옴 · '}{projects.length}개 중 {pickedCount}개 제출</Badge>}
+            </div>
+            <ProjectsEditor selectable projects={projects} onChange={(v) => changeContent('projects', v)} />
+          </section>
+
+          <section id="awards" className="resume-block">
+            <div className="resume-block__head"><h2>수상</h2>{!blank && content.awards?.length > 0 && <Badge tone="loaded">공통에서 불러옴</Badge>}</div>
+            <AwardsEditor awards={content.awards || []} onChange={(v) => changeContent('awards', v)} />
+          </section>
+
+          <section id="introduction" className="resume-block">
+            <div className="resume-block__head"><h2>자기소개</h2>{!blank && content.introduction && <Badge tone="loaded">공통에서 불러옴</Badge>}</div>
+            <TextAreaField
+              id="introduction-input" label="자기소개" max={MAX_INTRODUCTION} rows={6}
+              placeholder="이 회사에 맞춰 어떤 개발자인지 소개해 주세요."
+              value={content.introduction} onChange={(v) => changeContent('introduction', v)}
+            />
           </section>
 
           {questions.map((q, i) => (

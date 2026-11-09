@@ -7,8 +7,6 @@ import com.newlecture.resuit.dto.SessionMemberResponse;
 import com.newlecture.resuit.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -57,7 +55,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping ("/api/v1/users")
 public class UserController {
     private final AuthService authService;
-    private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContexts;
     private final SessionAuthenticationStrategy sessionAuthentication;
 	private final ProfileService profiles;
@@ -67,10 +64,9 @@ public class UserController {
 
 	public UserController(ProfileService profiles, CurrentUserResolver currentUser,
 			ProfileIntegrationService integrations, GithubContributionService githubContributions,
-            AuthService authService, AuthenticationManager authenticationManager,
+            AuthService authService,
             SecurityContextRepository securityContexts, SessionAuthenticationStrategy sessionAuthentication) {
         this.authService = authService;
-        this.authenticationManager = authenticationManager;
         this.securityContexts = securityContexts;
         this.sessionAuthentication = sessionAuthentication;
 		this.profiles = profiles;
@@ -241,8 +237,7 @@ public class UserController {
     public SessionMemberResponse login(@Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         try {
-            var authentication = authenticationManager.authenticate(
-                    UsernamePasswordAuthenticationToken.unauthenticated(request.username(), request.password()));
+            var authentication = authService.authenticate(request);
 
             var member = authService.findSessionMember(authentication.getName())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."));

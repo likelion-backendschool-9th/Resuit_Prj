@@ -15,6 +15,7 @@ async function request(path, { baseUrl = '', ...options } = {}) {
 const json = (method, body) => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 export const getJobs = ({ type = 'all', page = 0, ...options } = {}) => request(`?page=${page}&size=20${type !== 'all' ? `&type=${encodeURIComponent(type.toUpperCase())}` : ''}`, options);
 export const getJob = (id, options) => request(`/${encodeURIComponent(id)}`, options);
+export const getMyJobs = (page = 0, options) => request(`/me?page=${page}&size=20`, options);
 export const getJobDrafts = (page = 0, options) => request(`/me/drafts?page=${page}&size=20`, options);
 export const getJobDraft = (id, options) => request(`/me/drafts/${encodeURIComponent(id)}`, options);
 export const createJob = (body) => request('', json('POST', body));
