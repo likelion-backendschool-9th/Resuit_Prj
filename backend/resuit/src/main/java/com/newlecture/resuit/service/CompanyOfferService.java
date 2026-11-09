@@ -10,4 +10,6 @@ public interface CompanyOfferService {
     CompanyOfferResponse send(String username, CompanyOfferCreateRequest request);
 
     List<CompanyOfferResponse> getReceived(String username);
+
+    List<CompanyOfferResponse> getSent(String username);
 }

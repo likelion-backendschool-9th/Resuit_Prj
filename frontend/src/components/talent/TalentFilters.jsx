@@ -1,9 +1,9 @@
 import { TALENT_SKILLS } from '../../data/constants.js';
 import Badge from '../common/Badge.jsx';
 import { ToggleChip } from '../common/Chip.jsx';
+import { CAREERS, REGIONS } from './labels.js';
 
-const CAREERS = [{ id: 'all', label: '전체' }, { id: '신입', label: '신입' }, { id: '1~3년', label: '1~3년' }, { id: '3년 이상', label: '3년 이상' }];
-const REGIONS = [{ id: 'all', label: '전체' }, { id: '서울', label: '서울' }, { id: '경기', label: '경기' }, { id: '부산', label: '부산' }, { id: '대전', label: '대전' }];
+const withAll = (items) => [{ id: 'all', label: '전체' }, ...items];
 const EVIDENCE = [
   { key: 'streak', label: '2분기 연속 인증' },
   { key: 'github', label: 'GitHub 1년 기여 500회 이상' },
@@ -57,7 +57,7 @@ export default function TalentFilters({ pro, filters, onChange, showLockMessage,
       <fieldset className="talent-filters__group">
         <legend>경력</legend>
         <div className="chips" style={{ gap: 6 }}>
-          {CAREERS.map((c) => (
+          {withAll(CAREERS).map((c) => (
             <ToggleChip key={c.id} size="filter" on={pro && filters.career === c.id} onClick={guard(() => onChange({ career: c.id }))}>{c.label}</ToggleChip>
           ))}
         </div>
@@ -78,7 +78,7 @@ export default function TalentFilters({ pro, filters, onChange, showLockMessage,
       <fieldset className="talent-filters__group">
         <legend>지역</legend>
         <div className="chips" style={{ gap: 6 }}>
-          {REGIONS.map((r) => (
+          {withAll(REGIONS).map((r) => (
             <ToggleChip key={r.id} size="filter" on={pro && filters.region === r.id} onClick={guard(() => onChange({ region: r.id }))}>{r.label}</ToggleChip>
           ))}
         </div>

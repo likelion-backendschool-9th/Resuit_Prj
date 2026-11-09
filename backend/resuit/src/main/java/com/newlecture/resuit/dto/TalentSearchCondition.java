@@ -14,7 +14,8 @@ import jakarta.validation.constraints.Size;
 
 // field, page, size는 무료(9.1)이고, 나머지 상세 필터(9.2)는 기업 Pro만 쓸 수 있다.
 public record TalentSearchCondition(
-		@Pattern(regexp = "FRONTEND|BACKEND") String field,
+		// 개발 단계라 허용 값 검사는 하지 않는다. 화면의 탭에서 정해진 값만 보낸다.
+		String field,
 		@Pattern(regexp = "active") String badge,
 		@Min(1) Integer streak,
 		@Size(max = 10) List<String> skills,

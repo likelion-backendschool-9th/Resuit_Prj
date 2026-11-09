@@ -9,11 +9,12 @@ import { ToggleChip } from '../components/common/Chip.jsx';
 import useProfileData from '../components/profile/useProfileData.js';
 import { startSocialLink, unlinkSocialProvider } from '../services/auth.js';
 import './IntegrationsPage.css';
+import PasswordSetupForm from '@/components/auth/PasswordSetupForm.jsx';
 
 const MAX_PINNED_REPOS = 3;
 const PROVIDER_NAMES = { google: 'Google', github: 'GitHub', naver: '네이버' };
 const LINK_ERRORS = {
-  already_linked: '이미 다른 Resuit 계정에 연결된 소셜 계정입니다.',
+  already_linked: '이미 다른 Resuit 계정에 연결된 소셜 계정입니다. 기존 계정과 데이터는 유지되며, 이 계정으로 옮겨지지 않습니다.',
   provider_already_connected: '이미 이 제공자가 연결되어 있습니다.',
   link_provider_mismatch: '연결하려는 제공자와 로그인 제공자가 다릅니다.',
   link_user_missing: '연결할 로그인 세션을 확인할 수 없습니다. 다시 로그인해 주세요.',
@@ -27,7 +28,7 @@ const LINK_ERRORS = {
 
 export default function IntegrationsPage() {
   const {
-    me, loggedIn, authLoading, authProviders, linkedProviders, refreshSession,
+    me, loggedIn, authLoading, authProviders, linkedProviders, passwordLoginEnabled, refreshSession,
   } = useAppState();
   const data = useProfileData(me.handle, true, null, 'posts', me.handle, {
     ready: !authLoading && loggedIn,
@@ -135,12 +136,14 @@ export default function IntegrationsPage() {
           )}
           {data.error && <p role="alert" className="small muted">{data.error}</p>}
 
+          {loggedIn && <PasswordSetupForm key={me.id} />}
+
           <section className="card integrations__card">
             <h2>로그인 계정</h2>
             <p className="small muted">
               프로필에서 연결하지 않고 다른 제공자로만 로그인하면 별도 계정이 됩니다.
               같은 회원으로 쓰려면 아래에서 추가 연결하세요. 이메일이 달라도 연결할 수 있습니다.
-              다른 회원에 이미 연결된 계정이면, 여기서 연결할 때 지금 로그인한 회원으로 옮겨집니다.
+              다른 회원에 이미 연결된 소셜 계정은 추가할 수 없습니다. 해당 계정으로 로그인해 주세요.
             </p>
             <div className="integrations__repos" role="list">
               {(authProviders || []).map((provider) => {
@@ -162,7 +165,7 @@ export default function IntegrationsPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        disabled={(linkedProviders || []).length <= 1}
+                        disabled={!passwordLoginEnabled && (linkedProviders || []).length <= 1}
                         onClick={() => run(
                           () => unlinkProvider(provider.id),
                           `${name} 연결을 해제했습니다.`,

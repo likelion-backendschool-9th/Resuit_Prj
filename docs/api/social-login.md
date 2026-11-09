@@ -52,8 +52,8 @@ NAVER_CLIENT_SECRET='발급값'
 - database/migrations/004_social_accounts.sql을 배포 전에 적용한다. 개인 DB에는 적용 완료. users.username 유일성도 확인한다. 기존 중복 회원을 자동 병합하지 않는다.
 - social_accounts의 provider+subject 유일키로 외부 계정을 식별한다. 같은 외부 계정의 반복 로그인은 같은 users 회원에 연결된다.
 - 제공자가 다른 계정은 이메일이 같아도 자동 병합하지 않는다. 온보딩에서 Google만 쓰거나 GitHub만 쓰면 각각 별도 Resuit 회원이 된다.
-- **계정 연결**: 로그인한 뒤 `/setting/integrations`에서 `POST /api/v1/auth/link/{provider}`가 서명된 `link` 토큰이 붙은 인가 주소를 돌려준다. 그 토큰은 인가 시작 시 OAuth state와 같은 세션에 저장되어, 콜백에서 현재 회원에 `social_accounts` 행을 추가한다. 프로필에서 연결하지 않고 다른 제공자로 외부 로그인하면 별도 계정이다. 이미 다른 회원에 묶인 제공자·subject를 여기서 연결하면 그 로그인 수단은 지금 회원으로 옮겨지고, 이전 회원에서는 빠진다. `DELETE /api/v1/auth/link/{provider}`로 해제할 수 있으나 마지막 로그인 수단은 해제할 수 없다.
-- `GET /api/v1/auth/session`의 `linkedProviders`에 현재 회원에 연결된 제공자 목록이 포함된다.
+- **계정 연결**: 로그인한 뒤 `/setting/integrations`에서 `POST /api/v1/auth/link/{provider}`가 서명된 `link` 토큰이 붙은 인가 주소를 돌려준다. 그 토큰은 인가 시작 시 OAuth state와 같은 세션에 저장되어, 콜백에서 현재 회원에 `social_accounts` 행을 추가한다. 프로필에서 연결하지 않고 다른 제공자로 외부 로그인하면 별도 계정이다. 이미 다른 회원에 묶인 제공자·subject를 연결하면 `already_linked` 오류로 차단한다. 로그인 수단의 소유자와 기존 회원 데이터는 변경하지 않는다. `DELETE /api/v1/auth/link/{provider}`로 해제할 수 있으나 비밀번호도 없고 소셜 계정도 하나뿐이면 해제할 수 없다. 비밀번호 로그인이 설정되어 있으면 마지막 소셜 계정도 해제할 수 있다.
+- `GET /api/v1/auth/session`의 `linkedProviders`에 현재 회원에 연결된 제공자 목록이 포함되고, `passwordLoginEnabled`로 비밀번호 설정 여부를 알 수 있다.
 - 첫 로그인에는 임의의 유일 username과 USER 역할을 생성한다. 외부 프로필 값을 내부 역할이나 권한으로 사용하지 않는다.
 - Principal.getName()은 내부 users.username이다. 기존 리뷰·이메일 인증 서비스는 이 계약을 그대로 사용한다.
 - 동일 외부 계정의 첫 로그인을 DB 트랜잭션 advisory lock으로 직렬화한다.
