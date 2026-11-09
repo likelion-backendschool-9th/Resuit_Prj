@@ -15,7 +15,11 @@ public interface FeedbackBoardService {
     ResumePreviewResponse getResumePreview(String username, ResumePreviewCondition condition);
     List<FeedbackCommentResponse> getComments(Long requestId, String username);
     FeedbackCommentResponse createComment(FeedbackCommentCreateCommand command);
+    void deleteComment(Long commentId, String username);
 
     // 취소한 피드백 요청에는 댓글을 달 수 없다
     public static class FeedbackRequestClosedException extends RuntimeException {}
+    public static class FeedbackCommentNotFoundException extends RuntimeException {}
+    public static class FeedbackCommentForbiddenException extends RuntimeException {}
+    public static class FeedbackCommentInUseException extends RuntimeException {}
 }

@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface BestReviewRepository extends JpaRepository<BestReview, Long> {
+    boolean existsByComment_CommentId(Long commentId);
+
     interface ReviewRow {
         Long getReviewId();
         String getUsername();

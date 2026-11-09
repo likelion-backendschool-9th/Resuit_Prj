@@ -35,7 +35,7 @@ export default function CommentForm({ handle, initialContent = '', onSave, onCan
   }
 
   return <form className="comment-form" onSubmit={submit} aria-busy={saving}>
-    <Avatar initial={me.initial} color={me.av} size={40} />
+    <Avatar initial={me.initial} color={me.av} size={40} src={me.profileImage || undefined} />
     <div className="comment-form__body">
       <label htmlFor={id} className="small muted">{mode === 'edit' ? '댓글 수정' : `@${handle} 님에게 답글 남기기`}</label>
       <textarea autoFocus={autoFocus} id={id} rows={3} className="comment-form__input" placeholder="답글을 남겨보세요."

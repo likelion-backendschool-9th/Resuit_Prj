@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getFeedbackComments, createFeedbackComment, adoptFeedback } from '../../services/feedbackRequests.js';
+import { getFeedbackComments, createFeedbackComment, deleteFeedbackComment, adoptFeedback } from '../../services/feedbackRequests.js';
 import Avatar from '../common/Avatar.jsx';
 import Badge from '../common/Badge.jsx';
 import Button from '../common/Button.jsx';
@@ -18,7 +18,7 @@ function sectionOptions(request) {
 }
 
 // 피드백 카드를 펼쳤을 때 보이는 댓글 목록과 작성란 (WBS 4.6, 4.7, 4.9, 4.10)
-export default function FeedbackComments({ request, onAdded, onAdopted }) {
+export default function FeedbackComments({ request, onAdded, onDeleted, onAdopted }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -28,6 +28,9 @@ export default function FeedbackComments({ request, onAdded, onAdopted }) {
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState('');
   const [confirming, setConfirming] = useState(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [adopting, setAdopting] = useState(false);
   const [adoptNotice, setAdoptNotice] = useState('');
   const inputId = `feedback-${request.id}`;
@@ -78,6 +81,26 @@ export default function FeedbackComments({ request, onAdded, onAdopted }) {
     }
   }
 
+  async function remove(commentId) {
+    if (deleting) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteFeedbackComment(commentId);
+      setComments((list) => {
+        const removed = list.find((item) => item.commentId === commentId);
+        return list.filter((item) => item.commentId !== commentId)
+          .map((item) => item.parentId === commentId ? { ...item, parentId: removed?.parentId ?? null } : item);
+      });
+      setConfirmingDelete(null);
+      onDeleted?.();
+    } catch (err) {
+      setDeleteError(err.message);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="fb-card__panel">
       {request.mine && !adopted && <p className="small muted">가장 도움이 된 피드백 1개를 채택해 주세요. 채택은 리뷰어의 인증 배지 평가에 반영돼요.</p>}
@@ -87,20 +110,31 @@ export default function FeedbackComments({ request, onAdded, onAdopted }) {
         : comments.map((c) => {
           const name = c.author.nickname || c.author.username;
           return (
-            <div key={c.commentId} className="fb-item">
+            <div key={c.commentId} className={`fb-item${c.parentId ? ' fb-item--reply' : ''}`}>
               <Avatar initial={name.charAt(0)} color={avatarColor(c.author.username)} size={32} src={c.author.profileImageUrl} />
               <div className="grow stack" style={{ gap: 4 }}>
                 <div className="row-wrap" style={{ gap: 6, fontSize: 14 }}>
                   <strong>{name}</strong>
+                  {c.parentId && <span className="xs muted">답글</span>}
                   {c.reviewerBadge && <Badge tone="verified"><Icon name="check" size={11} />{c.reviewerBadge}</Badge>}
                   <Badge tone="general">{c.section ? SECTION_LABEL[c.section] ?? c.section : '전체'}</Badge>
                   <span className="xs muted">{timeText(c.createdAt)}</span>
                   {c.adopted && <span className="fb-item__adopt"><Badge tone="accepted" size="md">채택됨</Badge></span>}
-                  {canAdopt && !c.mine && confirming !== c.commentId && (
+                  {canAdopt && !c.mine && !c.parentId && confirming !== c.commentId && (
                     <Button variant="accent-outline" size="sm" className="fb-item__adopt" onClick={() => { setConfirming(c.commentId); setAdoptNotice(''); }}>채택하기</Button>
                   )}
+                  {c.mine && !c.adopted && <Button variant="ghost" size="sm" onClick={() => { setConfirmingDelete(c.commentId); setDeleteError(''); }} disabled={deleting}>삭제</Button>}
+                  {c.mine && c.adopted && <span className="xs muted">채택된 피드백은 삭제할 수 없어요.</span>}
                 </div>
                 <p style={{ fontSize: 14, whiteSpace: 'pre-wrap' }}>{c.content}</p>
+                {confirmingDelete === c.commentId && (
+                  <div className="row-wrap" style={{ gap: 6 }}>
+                    <span className="small">이 피드백을 삭제할까요?</span>
+                    <Button variant="outline" size="sm" onClick={() => remove(c.commentId)} disabled={deleting}>{deleting ? '삭제 중…' : '삭제 확인'}</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(null)} disabled={deleting}>취소</Button>
+                    {deleteError && <p className="small" role="alert">{deleteError}</p>}
+                  </div>
+                )}
                 {confirming === c.commentId && (
                   <div className="row-wrap" style={{ gap: 6 }}>
                     <span className="small">이 피드백을 채택할까요? 채택은 되돌릴 수 없어요.</span>

@@ -10,8 +10,11 @@ import com.newlecture.resuit.entity.FeedbackComment;
 import com.newlecture.resuit.entity.FeedbackRequest;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommonResumeRepository;
+import com.newlecture.resuit.repository.BestReviewRepository;
 import com.newlecture.resuit.repository.FeedbackBoardRepository;
+import com.newlecture.resuit.repository.FeedbackCommentLikeRepository;
 import com.newlecture.resuit.repository.FeedbackCommentRepository;
+import com.newlecture.resuit.repository.FeedbackRequestRepository;
 import com.newlecture.resuit.repository.FeedbackBoardRepository.CommentCountRow;
 import com.newlecture.resuit.repository.FeedbackBoardRepository.SectionRow;
 import com.newlecture.resuit.repository.TargetResumeRepository;
@@ -21,6 +24,9 @@ import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenExceptio
 import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
 import com.newlecture.resuit.service.FeedbackBoardService;
+import com.newlecture.resuit.service.FeedbackBoardService.FeedbackCommentForbiddenException;
+import com.newlecture.resuit.service.FeedbackBoardService.FeedbackCommentInUseException;
+import com.newlecture.resuit.service.FeedbackBoardService.FeedbackCommentNotFoundException;
 import com.newlecture.resuit.service.FeedbackRequestService.FeedbackRequestNotFoundException;
 
 import java.util.List;
@@ -30,6 +36,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +50,9 @@ public class FeedbackBoardServiceImpl implements FeedbackBoardService {
 
     private final FeedbackBoardRepository board;
     private final FeedbackCommentRepository comments;
+    private final FeedbackCommentLikeRepository likes;
+    private final BestReviewRepository bestReviews;
+    private final FeedbackRequestRepository requests;
     private final CommonResumeRepository commonResumes;
     private final TargetResumeRepository targetResumes;
     private final UserRepository users;
@@ -110,7 +120,11 @@ public class FeedbackBoardServiceImpl implements FeedbackBoardService {
     @Transactional
     public FeedbackCommentResponse createComment(FeedbackCommentCreateCommand command) {
         var user = currentUser(command.username());
-        var request = visibleRequest(command.requestId(), user);
+        if (command.requestId() == null || command.requestId() <= 0) throw new FeedbackRequestNotFoundException();
+        var request = requests.findForAcceptance(command.requestId()).orElseThrow(FeedbackRequestNotFoundException::new);
+        if (request.isCanceled() && !request.getUser().getId().equals(user.getId())) {
+            throw new FeedbackRequestNotFoundException();
+        }
         if (request.isCanceled()) throw new FeedbackRequestClosedException();
         var body = command.request();
         var saved = comments.save(FeedbackComment.builder()
@@ -120,6 +134,29 @@ public class FeedbackBoardServiceImpl implements FeedbackBoardService {
             .content(body.content().trim())
             .build());
         return FeedbackCommentResponse.of(saved, true);
+    }
+
+    @Override
+    @Transactional
+    public void deleteComment(Long commentId, String username) {
+        var user = currentUser(username);
+        if (commentId == null || commentId <= 0) throw new FeedbackCommentNotFoundException();
+        var requestId = comments.findRequestId(commentId).orElseThrow(FeedbackCommentNotFoundException::new);
+        requests.findForAcceptance(requestId).orElseThrow(FeedbackCommentNotFoundException::new);
+        var comment = comments.findById(commentId).orElseThrow(FeedbackCommentNotFoundException::new);
+        if (!comment.getUser().getId().equals(user.getId())) throw new FeedbackCommentForbiddenException();
+        if (comment.isAdopted() || bestReviews.existsByComment_CommentId(commentId)) {
+            throw new FeedbackCommentInUseException();
+        }
+        var parentId = comment.getParent() == null ? null : comment.getParent().getCommentId();
+        comments.reparentChildren(commentId, parentId);
+        likes.deleteByCommentId(commentId);
+        try {
+            comments.delete(comment);
+            comments.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new FeedbackCommentInUseException();
+        }
     }
 
     // 취소한 요청은 게시판에서 내려가므로 요청한 본인만 계속 볼 수 있다.

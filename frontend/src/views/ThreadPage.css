@@ -21,6 +21,8 @@
   border-top: 1px solid var(--line);
   color: var(--text-sub);
 }
+.thread-post__comment-action { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 8px; color: inherit; text-decoration: none; }
+.thread-post__comment-action:hover { color: var(--text); }
 .thread-reply { display: flex; gap: 12px; padding: 20px; border-bottom: 1px solid var(--line); }
 .thread-reply__body { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 10px; }
 .thread-reply__input {

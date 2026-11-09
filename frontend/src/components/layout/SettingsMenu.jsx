@@ -21,7 +21,7 @@ export default function SettingsMenu({ onClose }) {
   return (
     <div className="settings-menu">
       <div className="settings-menu__account">
-        <Avatar initial={me.initial} color={me.av} size={32} />
+        <Avatar initial={me.initial} color={me.av} size={32} src={me.profileImage || undefined} />
         <div className="grow">
           <div className="bold" style={{ fontSize: 14 }}>{me.name}</div>
           <div className="xs muted">{loggedIn ? `@${me.handle} · 로그인됨` : '로그인하지 않았어요'}</div>

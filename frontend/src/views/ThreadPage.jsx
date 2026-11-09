@@ -20,9 +20,11 @@ export default function ThreadPage({ initialPost, error }) {
   const router = useRouter();
   const { me, loggedIn } = useAppState();
   const [updatedPost, setUpdatedPost] = useState(null);
+  const [commentCount, setCommentCount] = useState(initialPost?.commentCount ?? 0);
   const [refreshing, startTransition] = useTransition();
   const post = updatedPost || initialPost;
   const badge = post && POST_TYPE_BADGE[post.type];
+  const avatarSrc = post && ((loggedIn && post.handle === me.handle && me.profileImage) || post.profileImage || undefined);
 
   return <>
     <MainColumn>
@@ -38,7 +40,7 @@ export default function ThreadPage({ initialPost, error }) {
       </div> : <>
         <article className="thread-post">
           <header className="thread-post__header">
-            <Avatar initial={post.initial} src={post.profileImage} size={48} />
+            <Avatar initial={post.initial} src={avatarSrc} size={48} />
             <div className="thread-post__author">
               <Link href={`/${encodeURIComponent(post.handle)}`}><strong>{post.author}</strong></Link>
               <span className="small muted">@{post.handle}</span>
@@ -54,12 +56,14 @@ export default function ThreadPage({ initialPost, error }) {
           {loggedIn && post.handle === me.handle && <PostOwnerActions post={post} onUpdated={setUpdatedPost}
             onDeleted={() => { router.replace('/'); router.refresh(); }} />}
           <div className="thread-post__actions" aria-label="게시글 반응">
-            <a href="#thread-reply" className="icon-btn icon-btn--plain" aria-label="댓글 작성란으로 이동"><Icon name="msg" /></a>
+            <a href="#thread-reply" className="thread-post__comment-action" aria-label={`댓글 ${commentCount}개, 작성란으로 이동`}>
+              <Icon name="msg" /><span>{commentCount}</span>
+            </a>
             <button className="icon-btn icon-btn--plain" disabled aria-label="리포스트 준비 중" title="리포스트 준비 중"><Icon name="repeat" /></button>
             <LikeButton post={post} />
           </div>
         </article>
-        <CommentsSection key={post.id} post={post} />
+        <CommentsSection key={post.id} post={post} onCountChange={setCommentCount} />
       </>}
     </MainColumn>
       <RightAside showReviews label="리뷰 추천 및 보조 정보">

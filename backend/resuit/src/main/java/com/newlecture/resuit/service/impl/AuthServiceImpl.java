@@ -88,8 +88,13 @@ public class AuthServiceImpl implements AuthService {
         var linked = socialAccounts.findByUser_Id(user.getId()).stream()
                 .map(account -> account.getProvider()).sorted().toList();
         return new AuthAccountResponse(
-                new SessionMemberResponse(user.getId(), user.getUsername(), user.getNickname()),
+                toSessionMember(user),
                 linked, user.hasPasswordLogin());
+    }
+
+    private SessionMemberResponse toSessionMember(User user) {
+        return new SessionMemberResponse(
+                user.getId(), user.getUsername(), user.getNickname(), user.getRole(), user.getProfileImageUrl());
     }
 
     private void validatePassword(String password) {
@@ -117,7 +122,7 @@ public class AuthServiceImpl implements AuthService {
         } catch (DataIntegrityViolationException exception) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "회원 정보를 저장할 수 없습니다. 아이디 중복을 확인해 주세요.", exception);
         }
-        return new SessionMemberResponse(user.getId(), user.getUsername(), user.getNickname(), user.getRole());
+        return toSessionMember(user);
     }
 
 
@@ -125,6 +130,6 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(readOnly = true)
     public Optional<SessionMemberResponse> findSessionMember(String username) {
         return users.findByUsername(username)
-            .map(user -> new SessionMemberResponse(user.getId(), user.getUsername(), user.getNickname(), user.getRole()));
+            .map(this::toSessionMember);
     }
 }

@@ -11,4 +11,5 @@ public interface FeedbackRequestService {
     public static class FeedbackRequestNotFoundException extends RuntimeException {}
     public static class FeedbackRequestForbiddenException extends RuntimeException {}
     public static class FeedbackRequestExistsException extends RuntimeException {}
+    public static class FeedbackRequestHasCommentsException extends RuntimeException {}
 }
