@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/common/Button.jsx';
+import { IconButton } from '@/components/common/Button.jsx';
+import Icon from '@/components/common/Icon.jsx';
 import { createJob, updateJob, createJobDraft, updateJobDraft } from '@/services/jobs.js';
 
 const empty = { type: 'GENERAL', title: '', location: '', employmentType: '', career: '', description: '', requirements: '', preferred: '', deadline: '', questions: [] };
@@ -49,17 +51,22 @@ export default function JobEditor({ job, onSaved }) {
   return <form className="job-editor" onSubmit={submit} aria-busy={busy}>
     <fieldset disabled={busy}>
       <legend className="sr-only">공고 내용</legend>
-      <div className="field"><label htmlFor="job-type">공고 유형</label><select id="job-type" className="input" value={values.type} onChange={(e) => change('type', e.target.value)}><option value="GENERAL">일반 공고 · 공통 이력서로 지원</option><option value="SPECIAL">특화 공고 · 요구 문항에 맞춰 지원</option></select></div>
-      {textFields.map(([name, label, max]) => <div className="field" key={name}><label htmlFor={`job-${name}`}>{label}{name === 'title' ? ' (필수)' : ''}</label><input id={`job-${name}`} className="input" value={values[name] || ''} onChange={(e) => change(name, e.target.value)} maxLength={max} required={name === 'title'} /></div>)}
-      <div className="field"><label htmlFor="job-deadline">마감일</label><input id="job-deadline" type="date" className="input" value={values.deadline} onChange={(e) => change('deadline', e.target.value)} /><p className="small muted">비워 두면 마감일 미정으로 표시됩니다. 게시 시에는 오늘 이후 날짜를 입력해 주세요.</p></div>
+      <div className="field"><span className="bold">공고 유형</span><div className="grid-2" role="radiogroup" aria-label="공고 유형">
+        <button type="button" role="radio" aria-checked={values.type === 'GENERAL'} className={`choice${values.type === 'GENERAL' ? ' is-on' : ''}`} onClick={() => change('type', 'GENERAL')}><span className="choice__title">일반 공고</span><span className="choice__desc">지원자가 공통 이력서를 그대로 제출</span></button>
+        <button type="button" role="radio" aria-checked={values.type === 'SPECIAL'} className={`choice${values.type === 'SPECIAL' ? ' is-on' : ''}`} onClick={() => change('type', 'SPECIAL')}><span className="choice__title">특화 공고</span><span className="choice__desc">원하는 문항을 받아 특화 이력서로 지원</span></button>
+      </div></div>
+      <div className="field"><label htmlFor="job-title">공고 제목 (필수)</label><input id="job-title" className="input" value={values.title || ''} onChange={(e) => change('title', e.target.value)} maxLength={100} required /></div>
+      <div className="grid-2">{textFields.slice(1).map(([name, label, max]) => <div className="field" key={name}><label htmlFor={`job-${name}`}>{label}</label><input id={`job-${name}`} className="input" value={values[name] || ''} onChange={(e) => change(name, e.target.value)} maxLength={max} /></div>)}
+        <div className="field"><label htmlFor="job-deadline">마감일</label><input id="job-deadline" type="date" className="input" value={values.deadline} onChange={(e) => change('deadline', e.target.value)} /></div>
+      </div>
       {[['description', '상세 내용'], ['requirements', '자격 요건'], ['preferred', '우대 사항']].map(([name, label]) => <div className="field" key={name}><label htmlFor={`job-${name}`}>{label}</label><textarea id={`job-${name}`} className="textarea" rows={5} value={values[name] || ''} onChange={(e) => change(name, e.target.value)} /></div>)}
       {values.type === 'SPECIAL' && <section className="stack"><h2 className="section-title">요구 문항</h2><p className="small muted">게시하려면 문항이 하나 이상 필요합니다. 입력한 순서대로 표시됩니다.</p>
         {values.questions.map((q, index) => <div key={q.key} className="job-editor__question">
-          <div className="field"><label htmlFor={`job-question-${q.key}`}>문항 {index + 1}</label><textarea id={`job-question-${q.key}`} className="textarea" maxLength={300} rows={2} value={q.content} onChange={(e) => changeQuestion(q.key, 'content', e.target.value)} /></div>
-          <div className="field job-editor__limit"><label htmlFor={`job-limit-${q.key}`}>답변 글자 수 제한</label><input id={`job-limit-${q.key}`} className="input" type="number" min={1} max={2147483647} step={1} placeholder="제한 없음" value={q.charLimit ?? ''} onChange={(e) => changeQuestion(q.key, 'charLimit', e.target.value)} /></div>
-          <Button variant="outline" onClick={() => change('questions', values.questions.filter((item) => item.key !== q.key))}>문항 {index + 1} 삭제</Button>
+          <span className="q-item__num">{index + 1}</span><div className="field"><label className="sr-only" htmlFor={`job-question-${q.key}`}>문항 {index + 1}</label><input id={`job-question-${q.key}`} className="q-item__text" maxLength={300} value={q.content} placeholder="새 문항을 입력하세요" onChange={(e) => changeQuestion(q.key, 'content', e.target.value)} /></div>
+          <div className="field job-editor__limit"><label className="sr-only" htmlFor={`job-limit-${q.key}`}>답변 글자 수 제한</label><input id={`job-limit-${q.key}`} className="input" type="number" min={1} max={2147483647} step={1} placeholder="제한 없음" value={q.charLimit ?? ''} onChange={(e) => changeQuestion(q.key, 'charLimit', e.target.value)} /></div>
+          <IconButton label="문항 삭제" className="icon-btn--plain icon-btn--sm q-item__remove" onClick={() => change('questions', values.questions.filter((item) => item.key !== q.key))}><Icon name="x" size={16} /></IconButton>
         </div>)}
-        <Button variant="outline" onClick={() => change('questions', [...values.questions, { key: sequence.current++, content: '', charLimit: 500 }])}>문항 추가</Button>
+        <button type="button" className="q-box__add" onClick={() => change('questions', [...values.questions, { key: sequence.current++, content: '', charLimit: 500 }])}>문항 추가</button>
       </section>}
     </fieldset>
     {error && <p role="alert" className="job-editor__error">{error}</p>}

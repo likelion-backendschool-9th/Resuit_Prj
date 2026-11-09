@@ -4,6 +4,7 @@ import { MainColumn, RightAside } from '@/components/layout/AppLayout.jsx';
 import Button from '@/components/common/Button.jsx';
 import { useAppState } from '@/context/AppStateContext.jsx';
 import CompanyJobWorkspace from '@/components/jobs/CompanyJobWorkspace.jsx';
+import './CompanyPostPage.css';
 import '@/components/jobs/Jobs.css';
 
 export default function CompanyPostPage({ jobId = null, draft = false }) {
