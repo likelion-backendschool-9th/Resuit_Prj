@@ -25,7 +25,7 @@ WBS에서 같은 기능이 여러 곳에 적힌 경우 하나로 정리한다.
 
 팀에서 정해야 할 것이 남아 있다. 정해지면 이 문서를 고친다.
 
-- `users.is_subscribed`가 무엇을 구독하는지. 기업 요금제를 뜻한다면 `company_subscriptions`와 겹치므로 컬럼을 지운다.
+- `users.is_subscribed`가 무엇을 구독하는지. 기업 요금제를 뜻한다면 `company_plan_periods`와 겹치므로 컬럼을 지운다.
 - (정함, 2026-11-06) 인재 검색은 지역으로 거른다. `users.region`(`SEOUL`, `BUSAN`, `DAEGU`, `INCHEON`, `GWANGJU`, `DAEJEON`, `ULSAN`, `GYEONGGI`, `JEJU`, `ETC`)을 둔다. 회원이 지역을 입력하는 경로는 프로필 수정 작업이 끝난 뒤 정한다.
 - 피드백 요청 하나에 몇 개까지 채택할 수 있는지.
 - 베스트 리뷰를 기간마다 몇 개, 어떤 기준(좋아요 수, 채택 여부)으로 뽑을지.
@@ -49,7 +49,7 @@ WBS에서 같은 기능이 여러 곳에 적힌 경우 하나로 정리한다.
 | 공고·이력서 | `Job`→`jobs`(공고), `JobQuestion`→`job_questions`(공고 요구 문항), `JobApplication`→`job_applications`(공고 지원), `CommonResume`→`common_resumes`(공통 이력서), `TargetResume`→`target_resumes`(특화 이력서) |
 | 피드백·베스트 리뷰 | `FeedbackRequest`→`feedback_requests`(피드백 요청), `FeedbackRequestSection`→`feedback_request_sections`(피드백 요청 섹션), `FeedbackComment`→`feedback_comments`(피드백 댓글), `FeedbackCommentLike`→`feedback_comment_likes`(리뷰 좋아요), `BestReview`→`best_reviews`(베스트 리뷰) |
 | 유료 피드백·크레딧 | `Mentor`→`mentors`(현직자), `PaidFeedbackRequest`→`paid_feedback_requests`(유료 피드백 요청), `PaidFeedbackResponse`→`paid_feedback_responses`(유료 피드백 답변), `CreditTransaction`→`credit_transactions`(크레딧 내역), `CreditPayment`→`credit_payments`(크레딧 결제) |
-| 기업 인재 검색 | `CompanyOffer`→`company_offers`(채용 제안), `CompanySubscription`→`company_subscriptions`(기업 요금제) |
+| 기업 인재 검색 | `CompanyOffer`→`company_offers`(채용 제안), `CompanyPlanPeriod`→`company_plan_periods`(기업 Pro 이용 기간) |
 
 ### 읽는 법
 
@@ -116,7 +116,7 @@ erDiagram
 
     User ||..o{ CompanyOffer : "제안"
     Job |o..o{ CompanyOffer : "관련 공고"
-    User ||--o| CompanySubscription : "요금제"
+    User ||..o{ CompanyPlanPeriod : "Pro 이용 기간"
 ```
 
 ### 회원·프로필
@@ -468,7 +468,7 @@ erDiagram
     User ||..o{ CompanyOffer : "제안 보냄 (company_id)"
     User ||..o{ CompanyOffer : "제안 받음 (user_id)"
     Job |o..o{ CompanyOffer : "관련 공고"
-    User ||--o| CompanySubscription : "요금제"
+    User ||..o{ CompanyPlanPeriod : "Pro 이용 기간"
 
     CompanyOffer {
       bigint id PK "아이디"
@@ -479,12 +479,17 @@ erDiagram
       varchar status "제안 상태"
       timestamptz created_at "제안일"
     }
-    CompanySubscription {
-      uuid company_id PK, FK "기업"
-      varchar plan "요금제"
-      timestamptz trial_ends_at "체험 종료일"
-      timestamptz expires_at "만료일"
-      timestamptz updated_at "수정일"
+    CompanyPlanPeriod {
+      bigint id PK "아이디"
+      uuid company_id FK "기업"
+      varchar product "이용권 (TRIAL, PRO_1M, PRO_3M)"
+      int days "이용 일수"
+      int amount_krw "결제 금액(원)"
+      varchar pg_transaction_id "결제사 거래 아이디"
+      varchar status "결제 상태"
+      timestamptz starts_at "이용 시작"
+      timestamptz ends_at "이용 끝"
+      timestamptz created_at "주문일"
     }
 ```
 
@@ -493,7 +498,7 @@ erDiagram
 ### 이름
 
 - 테이블과 컬럼은 소문자 snake_case로 쓴다. 테이블 이름은 복수형이다. 예: `users`, `job_applications`, `post_likes`.
-- PK는 `id`다. 연결 테이블(`follows`, `user_badges`, `post_likes`, `feedback_comment_likes`)은 두 FK를 묶어 PK로 쓴다. 회원 한 명에 하나만 붙는 테이블(`mentors`, `company_subscriptions`)은 회원 FK를 그대로 PK로 쓴다.
+- PK는 `id`다. 연결 테이블(`follows`, `user_badges`, `post_likes`, `feedback_comment_likes`)은 두 FK를 묶어 PK로 쓴다. 회원 한 명에 하나만 붙는 테이블(`mentors`)은 회원 FK를 그대로 PK로 쓴다.
 - FK는 `가리키는 테이블의 단수형_id`로 쓴다. 예: `job_id`, `feedback_request_id`, `paid_feedback_request_id`. 같은 테이블을 역할이 다르게 가리키면 역할을 이름으로 쓴다. 예: `follower_id`, `following_id`, `requester_id`, `company_id`, `mentor_id`, `parent_id`.
 - 참·거짓 컬럼은 `is_`로 시작한다. 예: `is_public`, `is_adopted`, `is_connected`.
 - 시각은 `_at`, 순서와 순위는 `_no`로 끝낸다. 예: `created_at`, `order_no`, `rank_no`.
@@ -629,9 +634,11 @@ erDiagram
 크레딧 충전은 결제가 `PAID`로 바뀔 때 같은 트랜잭션에서 `CHARGE` 기록을 남긴다. 결제 취소(`REFUNDED`) 흐름은 결제사 연동 방식이 정해질 때 설계한다.
 
 ### 기업 인재 검색
-
+겹치는 내용이 있을텐데 그냥 읽어주세요. 나도 몰라잉
 | 테이블 | 필수 컬럼 | 제약 및 읽기 방식 |
 | --- | --- | --- |
+| `company_offers` | `id`, `company_id`, `user_id`, `message`, `status`, `created_at`; 선택 `job_id` | `status IN ('SENT','ACCEPTED','DECLINED')`. 보내는 쪽은 `role='COMPANY'` 회원이고, 공고를 함께 보내면 그 기업의 공고여야 한다(서비스에서 검사). 받은 제안 조회는 `user_id`로 읽는다. |
+| `company_plan_periods` | `id`, `company_id`, `product`, `days`, `amount_krw`, `status`, `created_at`; 선택 `pg_transaction_id`, `starts_at`, `ends_at` | 기업 Pro 이용 기간이다. 체험과 결제한 이용권이 한 줄씩 쌓이고, 지금 요금제는 `status='PAID'`인 줄로 계산한다. `product IN ('TRIAL','PRO_1M','PRO_3M')`(14일 0원, 30일 49,000원, 90일 129,000원), `status IN ('PENDING','PAID','FAILED')`. 줄이 없는 기업은 `FREE`다. 체험은 기업당 한 번이며 체험이나 결제 기록(PAID)이 있으면 다시 시작할 수 없다(409). 결제는 `credit_payments`와 같은 흐름(행 잠금, `pg_transaction_id` 유니크)이고, `PAID`가 될 때 `starts_at`·`ends_at`이 정해진다. 결제한 기간이 남아 있으면 가장 늦은 `ends_at` 뒤로 이어 붙이고, 아니면 지금부터다. 결제 기간이 시작되면 체험은 끝난 것으로 본다. 상세 필터는 지금이 체험 기간이거나 결제 기간 안일 때만 쓸 수 있다. 같은 회사의 체험·결제는 회원 행을 잠가 하나씩 처리한다. 자동 갱신은 없다. |
 | `company_offers` | `id`, `company_id`, `user_id`, `message`, `status`, `created_at`; 선택 `job_id` | `status IN ('SENT','ACCEPTED','DECLINED')`. 보내는 쪽은 `role='COMPANY'` 회원이고, 공고를 함께 보내면 그 기업의 공고여야 한다(서비스에서 검사). 받은 제안 조회는 `user_id`로 읽는다. 같은 기업은 같은 회원에게 제안을 한 번만 보낸다(서비스에서 기업 회원 행을 잠그고 `(company_id, user_id)` 중복을 검사, 409). 받은 사람은 `SENT`인 제안에 한 번만 `ACCEPTED` 또는 `DECLINED`로 응답하고, 보낸 기업은 보낸 제안 목록에서 결과를 본다. 제안 응답에는 보낸 기업의 유효한 기업 이메일 인증(`verifications`) 이메일을 함께 담는다. |
 | `company_subscriptions` | `company_id`, `plan`, `updated_at`; 선택 `trial_ends_at`, `expires_at` | `plan IN ('FREE','PRO')`. 행이 없는 기업은 `FREE`로 본다. 체험 전환은 `PRO`와 `trial_ends_at`을 기록한다. 상세 필터는 `plan='PRO'`이고 체험·이용 기간이 지나지 않았을 때만 쓸 수 있다. 체험은 기업당 한 번, 14일이다. 요금제 행이 이미 있으면 체험을 다시 시작할 수 없다(409). |
 | `github_contribution_stats` | `user_id`, `total_contributions`, `synced_at` | 회원별 GitHub 최근 1년 기여 수다. 회원 FK를 PK로 쓴다. GitHub 연동이 켜진 회원을 매일 04:30에 갱신하며, 실패하면 이전 값을 유지한다. 인재 검색의 기여 수 필터는 이 값만 읽고, 행이 없으면 0으로 본다. |
@@ -713,7 +720,7 @@ PK와 UNIQUE 제약은 인덱스를 함께 만든다. 아래에는 그 밖에 �
 2. **로컬·개발 DB를 비우고 다시 만든다.** `ddl-auto: update`는 테이블과 컬럼을 추가만 하고 이름을 바꾸거나 지우지 않는다. 이름이 바뀐 엔티티로 실행하면 옛 테이블·컬럼이 그대로 남는다. 지금은 보존할 데이터가 없으므로 DB 볼륨을 지우고 새로 만든다. 배포 서버 DB도 같다.
 3. **JPA로 만들 수 있는 제약은 엔티티에 둔다.** 다중 컬럼 UNIQUE는 `@Table(uniqueConstraints = ...)`, 조회 인덱스는 `@Table(indexes = ...)`, 값 검사는 Hibernate `@Check`, 기본값은 필드 초기값과 `@ColumnDefault`로 표현한다.
 4. **JPA로 만들 수 없는 제약은 SQL로 따로 적용한다.** 부분 유니크·부분 인덱스(`WHERE deleted_at IS NULL`, `WHERE email IS NOT NULL`), 표현식 인덱스(`lower(email)`), 대댓글이 같은 글을 가리키게 하는 복합 FK가 해당한다. 적용 방법(Spring의 SQL 초기화 스크립트 또는 Flyway 같은 마이그레이션 도구)은 첫 기능을 만들 때 팀에서 정한다. 운영 데이터가 생기기 전에 마이그레이션 도구로 옮기는 것을 권장한다.
-5. **영역별로 작은 PR을 만든다.** FK가 가리키는 쪽부터 만든다. 회원·배지 → 연동·대표 레포·팔로우·인증 → 블로그 글 → 게시글·댓글·좋아요 → 공고·문항 → 공통 이력서 → 특화 이력서 → 공고 지원 → 피드백 요청·섹션·댓글 → 리뷰 좋아요·베스트 리뷰 → 현직자 → 유료 피드백·크레딧 결제·크레딧 내역 → 채용 제안·기업 요금제.
+5. **영역별로 작은 PR을 만든다.** FK가 가리키는 쪽부터 만든다. 회원·배지 → 연동·대표 레포·팔로우·인증 → 블로그 글 → 게시글·댓글·좋아요 → 공고·문항 → 공통 이력서 → 특화 이력서 → 공고 지원 → 피드백 요청·섹션·댓글 → 리뷰 좋아요·베스트 리뷰 → 현직자 → 유료 피드백·크레딧 결제·크레딧 내역 → 채용 제안·기업 Pro 이용 기간.
 6. **빈 DB에서 확인한다.**
    - 앱을 실행한 뒤 테이블 28개, FK 52개, 4장의 UNIQUE·CHECK가 생겼는지 `psql`의 `\d 테이블명`으로 본다.
    - 제약 확인: 같은 공고 두 번 지원, 이력서 두 개를 함께 고른 피드백 요청, 자기 자신 팔로우, 대표 레포 4개가 모두 거부되는지 본다.

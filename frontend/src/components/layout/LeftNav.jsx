@@ -30,12 +30,13 @@ const ITEMS_BOTTOM = [
   { to: '/threads/1', icon: 'bell', label: '알림' },
   { to: '/offers', icon: 'msg', label: '받은 제안', roles: ['USER'] },
   { to: '/profile', icon: 'user', label: '프로필' },
-  { to: '/credits', icon: 'coin', label: '크레딧' }
+  { to: '/credits', icon: 'coin', label: '크레딧', roles: ['USER'] }
 ];
 // 기업 회원 메뉴. 공고 관리 묶음 바로 아래에 모아 둔다. 공고 작성은 공고 관리 안에 있다.
 const COMPANY_ITEMS = [
   { to: '/talent', icon: 'talent', label: '인재 찾기', pill: '기업' },
-  { to: '/company/offers', icon: 'msg', label: '보낸 제안' }
+  { to: '/company/offers', icon: 'msg', label: '보낸 제안' },
+  { to: '/company/pro', icon: 'coin', label: 'Pro 결제' }
 ];
 
 // 역할별 메뉴를 보여 줄지 정한다. 로그인 전(역할을 모를 때)에는 역할별 메뉴를 숨긴다.
