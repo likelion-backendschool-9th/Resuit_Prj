@@ -53,6 +53,14 @@ public class CompanyVerificationServiceImpl implements CompanyVerificationServic
     }
 
     @Override
+    @Transactional
+    public void revoke(String username) {
+        var user = authenticatedUser(username);
+        verifications.deleteByUserIdAndType(user.getId(), TYPE);
+        user.changeRole("USER");
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public MyStatusResponse getMyStatus(UUID userId) {
         return verifications

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAppState } from '../context/AppStateContext.jsx';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
@@ -13,6 +13,8 @@ import Tabs from '../components/common/Tabs.jsx';
 import ContributionGraph from '../components/profile/ContributionGraph.jsx';
 import PostCard from '../components/feed/PostCard.jsx';
 import useProfileData from '../components/profile/useProfileData.js';
+import { getMyVerificationStatus, revokeCompanyVerification } from '../services/verifications.js';
+import CompanyVerificationCancelModal from '../components/profile/CompanyVerificationCancelModal.jsx';
 import './ProfilePage.css';
 
 const TABS = [
@@ -84,10 +86,32 @@ function sortOwnedBadges(badges, displayedId) {
 }
 
 export default function ProfilePage({ username, initialProfile = null, startEditing = false }) {
-  const { me, loggedIn, authLoading } = useAppState();
+  const { me, loggedIn, authLoading, refreshSession } = useAppState();
   const isOwner = !username || username === me.handle;
   const handle = username || me.handle;
   const [editing, setEditing] = useState(startEditing);
+  const [verificationStatus, setVerificationStatus] = useState(null);
+  const [verificationError, setVerificationError] = useState('');
+  const [cancelVerificationOpen, setCancelVerificationOpen] = useState(false);
+  useEffect(() => {
+    if (!isOwner || !loggedIn) return undefined;
+    let active = true;
+    getMyVerificationStatus()
+      .then((status) => {
+        if (active) setVerificationStatus(status.status);
+      })
+      .catch((error) => {
+        if (active) setVerificationError(error.message);
+      });
+    return () => { active = false; };
+  }, [isOwner, loggedIn]);
+
+  async function cancelVerification() {
+    await revokeCompanyVerification();
+    setVerificationStatus('NONE');
+    setCancelVerificationOpen(false);
+    await refreshSession();
+  }
   const [tab, setTab] = useState('posts');
   const [grassYear, setGrassYear] = useState(CURRENT_YEAR);
   const [resumeSettingsOpen, setResumeSettingsOpen] = useState(false);
@@ -197,7 +221,13 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
         <div className="profile__head">
           <div className="profile__head-row">
             {isOwner ? (
-              <Button to="/profile/verification" variant="outline">기업 이메일 인증</Button>
+              verificationStatus === 'VERIFIED' ? (
+                <Button variant="outline" onClick={() => setCancelVerificationOpen(true)}>기업 인증 취소</Button>
+              ) : (
+                <Button to="/profile/verification" variant="outline" disabled={!verificationStatus && !verificationError}>
+                  {!verificationStatus && !verificationError ? '인증 상태 확인 중…' : '기업 이메일 인증'}
+                </Button>
+              )
             ) : (
               <FollowButton
                 handle={displayHandle}
@@ -736,6 +766,12 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
           })}
         </section>
       </RightAside>
+      {cancelVerificationOpen && (
+        <CompanyVerificationCancelModal
+          onClose={() => setCancelVerificationOpen(false)}
+          onConfirm={cancelVerification}
+        />
+      )}
     </>
   );
 }

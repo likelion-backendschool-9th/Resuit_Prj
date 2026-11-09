@@ -27,6 +27,12 @@ public class CompanyVerificationController {
         return ResponseEntity.ok(service.verify(principal == null ? null : principal.getName(), request));
     }
 
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> revoke(Principal principal) {
+        service.revoke(principal == null ? null : principal.getName());
+        return ResponseEntity.noContent().build();
+    }
+
     @ExceptionHandler(CompanyVerificationException.class)
     public ResponseEntity<ErrorResponse> error(CompanyVerificationException ex) {
         int status = switch (ex.getKind()) {

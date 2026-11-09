@@ -9,6 +9,8 @@
   - `status`: `NONE` | `VERIFIED`. 완료 기록이 있으면 `VERIFIED`다. 이메일은 본인 조회에만 포함한다.
 - `POST /api/v1/verifications/email`, JSON: `{"email":"user@newlecture.com"}`.
   - 성공: `verificationId`, `email`, `verifiedAt`. 이때 `users.role`이 `COMPANY`가 된다.
+- `DELETE /api/v1/verifications/me`.
+  - 본인의 기업 이메일 인증 기록을 취소하고 `users.role`을 `USER`로 되돌린다.
 - 공개 프로필(`GET /api/v1/users/{username}`, `GET /api/v1/users/me`)에는 `companyVerified`와 `companyVerifiedAt`만 넣는다. 이메일과 `status`는 넣지 않는다. 인증된 회원 프로필에는 “현직자 인증” 배지를 표시한다.
 - 인증 API는 인증된 Principal 이름을 `users.username`으로 조회한다. 상태 조회는 로그인 사용자(세션 또는 `X-Username`) 기준이다. 요청에서 사용자 ID나 권한을 받지 않는다.
 
@@ -16,6 +18,7 @@
 
 - 이메일은 앞뒤 공백을 지우고 `@` 뒤를 소문자로 바꾼 뒤, `@` 뒤 도메인이 목록에 정확히 일치할 때만 통과한다. 하위 도메인(예: `mail.newlecture.com`)은 따로 등록해야 한다.
 - 인증할 때마다 `verifications`에 완료 기록(`verified_at`)을 남긴다. 코드가 없으므로 `code_hash`는 `NONE`, `expires_at`은 인증 시각으로 저장한다.
+- 인증 취소 시 본인의 `company_email` 인증 기록을 삭제하고 기업 권한을 회수한다.
 - 사용자 행의 쓰기 잠금으로 같은 사용자의 인증 요청을 하나씩 처리한다.
 - 도메인을 추가하려면 `company_email_domains`에 `@` 없이 소문자로 넣는다.
 

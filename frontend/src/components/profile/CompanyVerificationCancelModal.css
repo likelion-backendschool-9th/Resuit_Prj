@@ -1,0 +1,14 @@
+.company-verification-modal {
+  width: min(440px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+}
+.company-verification-modal::backdrop { background: color-mix(in srgb, var(--text) 40%, transparent); }
+.company-verification-modal__body { display: flex; flex-direction: column; gap: 16px; padding: 24px; }
+.company-verification-modal__body h2 { font-size: 18px; }
+.company-verification-modal__body p { color: var(--text-2); line-height: 1.6; }
+.company-verification-modal__body .company-verification-modal__error { color: var(--danger); }
+.company-verification-modal__actions { display: flex; justify-content: flex-end; gap: 8px; }

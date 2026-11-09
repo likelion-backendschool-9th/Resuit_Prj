@@ -20,3 +20,11 @@ export async function getMyVerificationStatus() {
 }
 
 export const verifyCompanyEmail = (email) => post('/email', { email });
+
+export async function revokeCompanyVerification() {
+  const response = await authenticatedFetch('/api/v1/verifications/me', {
+    method: 'DELETE', credentials: 'same-origin',
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(data?.message || '기업 이메일 인증을 취소하지 못했어요.');
+}
