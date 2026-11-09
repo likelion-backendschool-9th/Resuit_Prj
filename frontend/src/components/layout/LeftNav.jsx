@@ -26,10 +26,11 @@ const ITEMS_BOTTOM = [
   { to: '/threads/1', icon: 'bell', label: '알림' },
   { to: '/offers', icon: 'msg', label: '받은 제안', roles: ['USER'] },
   { to: '/profile', icon: 'user', label: '프로필' },
-  { to: '/credits', icon: 'coin', label: '크레딧' },
+  { to: '/credits', icon: 'coin', label: '크레딧', roles: ['USER'] },
   { to: '/company/post', icon: 'plus', label: '공고 작성', tag: '회사', roles: ['COMPANY'] },
   { to: '/talent', icon: 'talent', label: '인재 찾기', pill: '기업', roles: ['COMPANY'] },
-  { to: '/company/offers', icon: 'msg', label: '보낸 제안', roles: ['COMPANY'] }
+  { to: '/company/offers', icon: 'msg', label: '보낸 제안', roles: ['COMPANY'] },
+  { to: '/company/pro', icon: 'coin', label: 'Pro 결제', roles: ['COMPANY'] }
 ];
 
 // 역할별 메뉴를 보여 줄지 정한다. 로그인 전(역할을 모를 때)에는 역할별 메뉴를 숨긴다.

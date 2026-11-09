@@ -22,7 +22,8 @@ function loadSdk() {
   return loading;
 }
 
-export async function requestTossPay(order) {
+// paths: 결제 뒤 돌아올 화면. 기본은 크레딧 충전 결과 화면이다.
+export async function requestTossPay(order, paths = { success: '/credits/success', fail: '/credits/fail' }) {
   const TossPayments = await loadSdk();
   const payment = TossPayments(order.clientKey).payment({ customerKey: order.customerKey });
   const origin = window.location.origin;
@@ -31,8 +32,8 @@ export async function requestTossPay(order) {
     amount: { currency: 'KRW', value: order.amount },
     orderId: order.orderId,
     orderName: order.orderName,
-    successUrl: `${origin}/credits/success`,
-    failUrl: `${origin}/credits/fail`,
+    successUrl: `${origin}${paths.success}`,
+    failUrl: `${origin}${paths.fail}`,
     // 카드 선택 없이 토스페이 간편결제 화면으로 바로 연다.
     card: { flowMode: 'DIRECT', easyPay: 'TOSSPAY' },
   });
