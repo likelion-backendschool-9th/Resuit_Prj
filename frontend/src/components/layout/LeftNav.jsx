@@ -23,7 +23,9 @@ const RESUME_CHILDREN = [
 ];
 const ITEMS_BOTTOM = [
   { to: '/threads/1', icon: 'bell', label: '알림' },
+  { to: '/offers', icon: 'msg', label: '받은 제안' },
   { to: '/profile', icon: 'user', label: '프로필' },
+  { to: '/credits', icon: 'coin', label: '크레딧' },
   { to: '/company/post', icon: 'plus', label: '공고 작성', tag: '회사' },
   { to: '/talent', icon: 'talent', label: '인재 찾기', pill: '기업' }
 ];

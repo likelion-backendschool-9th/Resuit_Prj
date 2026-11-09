@@ -36,7 +36,8 @@ const PATHS = {
   lock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>,
   warn: <path d="M12 8v5M12 16.5v.5" />,
   minus: <path d="M5 12h14" />,
-  trend: <path d="M4 17l5-5 4 4 7-8M15 8h5v5" />
+  trend: <path d="M4 17l5-5 4 4 7-8M15 8h5v5" />,
+  coin: <><circle cx="12" cy="12" r="9" /><path d="M14.5 9.5A2.5 2 0 0 0 12 8c-1.4 0-2.5.8-2.5 2s1.1 1.6 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2a2.5 2 0 0 1-2.5-1.5M12 6.5V8M12 16v1.5" /></>
 };
 
 export default function Icon({ name, size = 20, filled = false, className, style }) {
