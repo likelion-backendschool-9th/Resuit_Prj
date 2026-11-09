@@ -117,6 +117,7 @@ erDiagram
     User ||..o{ CompanyOffer : "제안"
     Job |o..o{ CompanyOffer : "관련 공고"
     User ||--o| CompanySubscription : "요금제"
+    User ||..o{ CompanyProPayment : "Pro 결제"
 ```
 
 ### 회원·프로필
@@ -469,6 +470,7 @@ erDiagram
     User ||..o{ CompanyOffer : "제안 받음 (user_id)"
     Job |o..o{ CompanyOffer : "관련 공고"
     User ||--o| CompanySubscription : "요금제"
+    User ||..o{ CompanyProPayment : "Pro 결제"
 
     CompanyOffer {
       bigint id PK "아이디"
@@ -485,6 +487,16 @@ erDiagram
       timestamptz trial_ends_at "체험 종료일"
       timestamptz expires_at "만료일"
       timestamptz updated_at "수정일"
+    }
+    CompanyProPayment {
+      bigint id PK "아이디"
+      uuid company_id FK "기업"
+      varchar product "이용권"
+      int days "이용 일수"
+      int amount_krw "결제 금액(원)"
+      varchar pg_transaction_id "결제사 거래 아이디"
+      varchar status "결제 상태"
+      timestamptz created_at "결제일"
     }
 ```
 
@@ -634,6 +646,7 @@ erDiagram
 | --- | --- | --- |
 | `company_offers` | `id`, `company_id`, `user_id`, `message`, `status`, `created_at`; 선택 `job_id` | `status IN ('SENT','ACCEPTED','DECLINED')`. 보내는 쪽은 `role='COMPANY'` 회원이고, 공고를 함께 보내면 그 기업의 공고여야 한다(서비스에서 검사). 받은 제안 조회는 `user_id`로 읽는다. |
 | `company_subscriptions` | `company_id`, `plan`, `updated_at`; 선택 `trial_ends_at`, `expires_at` | `plan IN ('FREE','PRO')`. 행이 없는 기업은 `FREE`로 본다. 체험 전환은 `PRO`와 `trial_ends_at`을 기록한다. 상세 필터는 `plan='PRO'`이고 체험·이용 기간이 지나지 않았을 때만 쓸 수 있다. 체험은 기업당 한 번, 14일이다. 요금제 행이 이미 있으면 체험을 다시 시작할 수 없다(409). |
+| `company_pro_payments` | `id`, `company_id`, `product`, `days`, `amount_krw`, `status`, `created_at`; 선택 `pg_transaction_id` | 기업 Pro 이용권 결제다. `product IN ('PRO_1M','PRO_3M')`(30일 49,000원, 90일 129,000원), `status IN ('PENDING','PAID','FAILED')`. 흐름과 중복 승인 방지는 `credit_payments`와 같다. `PAID`가 되면 같은 트랜잭션에서 `company_subscriptions`를 `PRO`로 바꾸고 체험을 끝낸다. 결제한 기간이 남아 있으면 `expires_at` 뒤로 이어 붙이고, 아니면 지금부터 계산한다. 자동 갱신은 없다. |
 | `github_contribution_stats` | `user_id`, `total_contributions`, `synced_at` | 회원별 GitHub 최근 1년 기여 수다. 회원 FK를 PK로 쓴다. GitHub 연동이 켜진 회원을 매일 04:30에 갱신하며, 실패하면 이전 값을 유지한다. 인재 검색의 기여 수 필터는 이 값만 읽고, 행이 없으면 0으로 본다. |
 
 인재 목록은 공개 공통 이력서(`is_public=true`)가 있는 회원을 대상으로 한다. 상세 필터의 배지는 `user_badges`, 게시글 수는 `posts`, 기여 수는 `github_contribution_stats`, 기술과 경력은 이력서 `content`에서 구한다.

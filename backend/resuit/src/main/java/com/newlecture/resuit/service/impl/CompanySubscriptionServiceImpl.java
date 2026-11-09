@@ -52,6 +52,28 @@ public class CompanySubscriptionServiceImpl implements CompanySubscriptionServic
         return toResponse(subscription);
     }
 
+    // 요금제 행이 없거나 체험 중·만료 상태면 지금부터, 결제한 Pro가 남아 있으면 남은 만료일 뒤로 이어 붙인다.
+    @Override
+    @Transactional
+    public CompanySubscriptionResponse extendPaidPro(User company, int days) {
+        LocalDateTime now = now();
+        CompanySubscription subscription = subscriptions.findById(company.getId()).orElse(null);
+        if (subscription == null) {
+            subscription = subscriptions.save(CompanySubscription.builder()
+                    .company(company)
+                    .plan(PRO)
+                    .expiresAt(now.plusDays(days))
+                    .build());
+            return toResponse(subscription);
+        }
+        // 결제한 기간이 아직 남아 있으면 그 뒤로 이어 붙인다. 체험(trialEndsAt)은 남은 기간으로 치지 않는다.
+        boolean paidLeft = subscription.getTrialEndsAt() == null && subscription.getExpiresAt() != null
+                && subscription.getExpiresAt().isAfter(now);
+        LocalDateTime start = paidLeft ? subscription.getExpiresAt() : now;
+        subscription.activatePaidPro(start.plusDays(days));
+        return toResponse(subscription);
+    }
+
     // PRO이고 체험·이용 기간이 남아 있을 때만 Pro다(설계 문서 기준).
     @Override
     @Transactional(readOnly = true)

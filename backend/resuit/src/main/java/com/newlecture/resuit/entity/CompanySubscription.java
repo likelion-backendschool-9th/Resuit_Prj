@@ -41,4 +41,11 @@ public class CompanySubscription {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    // Pro 결제가 끝나면 체험을 끝내고 결제 기간으로 바꾼다. 만료 시각은 서비스에서 계산해 넘긴다.
+    public void activatePaidPro(LocalDateTime expiresAt) {
+        this.plan = "PRO";
+        this.trialEndsAt = null;
+        this.expiresAt = expiresAt;
+    }
 }
