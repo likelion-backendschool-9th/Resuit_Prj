@@ -1,0 +1,11 @@
+.resume-field { gap: 6px; }
+.resume-field > label { font-size: 14px; }
+.resume-field__foot { display: flex; justify-content: space-between; gap: 12px; }
+
+.resume-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+
+.resume-skill--edit { display: inline-flex; align-items: center; gap: 2px; padding-right: 4px; }
+.resume-skill__remove { width: 24px; height: 24px; min-height: 0; border: 0; background: none; color: var(--text-sub); }
+.resume-skill__remove:hover { background: var(--bg); color: var(--text); }
+.resume-skill-add { display: flex; gap: 8px; }
+.resume-skill-add .input { flex: 1; min-width: 0; }
