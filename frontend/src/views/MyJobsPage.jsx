@@ -16,7 +16,7 @@ function MyJobsList() {
   const state = useJobResource(load);
   return <>
     <JobRequestState {...state} />
-    {state.error && <div className="section"><Button to="/profile/verification" variant="outline">기업 인증 확인</Button></div>}
+    {state.error && <div className="section"><Button to="/signup" variant="outline">기업 회원 가입</Button></div>}
     {!state.loading && !state.error && state.data && <div className="jobs-content">
       <p className="small muted">전체 {state.data.totalElements}개 · 최근 수정순</p>
       {state.data.content.length ? state.data.content.map((job) => {

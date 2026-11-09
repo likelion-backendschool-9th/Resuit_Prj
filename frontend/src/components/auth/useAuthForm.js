@@ -19,7 +19,7 @@ export default function useAuthForm(mode) {
     const values = Object.fromEntries(new FormData(form));
     const errors = {};
     if (mode === 'signup') {
-      if (!values.nickname.trim()) errors.nickname = '닉네임을 입력해 주세요.';
+      if (!values.nickname.trim()) errors.nickname = values.accountType === 'COMPANY' ? '회사명을 입력해 주세요.' : '닉네임을 입력해 주세요.';
       if (new TextEncoder().encode(values.password).length > 72) errors.password = '비밀번호는 한글 포함 UTF-8 기준 72바이트까지 입력할 수 있어요.';
       if (values.password !== values.confirmPassword) errors.confirmPassword = '비밀번호가 일치하지 않아요.';
     }
@@ -33,7 +33,7 @@ export default function useAuthForm(mode) {
     setBusy(true);
     try {
       if (mode === 'signup') {
-        await signupWithPassword({ username: values.username, email: values.email, nickname: values.nickname.trim(), password: values.password });
+        await signupWithPassword({ username: values.username, email: values.email, nickname: values.nickname.trim(), password: values.password, accountType: values.accountType || 'USER' });
         form.reset();
         setComplete(true);
       } else {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Button from '@/components/common/Button.jsx';
 import Icon from '@/components/common/Icon.jsx';
+import { ChipRadioGroup } from '@/components/common/Chip.jsx';
 import AuthField from './AuthField.jsx';
 import useAuthForm from './useAuthForm.js';
 import { useAppState } from '@/context/AppStateContext.jsx';
@@ -13,6 +14,9 @@ export default function AuthForm({ mode }) {
   const { submit, busy, error, fieldErrors, complete } = useAuthForm(mode);
   const { loggedIn, me, authProviders, authLoading } = useAppState();
   const [oauthError, setOauthError] = useState(false);
+  // 가입 종류. 기업(COMPANY)이면 기업 회원으로 가입하고 닉네임 칸을 회사명으로 쓴다.
+  const [accountType, setAccountType] = useState('USER');
+  const company = signup && accountType === 'COMPANY';
   const successHeading = useRef(null);
   useEffect(() => {
     setOauthError(new URLSearchParams(window.location.search).get('error') === 'oauth');
@@ -38,8 +42,15 @@ export default function AuthForm({ mode }) {
           <AuthField name="username" label="아이디" placeholder="아이디를 입력해 주세요" required autoComplete="username" autoCapitalize="none" spellCheck={false}
             minLength={signup ? 3 : undefined} maxLength={50} pattern={signup ? '[a-zA-Z0-9_\\-]+' : undefined}
             title={signup ? '영문, 숫자, 밑줄 또는 하이픈 3~50자' : undefined} hint={signup ? '영문, 숫자, 밑줄(_), 하이픈(-) 3~50자' : undefined} />
+          {signup && <div className="auth-form__type">
+            <span className="auth-form__type-label">가입 종류</span>
+            <ChipRadioGroup label="가입 종류" value={accountType} onChange={setAccountType}
+              options={[{ id: 'USER', label: '개인 회원' }, { id: 'COMPANY', label: '기업 회원' }]} />
+            <input type="hidden" name="accountType" value={accountType} />
+            {company && <p className="auth-form__type-hint">기업 회원은 인재 찾기, 채용 제안, 공고 관리를 쓸 수 있어요. 회사명은 프로필 이름으로 보여요.</p>}
+          </div>}
           {signup && <div className="auth-form__row">
-            <AuthField name="nickname" label="닉네임" placeholder="어떻게 불러드릴까요?" required maxLength={50} autoComplete="nickname" error={fieldErrors.nickname} />
+            <AuthField key={accountType} name="nickname" label={company ? '회사명' : '닉네임'} placeholder={company ? '예: 뉴렉처' : '어떻게 불러드릴까요?'} required maxLength={50} autoComplete={company ? 'organization' : 'nickname'} error={fieldErrors.nickname} />
           </div>}
           {signup && <AuthField name="email" label="이메일" placeholder="you@example.com" type="email" required maxLength={255} autoComplete="email" autoCapitalize="none" spellCheck={false} />}
           <AuthField name="password" label="비밀번호" placeholder={signup ? '8자 이상의 비밀번호' : '비밀번호를 입력해 주세요'} type="password" required

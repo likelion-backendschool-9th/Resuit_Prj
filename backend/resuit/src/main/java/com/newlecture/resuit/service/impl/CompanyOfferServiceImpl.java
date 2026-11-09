@@ -1,11 +1,6 @@
 package com.newlecture.resuit.service.impl;
 
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,12 +13,10 @@ import com.newlecture.resuit.dto.CompanyOfferResponse;
 import com.newlecture.resuit.entity.CompanyOffer;
 import com.newlecture.resuit.entity.Job;
 import com.newlecture.resuit.entity.User;
-import com.newlecture.resuit.entity.Verification;
 import com.newlecture.resuit.repository.CommonResumeRepository;
 import com.newlecture.resuit.repository.CompanyOfferRepository;
 import com.newlecture.resuit.repository.JobRepository;
 import com.newlecture.resuit.repository.UserRepository;
-import com.newlecture.resuit.repository.VerificationRepository;
 import com.newlecture.resuit.service.CompanyMemberGuard;
 import com.newlecture.resuit.service.CompanyOfferService;
 
@@ -32,8 +25,6 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
 
     // 처음 보낸 제안의 상태. 받은 사람이 응답하면 ACCEPTED(승낙)나 DECLINED(거절)가 된다.
     private static final String SENT = "SENT";
-    // 기업 이메일 인증 기록의 종류(CompanyVerificationServiceImpl과 같은 값)
-    private static final String COMPANY_EMAIL = "company_email";
     private static final String DRAFT = "DRAFT";
 
     private final CompanyOfferRepository offers;
@@ -41,17 +32,14 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
     private final JobRepository jobs;
     private final CommonResumeRepository resumes;
     private final CompanyMemberGuard companyGuard;
-    // 기업 이메일 인증 기록. 제안에 보낸 기업의 인증 이메일을 붙일 때 읽는다.
-    private final VerificationRepository verifications;
 
     public CompanyOfferServiceImpl(CompanyOfferRepository offers, UserRepository users, JobRepository jobs,
-            CommonResumeRepository resumes, CompanyMemberGuard companyGuard, VerificationRepository verifications) {
+            CommonResumeRepository resumes, CompanyMemberGuard companyGuard) {
         this.offers = offers;
         this.users = users;
         this.jobs = jobs;
         this.resumes = resumes;
         this.companyGuard = companyGuard;
-        this.verifications = verifications;
     }
 
     @Override
@@ -117,23 +105,11 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
         return toResponses(List.of(offer)).get(0);
     }
 
-    // 제안 목록을 응답으로 바꾼다. 보낸 기업들의 인증 이메일을 한 번에 읽어 붙인다.
+    // 제안 목록을 응답으로 바꾼다. 기업 이메일은 기업 회원이 가입할 때 입력한 이메일이다.
     private List<CompanyOfferResponse> toResponses(List<CompanyOffer> list) {
-        Map<UUID, String> emails = companyEmails(list.stream().map(o -> o.getCompany().getId()).distinct().toList());
         return list.stream()
-                .map(offer -> CompanyOfferResponse.from(offer, emails.get(offer.getCompany().getId())))
+                .map(offer -> CompanyOfferResponse.from(offer, offer.getCompany().getEmail()))
                 .toList();
-    }
-
-    // 기업 회원별 유효한(취소하지 않은) 인증 이메일. 여러 번 인증했으면 가장 최근 것을 쓴다.
-    private Map<UUID, String> companyEmails(Collection<UUID> companyIds) {
-        if (companyIds.isEmpty()) {
-            return Map.of();
-        }
-        return verifications.findByUserIdInAndTypeAndVerifiedAtIsNotNullAndRevokedAtIsNull(companyIds, COMPANY_EMAIL).stream()
-                .collect(Collectors.groupingBy(v -> v.getUser().getId(),
-                        Collectors.collectingAndThen(Collectors.maxBy(Comparator.comparing(Verification::getVerifiedAt)),
-                                v -> v.map(Verification::getEmail).orElse(null))));
     }
 
     // 내 회사의 공개된 공고를 찾는다. 남의 공고, 삭제된 공고, 임시 저장 공고는 없는 공고처럼 404다.
