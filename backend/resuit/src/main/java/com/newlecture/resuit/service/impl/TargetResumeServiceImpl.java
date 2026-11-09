@@ -1,14 +1,19 @@
 package com.newlecture.resuit.service.impl;
 
+import com.newlecture.resuit.dto.resume.RestoredResumeResponse;
+import com.newlecture.resuit.dto.resume.SubmittedResumeSummary;
 import com.newlecture.resuit.dto.resume.TargetResumeCreateRequest;
 import com.newlecture.resuit.dto.resume.TargetResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.TargetResumeSummary;
 import com.newlecture.resuit.dto.resume.TargetResumeUpdateCommand;
 import com.newlecture.resuit.entity.CommonResume;
+import com.newlecture.resuit.entity.JobApplication;
 import com.newlecture.resuit.entity.JobQuestion;
+import com.newlecture.resuit.entity.SubmittedResume;
 import com.newlecture.resuit.entity.TargetResume;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommonResumeRepository;
+import com.newlecture.resuit.repository.JobApplicationRepository;
 import com.newlecture.resuit.repository.TargetResumeRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CommonResumeService.InvalidResumeException;
@@ -16,8 +21,8 @@ import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenExceptio
 import com.newlecture.resuit.service.CommonResumeService.ResumeInUseException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
+import com.newlecture.resuit.service.MediaService;
 import com.newlecture.resuit.service.TargetResumeService;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -37,6 +42,33 @@ public class TargetResumeServiceImpl implements TargetResumeService {
     private final TargetResumeRepository resumes;
     private final CommonResumeRepository commonResumes;
     private final UserRepository users;
+    private final JobApplicationRepository applications;
+    private final MediaService media;
+
+    @Override
+    @Transactional
+    public RestoredResumeResponse restore(JobApplication application) {
+        var snapshot = application.getSubmittedResumeSnapshot();
+        var title = SubmittedResumeSummary.restoreTitle(application);
+        var job = application.getJob();
+        if (job.getDeletedAt() != null || !"SPECIAL".equalsIgnoreCase(job.getType()))
+            throw new InvalidResumeException("삭제되었거나 유형이 변경된 공고의 특화 이력서는 복원할 수 없습니다.");
+        if (resumes.existsByUserIdAndJobId(application.getUser().getId(), job.getId()))
+            throw new InvalidResumeException("이 공고의 특화 이력서가 이미 있습니다. 기존 이력서를 삭제한 뒤 불러와 주세요.");
+        Map<String, Object> content = new LinkedHashMap<>(SubmittedResume.copyContent(snapshot.content()));
+        content.put("submittedAnswers", snapshot.content().getOrDefault("answers", List.of()));
+        // Preserve the historic question text alongside answers; submission validates current questions again.
+        content.put("submittedQuestions", snapshot.questions().stream().map(q -> {
+            Map<String, Object> question = new LinkedHashMap<>();
+            question.put("id", q.id()); question.put("content", q.content());
+            question.put("charLimit", q.charLimit()); question.put("orderNo", q.orderNo());
+            return question;
+        }).toList());
+        var resume = TargetResume.builder().user(application.getUser()).job(job).title(title).content(content)
+            .photoUrl(media.restoreResumePhoto(application.getSnapshotPhotoKey(), application.getUser().getId())).build();
+        resumes.saveAndFlush(resume);
+        return new RestoredResumeResponse(resume.getId(), "TARGET", title);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -57,7 +89,7 @@ public class TargetResumeServiceImpl implements TargetResumeService {
     @Override
     @Transactional
     public TargetResumeDetailResponse create(String username, TargetResumeCreateRequest request) {
-        var user = currentUser(username);
+        var user = users.findWithLockByUsername(username).orElseThrow(UnauthenticatedUserException::new);
         if (request == null || request.jobId() == null) throw new InvalidResumeException("공고를 골라 주세요.");
         var job = resumes.findJob(request.jobId()).orElseThrow(JobNotFoundException::new);
         if (!"SPECIAL".equalsIgnoreCase(job.getType())) throw new NotSpecialJobException();
@@ -83,6 +115,7 @@ public class TargetResumeServiceImpl implements TargetResumeService {
             .job(job)
             .user(user)
             .commonResume(base)
+            .photoUrl(base == null ? null : media.copyResumePhoto(base.getPhotoUrl(), user.getId()))
             .title(title.length() > MAX_TITLE ? title.substring(0, MAX_TITLE) : title)
             .content(content)
             .build();
@@ -102,6 +135,7 @@ public class TargetResumeServiceImpl implements TargetResumeService {
         resume.update(
             request.title() == null ? resume.getTitle() : validTitle(request.title()),
             request.content() == null ? resume.getContent() : request.content());
+        if (request.photoUrl() != null) resume.updatePhoto(media.prepareResumePhoto(request.photoUrl(), user.getId()));
         resumes.flush();
         return TargetResumeDetailResponse.of(resume, questions, isSubmitted(resume, user));
     }
@@ -110,9 +144,10 @@ public class TargetResumeServiceImpl implements TargetResumeService {
     @Override
     @Transactional
     public void delete(Long resumeId, String username) {
-        var user = currentUser(username);
+        var user = users.findWithLockByUsername(username).orElseThrow(UnauthenticatedUserException::new);
         var resume = ownedResume(resumeId, user);
         try {
+            applications.detachTarget(resumeId);
             resumes.delete(resume);
             resumes.flush();
         } catch (DataIntegrityViolationException e) {
@@ -128,7 +163,7 @@ public class TargetResumeServiceImpl implements TargetResumeService {
         return TargetResumeDetailResponse.of(resume, resumes.findQuestions(resume.getJob().getId()), isSubmitted(resume, user));
     }
 
-    private static void validateAnswers(Object answers, List<JobQuestion> questions) {
+    public static void validateAnswers(Object answers, List<JobQuestion> questions) {
         if (answers == null) return;
         if (!(answers instanceof List<?> list)) throw new InvalidResumeException("답변 목록 형식이 올바르지 않아요.");
         Map<Long, JobQuestion> byId = questions.stream().collect(Collectors.toMap(JobQuestion::getId, q -> q));

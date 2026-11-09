@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,6 +19,10 @@ public interface TargetResumeRepository extends JpaRepository<TargetResume, Long
         WHERE t.user.id = :userId ORDER BY t.id DESC
         """)
     List<TargetResume> findMineWithJob(@Param("userId") UUID userId);
+
+    @Modifying
+    @Query("update TargetResume r set r.commonResume = null where r.commonResume.id = :id")
+    void detachCommonResume(@Param("id") Long id);
 
     boolean existsByUserIdAndJobId(UUID userId, Long jobId);
 

@@ -1,10 +1,13 @@
 package com.newlecture.resuit.entity;
+
 import jakarta.persistence.*;
-import lombok.*;
 import java.io.Serializable;
 import java.time.*;
 import java.util.*;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -32,8 +35,14 @@ public class TargetResume extends BaseTimeEntity {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "common_resume_id")
     private CommonResume commonResume;
+
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
+    public void updatePhoto(String photoUrl) { this.photoUrl = photoUrl; }
 
     @Column(name = "title", nullable = false, length = 100)
     private String title;

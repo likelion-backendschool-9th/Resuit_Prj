@@ -4,9 +4,12 @@ import com.newlecture.resuit.dto.resume.CommonResumeDetailResponse;
 import com.newlecture.resuit.dto.resume.CommonResumeRequest;
 import com.newlecture.resuit.dto.resume.CommonResumeSummary;
 import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
+import com.newlecture.resuit.dto.resume.RestoredResumeResponse;
+import com.newlecture.resuit.entity.JobApplication;
 import java.util.List;
 
 public interface CommonResumeService {
+    RestoredResumeResponse restore(JobApplication application);
     List<CommonResumeSummary> getMyResumes(String username);
     CommonResumeDetailResponse create(String username, CommonResumeRequest request);
     CommonResumeDetailResponse update(CommonResumeUpdateCommand command);

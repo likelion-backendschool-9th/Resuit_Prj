@@ -1,21 +1,24 @@
 package com.newlecture.resuit.service.impl;
 
+import com.newlecture.resuit.dto.MediaUploadResponse;
+import com.newlecture.resuit.entity.User;
+import com.newlecture.resuit.repository.UserRepository;
+import com.newlecture.resuit.service.MediaService;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
-
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.newlecture.resuit.dto.MediaUploadResponse;
-import com.newlecture.resuit.repository.UserRepository;
-import com.newlecture.resuit.service.MediaService;
 
 @Service
 public class MediaServiceImpl implements MediaService {
@@ -107,7 +110,94 @@ public class MediaServiceImpl implements MediaService {
 		}
 	}
 
-	private com.newlecture.resuit.entity.User findUser(String username) {
+    // Snapshot files have no static resource mapping. Only authenticated snapshot endpoints read them.
+    @Override
+    public String prepareResumePhoto(String path, UUID userId) {
+        if (path == null || path.isBlank()) return null;
+        var relative = ownedPhoto(path, userId);
+        if (relative.getName(0).toString().equals("tmpImage")) return copyResumePhoto(path, userId);
+        return "/media/" + relative.toString().replace('\\', '/');
+    }
+
+    @Override
+    public String copyResumePhoto(String path, UUID userId) {
+        if (path == null || path.isBlank()) return null;
+        return copyPhoto(resolveInsideMediaRoot(ownedPhoto(path, userId)), userId, false);
+    }
+
+    @Override
+    public String preserveResumePhoto(String path, UUID userId) {
+        if (path == null || path.isBlank()) return null;
+        return copyPhoto(resolveInsideMediaRoot(ownedPhoto(path, userId)), userId, true);
+    }
+
+    @Override
+    public String restoreResumePhoto(String key, UUID userId) {
+        return key == null ? null : copyPhoto(snapshotPath(key), userId, false);
+    }
+
+    private Path ownedPhoto(String path, UUID userId) {
+        if (path.length() > 500) throw new IllegalArgumentException("사진 경로는 500자 이하여야 합니다.");
+        var relative = parseRelativePath(path.startsWith("/media/") ? path.substring(7) : path);
+        if (relative.getNameCount() != 3
+                || !Set.of("image", "tmpImage").contains(relative.getName(0).toString())
+                || !relative.getName(1).toString().equals(userId.toString())) {
+            throw new IllegalArgumentException("본인이 업로드한 사진만 사용할 수 있습니다.");
+        }
+        var resolved = resolveInsideMediaRoot(relative);
+        try {
+            if (!Files.isRegularFile(resolved) || !resolved.toRealPath().startsWith(mediaRoot.toRealPath()))
+                throw new IllegalArgumentException("사진 파일을 찾을 수 없습니다.");
+        } catch (IOException e) { throw new IllegalArgumentException("사진 파일을 읽을 수 없습니다.", e); }
+        extension(relative.getFileName().toString(), IMAGE);
+        return relative;
+    }
+
+    private String copyPhoto(Path source, UUID userId, boolean snapshot) {
+        var name = UUID.randomUUID() + extension(source.getFileName().toString(), IMAGE);
+        var relative = snapshot ? Path.of("resumeSnapshots", name) : Path.of("image", userId.toString(), name);
+        var target = resolveInsideMediaRoot(relative);
+        try {
+            Files.createDirectories(target.getParent());
+            Files.copy(source, target);
+        } catch (IOException e) {
+            try { Files.deleteIfExists(target); } catch (IOException ignored) { }
+            throw new IllegalArgumentException("제출 사진을 복사할 수 없습니다.", e);
+        }
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override public void afterCompletion(int status) {
+                        if (status != STATUS_COMMITTED) {
+                            try { Files.deleteIfExists(target); }
+                            catch (IOException e) { LoggerFactory.getLogger(MediaServiceImpl.class).error("사진 복사 롤백 실패: {}", target, e); }
+                        }
+                    }
+                });
+        }
+        return snapshot ? name : "/media/" + relative.toString().replace('\\', '/');
+    }
+
+    private Path snapshotPath(String key) {
+        if (key == null || !key.matches("[0-9a-fA-F-]{36}\\.(jpg|jpeg|png|gif|webp)"))
+            throw new IllegalArgumentException("유효하지 않은 제출 사진 키입니다.");
+        return resolveInsideMediaRoot(Path.of("resumeSnapshots", key));
+    }
+
+    @Override
+    public byte[] readSnapshotPhoto(String key) {
+        try { return Files.readAllBytes(snapshotPath(key)); }
+        catch (IOException e) { throw new IllegalArgumentException("제출 사진을 읽을 수 없습니다.", e); }
+    }
+
+    @Override
+    public void deleteSnapshotPhoto(String key) {
+        if (key == null) return;
+        try { Files.deleteIfExists(snapshotPath(key)); }
+        catch (IOException e) { throw new IllegalStateException("제출 사진 삭제에 실패했습니다. 다음 정리 작업에서 재시도합니다.", e); }
+    }
+
+    private User findUser(String username) {
 		if (username == null || username.isBlank()) {
 			throw new IllegalArgumentException("로그인이 필요합니다.");
 		}
@@ -145,8 +235,8 @@ public class MediaServiceImpl implements MediaService {
 		}
 		var extension = filename.substring(dot).toLowerCase(Locale.ROOT);
 		var validExtensions = mediaType.equals(IMAGE)
-				? java.util.Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp")
-				: java.util.Set.of(".mp4", ".webm", ".mov", ".m4v");
+				? Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp")
+				: Set.of(".mp4", ".webm", ".mov", ".m4v");
 		if (!validExtensions.contains(extension)) {
 			throw new IllegalArgumentException("파일 형식과 확장자가 일치하지 않습니다.");
 		}

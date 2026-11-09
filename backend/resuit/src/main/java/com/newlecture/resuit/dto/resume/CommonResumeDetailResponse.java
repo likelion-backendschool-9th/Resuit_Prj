@@ -7,6 +7,7 @@ import java.util.Map;
 public record CommonResumeDetailResponse(
     Long id,
     String title,
+    String photoUrl,
     String field,
     boolean isPublic,
     Map<String, Object> content,
@@ -14,7 +15,7 @@ public record CommonResumeDetailResponse(
     LocalDateTime updatedAt
 ) {
     public static CommonResumeDetailResponse from(CommonResume resume) {
-        return new CommonResumeDetailResponse(resume.getId(), resume.getTitle(), resume.getField(),
+        return new CommonResumeDetailResponse(resume.getId(), resume.getTitle(), resume.getPhotoUrl(), resume.getField(),
             resume.isPublic(), resume.getContent(), resume.getCreatedAt(), resume.getUpdatedAt());
     }
 }

@@ -1,8 +1,8 @@
 package com.newlecture.resuit.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
 import java.util.*;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -22,6 +22,11 @@ public class CommonResume extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
+    public void updatePhoto(String photoUrl) { this.photoUrl = photoUrl; }
 
     @Column(name = "title", nullable = false, length = 100)
     private String title;
