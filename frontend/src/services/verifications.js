@@ -19,6 +19,7 @@ export async function getMyVerificationStatus() {
   return data;
 }
 
+// 등록된 회사 도메인 이메일을 보내면 서버가 바로 현직자 인증을 끝낸다. 회원 역할은 바뀌지 않는다. 코드 확인 단계는 없다.
 export const verifyCompanyEmail = (email) => post('/email', { email });
 
 export async function cancelCompanyEmailVerification() {
@@ -26,6 +27,6 @@ export async function cancelCompanyEmailVerification() {
     method: 'DELETE', credentials: 'same-origin',
   });
   const data = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(data?.message || '기업 이메일 인증을 취소하지 못했어요.');
+  if (!response.ok) throw new Error(data?.message || '현직자 인증을 취소하지 못했어요.');
   return data;
 }

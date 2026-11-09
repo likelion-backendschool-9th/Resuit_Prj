@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,8 @@ import com.newlecture.resuit.dto.CreditPaymentOrderResponse;
 import com.newlecture.resuit.dto.CreditPaymentResultResponse;
 import com.newlecture.resuit.dto.CreditTransactionResponse;
 import com.newlecture.resuit.dto.MentorDetailResponse;
+import com.newlecture.resuit.dto.MentorProfileRequest;
+import com.newlecture.resuit.dto.MyMentorResponse;
 import com.newlecture.resuit.dto.MentorSummary;
 import com.newlecture.resuit.dto.PaidFeedbackCreateRequest;
 import com.newlecture.resuit.dto.PaidFeedbackDetailResponse;
@@ -62,6 +65,19 @@ public class PaidFeedbackController {
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
 		return ResponseEntity.ok(mentorService.getMentors(PageRequest.of(page, size)));
+	}
+
+	// 내 현직자 정보: GET /api/v1/users/me/mentor. 현직자 인증 상태와 직무·경력·가격을 돌려준다.
+	@GetMapping("/users/me/mentor")
+	public ResponseEntity<MyMentorResponse> getMyMentor(Principal principal) {
+		return ResponseEntity.ok(mentorService.getMyMentor(principal.getName()));
+	}
+
+	// 현직자 정보 저장: PUT /api/v1/users/me/mentor  {"jobTitle":"백엔드 개발자","careerYears":5,"priceCredits":50}
+	@PutMapping("/users/me/mentor")
+	public ResponseEntity<MyMentorResponse> saveMyMentor(
+			@Valid @RequestBody MentorProfileRequest request, Principal principal) {
+		return ResponseEntity.ok(mentorService.saveMyMentor(principal.getName(), request));
 	}
 
 	@GetMapping("/mentors/{id}")

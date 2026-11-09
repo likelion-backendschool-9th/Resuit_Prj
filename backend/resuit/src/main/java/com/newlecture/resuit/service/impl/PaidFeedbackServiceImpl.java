@@ -70,7 +70,7 @@ public class PaidFeedbackServiceImpl implements PaidFeedbackService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "자기 자신에게는 요청할 수 없습니다.");
 		}
 
-		Mentor mentor = mentorRepository.findById(request.mentorId())
+		Mentor mentor = mentorRepository.findActiveById(request.mentorId())
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 		CommonResume commonResume = findCommonResume(request.commonResumeId(), requester.getId());
 		TargetResume targetResume = findTargetResume(request.targetResumeId(), requester.getId());

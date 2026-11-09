@@ -4,3 +4,5 @@
 .verification__form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .verification__error { color: var(--danger); }
 .verification__actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.verification__status { display: grid; gap: 4px; margin-bottom: 20px; }
+.verification__status h2 { font-size: 18px; font-weight: 800; }

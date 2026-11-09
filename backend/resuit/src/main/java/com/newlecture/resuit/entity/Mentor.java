@@ -42,4 +42,17 @@ public class Mentor {
 
     @Column(name = "verified_at", nullable = false)
     private LocalDateTime verifiedAt;
+
+    // 현직자가 직무·경력 연차·피드백 가격을 고친다.
+    public void updateProfile(String jobTitle, Integer careerYears, int priceCredits) {
+        this.jobTitle = jobTitle;
+        this.careerYears = careerYears;
+        this.priceCredits = priceCredits;
+    }
+
+    // 다른 회사 이메일로 다시 인증하면 회사명과 인증 시각을 바꾼다.
+    public void changeCompany(String companyName, LocalDateTime verifiedAt) {
+        this.companyName = companyName;
+        this.verifiedAt = verifiedAt;
+    }
 }
