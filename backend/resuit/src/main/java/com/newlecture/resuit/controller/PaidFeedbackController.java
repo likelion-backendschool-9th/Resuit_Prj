@@ -33,6 +33,7 @@ import com.newlecture.resuit.dto.PaidFeedbackResponseCreateRequest;
 import com.newlecture.resuit.dto.PaidFeedbackResponseSummary;
 import com.newlecture.resuit.dto.PaidFeedbackSearchCondition;
 import com.newlecture.resuit.dto.PaidFeedbackSummary;
+import com.newlecture.resuit.dto.resume.ResumePreviewResponse;
 import com.newlecture.resuit.service.CreditPaymentService;
 import com.newlecture.resuit.service.CreditService;
 import com.newlecture.resuit.service.MentorService;
@@ -105,6 +106,12 @@ public class PaidFeedbackController {
 			@PathVariable Long id,
 			Principal principal) {
 		return ResponseEntity.ok(paidFeedbackService.getRequest(id, principal.getName()));
+	}
+
+	// 요청에 붙은 이력서: GET /api/v1/paid-feedback-requests/{id}/resume. 요청자와 그 요청의 현직자만 볼 수 있다.
+	@GetMapping("/paid-feedback-requests/{id}/resume")
+	public ResponseEntity<ResumePreviewResponse> getPaidFeedbackResume(@PathVariable Long id, Principal principal) {
+		return ResponseEntity.ok(paidFeedbackService.getRequestResume(id, principal.getName()));
 	}
 
 	@PostMapping("/paid-feedback-requests/{id}/responses")

@@ -19,6 +19,8 @@ const ITEMS_TOP = [
 const RESUME_CHILDREN = [
   { to: '/resumes', label: '내 이력서' },
   { to: '/feedback', label: '피드백' },
+  { to: '/mentors', label: '현직자 피드백' },
+  { to: '/paid-feedback', label: '내 유료 피드백' },
   { to: '/reviews/best', label: '베스트 리뷰' },
   { to: '/reviews/hall-of-fame', label: '명예의 전당' }
 ];
@@ -61,6 +63,8 @@ export default function LeftNav() {
   const pathname = usePathname();
   const { requestCompose, me } = useAppState();
   const inResume = RESUME_CHILDREN.some((c) => pathname.startsWith(c.to));
+  // 하위 메뉴는 그 주소와 그 아래 상세 화면(/mentors/아이디 등)에서 선택된 것으로 보인다.
+  const isSubActive = (to) => pathname === to || pathname.startsWith(`${to}/`);
   // undefined 면 "지금 이력서 화면에 있으면 펼침"을 따른다.
   const [resumeOpen, setResumeOpen] = useState();
   const inCompany = COMPANY_CHILDREN.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
@@ -91,7 +95,7 @@ export default function LeftNav() {
       {open && (
         <div className="nav-sub">
           {RESUME_CHILDREN.map((c) => (
-            <Link key={c.to} href={c.to} aria-current={pathname === c.to ? 'page' : undefined} className={`nav-sub__item${pathname === c.to ? ' is-active' : ''}`}>
+            <Link key={c.to} href={c.to} aria-current={isSubActive(c.to) ? 'page' : undefined} className={`nav-sub__item${isSubActive(c.to) ? ' is-active' : ''}`}>
               {c.label}
             </Link>
           ))}

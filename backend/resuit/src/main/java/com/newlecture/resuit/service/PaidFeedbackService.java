@@ -1,5 +1,7 @@
 package com.newlecture.resuit.service;
 
+import com.newlecture.resuit.dto.resume.ResumePreviewResponse;
+
 import org.springframework.data.domain.Page;
 
 import com.newlecture.resuit.dto.PaidFeedbackCreateRequest;
@@ -18,4 +20,7 @@ public interface PaidFeedbackService {
 	PaidFeedbackDetailResponse getRequest(Long id, String username);
 
 	PaidFeedbackResponseSummary createResponse(PaidFeedbackResponseCommand command);
+
+	// 요청에 붙은 이력서를 돌려준다. 요청자와 그 요청의 현직자만 볼 수 있다.
+	ResumePreviewResponse getRequestResume(Long id, String username);
 }
