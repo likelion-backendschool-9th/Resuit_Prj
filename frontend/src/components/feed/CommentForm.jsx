@@ -43,7 +43,7 @@ export default function CommentForm({ handle, initialContent = '', onSave, onCan
       {error && <p role="alert">{error}</p>}
       <div className="comment-form__footer">
         {authLoading ? <span role="status">로그인 확인 중…</span> : !loggedIn
-          ? <Button to="/onboarding" variant="outline" size="sm">로그인하고 댓글 달기</Button>
+          ? <Button to="/login" variant="outline" size="sm">로그인하고 댓글 달기</Button>
           : <>
             {onCancel && <Button variant="ghost" disabled={saving} onClick={onCancel}>취소</Button>}
             <Button type="submit" disabled={saving || disabled || !content.trim()}>{saving ? '저장 중…' : mode === 'edit' ? '수정 저장' : '답글'}</Button>
