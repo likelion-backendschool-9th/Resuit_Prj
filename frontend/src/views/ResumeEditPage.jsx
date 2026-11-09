@@ -10,7 +10,13 @@ import Button from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
 import ThemeToggle from '../components/common/ThemeToggle.jsx';
 import TocLink from '../components/resume/TocLink.jsx';
+import BasicInfoFields from '../components/resume/BasicInfoFields.jsx';
+import SkillsEditor from '../components/resume/SkillsEditor.jsx';
+import { TextAreaField } from '../components/resume/ResumeFields.jsx';
 import './ResumeEditPage.css';
+
+const MAX_INTRODUCTION = 2000;
+const trimValues = (obj) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v]));
 
 const projectKey = (p, i) => p.id || `p${i}`;
 
@@ -92,6 +98,8 @@ export default function ResumeEditPage({ id, jobId, mode }) {
   const total = questions.length;
   const pickedCount = projects.filter((p, i) => picked[projectKey(p, i)]).length;
   const toc = { active: activeToc, onPick: setActiveToc };
+  // 특화 이력서는 시작할 때 복사한 별도 내용이라 여기서 고쳐도 공통 이력서는 바뀌지 않는다
+  const changeContent = (key, value) => setDoc((d) => ({ ...d, content: { ...d.content, [key]: value } }));
 
   // 저장에 성공하면 true
   async function save() {
@@ -100,6 +108,8 @@ export default function ResumeEditPage({ id, jobId, mode }) {
     try {
       const next = {
         ...content,
+        ...(content.basic && { basic: trimValues(content.basic) }),
+        ...(content.introduction !== undefined && { introduction: String(content.introduction ?? '').trim() }),
         projects: projects.map((p, i) => ({ ...p, selected: !!picked[projectKey(p, i)] })),
         answers: questions.map((q) => ({ questionId: q.key, answer: answers[q.key] || '' }))
       };
@@ -169,33 +179,25 @@ export default function ResumeEditPage({ id, jobId, mode }) {
           <TocLink target="basic" {...toc}>기본 정보</TocLink>
           <TocLink target="skills" {...toc}>기술 스택</TocLink>
           <TocLink target="projects" {...toc}>프로젝트</TocLink>
+          <TocLink target="introduction" {...toc}>자기소개</TocLink>
           <div className="resume-edit__toc-group is-req">회사 요구 문항</div>
           {questions.map((q, i) => <TocLink key={q.key} target={`q${i + 1}`} {...toc}>문항 {i + 1}</TocLink>)}
         </nav>
 
         <main className="resume-edit__form">
-          {blank && <div className="resume-edit__note">빈 이력서로 시작했어요. 아래 항목을 이 회사에 맞춰 새로 작성해 주세요.</div>}
+          <div className="resume-edit__note">
+            {blank ? '빈 이력서로 시작했어요. 아래 항목을 이 회사에 맞춰 새로 작성해 주세요.'
+              : '공통 이력서에서 불러온 내용이에요. 이 회사에 맞춰 고쳐도 원래 공통 이력서는 바뀌지 않아요.'}
+          </div>
 
           <section id="basic" className="resume-block">
-            <div className="resume-block__head">
-              <h2>기본 정보</h2>
-              {!blank && <Badge tone="loaded">공통에서 불러옴</Badge>}
-              {!blank && <button type="button" className="resume-block__edit">이 이력서에서만 수정</button>}
-            </div>
-            {!content.basic ? <span className="small muted">아직 작성하지 않았어요</span> : (
-              <div className="grid-3" style={{ fontSize: 14 }}>
-                <div><div className="xs muted">이름</div><div style={{ fontWeight: 500 }}>{content.basic.name}</div></div>
-                <div><div className="xs muted">학력</div><div style={{ fontWeight: 500 }}>{content.basic.school}</div></div>
-                <div><div className="xs muted">GitHub</div><div style={{ fontWeight: 500 }}>{content.basic.github}</div></div>
-              </div>
-            )}
+            <div className="resume-block__head"><h2>기본 정보</h2>{!blank && <Badge tone="loaded">공통에서 불러옴</Badge>}</div>
+            <BasicInfoFields basic={content.basic} onChange={(v) => changeContent('basic', v)} />
           </section>
 
           <section id="skills" className="resume-block">
             <div className="resume-block__head"><h2>기술 스택</h2>{!blank && <Badge tone="loaded">공통에서 불러옴</Badge>}</div>
-            {!content.skills?.length ? <span className="small muted">아직 작성하지 않았어요</span> : (
-              <div className="row-wrap">{content.skills.map((s) => <span key={s} className="resume-skill">{s}</span>)}</div>
-            )}
+            <SkillsEditor skills={content.skills || []} onChange={(v) => changeContent('skills', v)} />
           </section>
 
           <section id="projects" className="resume-block">
@@ -225,6 +227,15 @@ export default function ResumeEditPage({ id, jobId, mode }) {
                 </div>
               );
             })}
+          </section>
+
+          <section id="introduction" className="resume-block">
+            <div className="resume-block__head"><h2>자기소개</h2>{!blank && content.introduction && <Badge tone="loaded">공통에서 불러옴</Badge>}</div>
+            <TextAreaField
+              id="introduction-input" label="자기소개" max={MAX_INTRODUCTION} rows={6}
+              placeholder="이 회사에 맞춰 어떤 개발자인지 소개해 주세요."
+              value={content.introduction} onChange={(v) => changeContent('introduction', v)}
+            />
           </section>
 
           {questions.map((q, i) => (

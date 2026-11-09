@@ -47,7 +47,6 @@
 .resume-block--req { border: 2px solid var(--special-line); }
 .resume-block__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .resume-block__head h2 { font-size: 17px; font-weight: 700; }
-.resume-block__edit { margin-left: auto; min-height: 36px; padding: 0 12px; border: 0; background: none; color: var(--accent); font-size: 14px; font-weight: 700; }
 .resume-block__foot { display: flex; justify-content: space-between; gap: 12px; }
 .resume-skill { font-size: 14px; padding: 6px 12px; border-radius: var(--radius-sm); background: var(--bg-muted); }
 

@@ -13,6 +13,7 @@ import TocLink from '../components/resume/TocLink.jsx';
 import { TextField, TextAreaField } from '../components/resume/ResumeFields.jsx';
 import SkillsEditor from '../components/resume/SkillsEditor.jsx';
 import ItemListEditor from '../components/resume/ItemListEditor.jsx';
+import BasicInfoFields from '../components/resume/BasicInfoFields.jsx';
 import './ResumeEditPage.css';
 
 const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
@@ -20,11 +21,6 @@ const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
 const FIELD_OPTIONS = [{ id: 'FRONTEND', label: '프론트엔드' }, { id: 'BACKEND', label: '백엔드' }, { id: '', label: '정하지 않음' }];
 const MAX_TITLE = 40;
 const MAX_INTRODUCTION = 2000;
-const BASIC_FIELDS = [
-  { key: 'name', label: '이름', max: 30, placeholder: '예: 이서연' },
-  { key: 'school', label: '학력', max: 100, placeholder: '예: OO대학교 컴퓨터공학과' },
-  { key: 'github', label: 'GitHub', max: 200, placeholder: '예: github.com/seoyeon-dev' }
-];
 
 // 공통 이력서 항목. id는 섹션 위치, 이름은 목차와 제목에 쓴다 (docs/database-design.md 이력서 content)
 const SECTIONS = [
@@ -185,7 +181,6 @@ export default function CommonResumeEditPage({ id }) {
   const change = (key, value) => { setAlertText(''); setDraft((d) => ({ ...d, [key]: value })); };
   // 화면이 다루지 않는 content 값(프로젝트 근거 등)은 그대로 두고 바꾼 항목만 덮는다
   const changeContent = (key, value) => { setAlertText(''); setDraft((d) => ({ ...d, content: { ...d.content, [key]: value } })); };
-  const changeBasic = (key, value) => changeContent('basic', { ...basic, [key]: value });
 
   return (
     <div className="resume-edit">
@@ -239,11 +234,7 @@ export default function CommonResumeEditPage({ id }) {
 
           <section id="basic" className="resume-block">
             <div className="resume-block__head"><h2>기본 정보</h2></div>
-            <div className="resume-fields">
-              {BASIC_FIELDS.map((f) => (
-                <TextField key={f.key} id={`basic-${f.key}`} label={f.label} max={f.max} placeholder={f.placeholder} value={basic[f.key]} onChange={(v) => changeBasic(f.key, v)} />
-              ))}
-            </div>
+            <BasicInfoFields basic={basic} onChange={(v) => changeContent('basic', v)} />
           </section>
 
           <section id="skills" className="resume-block">
