@@ -49,7 +49,7 @@ bash scripts/dev-backend.sh
 bash scripts/dev-frontend.sh
 ```
 
-migration 스크립트는 현재 Compose db 컨테이너에 001~004와 기업 이메일 도메인 초기 데이터 파일을 순서대로 적용한다. 이미 적용된 변경은 다시 추가하지 않는다. 파일마다 트랜잭션이며 한 파일이 실패하면 이후 파일은 실행하지 않는다. 기존 중복 채택·선정 때문에 실패한 경우 데이터를 삭제하지 말고 원인을 확인한다.
+migration 스크립트는 현재 Compose db 컨테이너에 `database/migrations/*.sql`을 파일명 순서대로 모두 적용하고, 기업 이메일 도메인 초기 데이터 파일도 적용한다. 이미 적용된 변경은 다시 추가하지 않는다. 파일마다 트랜잭션이며 한 파일이 실패하면 이후 파일은 실행하지 않는다. 기존 중복 채택·선정 때문에 실패한 경우 데이터를 삭제하지 말고 원인을 확인한다.
 
 평소 backend 스크립트는 항상 ddl-auto=validate를 사용한다. 테이블이나 컬럼이 없으면 기동 실패로 알려 주며 자동으로 변경하지 않는다. 스케줄러는 기본 활성화다. 개인 실험에서 비활성화하려면 .env에 RESUIT_REVIEWS_SELECTION_ENABLED=false를 넣는다.
 
