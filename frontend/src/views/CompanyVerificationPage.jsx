@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import { MainColumn, RightAside } from '@/components/layout/AppLayout.jsx';
 import Button from '@/components/common/Button.jsx';
+import { useAppState } from '@/context/AppStateContext.jsx';
 import { getMyVerificationStatus, verifyCompanyEmail } from '@/services/verifications.js';
 import './CompanyVerificationPage.css';
 
 export default function CompanyVerificationPage() {
+  const { refreshSession } = useAppState();
   const [email, setEmail] = useState('');
   const [verifiedEmail, setVerifiedEmail] = useState('');
   const [busy, setBusy] = useState(false);
@@ -38,6 +40,8 @@ export default function CompanyVerificationPage() {
       const result = await verifyCompanyEmail(email.trim());
       setVerified(true);
       setVerifiedEmail(result.email || email.trim());
+      // 역할이 COMPANY로 바뀌었으니 세션을 다시 읽어 좌측 메뉴를 기업용으로 바꾼다.
+      await refreshSession();
     } catch (err) { setError(err.message); }
     finally { setBusy(false); }
   }

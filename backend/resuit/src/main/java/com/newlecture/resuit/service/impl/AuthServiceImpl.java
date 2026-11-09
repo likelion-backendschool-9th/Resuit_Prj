@@ -41,7 +41,7 @@ public class AuthServiceImpl implements AuthService {
         } catch (DataIntegrityViolationException exception) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "회원 정보를 저장할 수 없습니다. 아이디 중복을 확인해 주세요.", exception);
         }
-        return new SessionMemberResponse(user.getId(), user.getUsername(), user.getNickname());
+        return new SessionMemberResponse(user.getId(), user.getUsername(), user.getNickname(), user.getRole());
     }
 
 
@@ -49,6 +49,6 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(readOnly = true)
     public Optional<SessionMemberResponse> findSessionMember(String username) {
         return users.findByUsername(username)
-            .map(user -> new SessionMemberResponse(user.getId(), user.getUsername(), user.getNickname()));
+            .map(user -> new SessionMemberResponse(user.getId(), user.getUsername(), user.getNickname(), user.getRole()));
     }
 }
