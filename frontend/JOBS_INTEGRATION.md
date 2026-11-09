@@ -18,23 +18,20 @@
 목록 응답에 없는 전체 유형별 수, 회사 팔로워 수 등은 임의로 표시하지 않는다.
 기존 AppLayout / MainColumn / RightAside를 유지하며 상단 탭은 페이지 내부 상태다.
 
-## 사전 검토 후 보류한 범위
+## 지원 기능의 백엔드 계약 보완
 
-일반 지원, 특화 지원 및 지원 취소 UI는 다음 백엔드 계약이 보완될 때 연결한다.
+지원 상태 조회, 마감 검증, 오류 응답, 일반·특화 응답 분리는 구현되었다.
+상세 계약은 [지원 API 문서](../backend/resuit/JOB_APPLICATION_API.md)를 따른다.
 
-1. **본인의 현재 지원 상태**: JobDetailResponse에 포함되어 있지 않으며 JobController에도 조회 API가 없다.
-   새로고침 후 지원 여부·제출 이력서를 복원할 수 없다. 로컬 상태로 지원 완료를 가장하지 않는다.
-   공고 상세를 조회할 때 로그인 사용자에 대한 application 요약을 함께 반환하는 방식을 우선 검토한다.
-   개인 정보가 추가되면 상세 SSR 요청의 인증 전달과 캐시 정책도 함께 변경해야 한다.
-2. **접수 가능 여부 검증**: JobApplicationServiceImpl은 DRAFT만 거절하며 CLOSED와 지난 deadline은 검사하지 않는다.
-   실제 지원 API에서 두 조건을 검증해야 한다.
-3. **오류 응답**: 이미 지원함, 잘못된 공고 유형, 다른 사용자의 이력서 등에 IllegalArgumentException을 사용한다.
-   해당 예외를 다루는 공통 핸들러와 명시적인 오류 계약을 정리해야 UI가 중복 지원과 기타 실패를 구분할 수 있다.
-4. **특화 지원 결과**: JobApplicationResponse에는 commonResumeId만 있고 targetResumeId가 없다.
-   지원 현황에서 제출한 특화 이력서를 식별할 응답이 필요하다.
+- 본인 상태: `GET /api/v1/jobs/{jobId}/applications/me` (로그인 필요, 캐시 금지).
+- 미지원 또는 취소 후: `applied: false`. 현재 지원: `resumeType`과 `resumeId`로 제출 이력서를 식별한다.
+- 일반 지원 결과: `commonResumeId`, 특화 지원 결과: `targetResumeId`.
+- 접수 조건: 삭제되지 않음, OPEN 상태, 한국 시간 기준 마감일 당일까지.
+- 기존 IllegalArgumentException은 HTTP 400의 `code`, `message` 응답으로 변환한다.
 
-따라서 상세에는 온라인 지원 준비 안내만 표시한다. 기존 GeneralJobDetail의 메모리 기반
-지원 동작을 새 상세 경로에서 호출하지 않는다. 백엔드 API 변경은 이번 작업에 포함하지 않았다.
+공개 공고 상세와 개인별 지원 상태는 공개 범위와 캐시 정책이 다르므로 별도 API로 유지한다.
+프론트엔드 지원·취소 UI 연결은 아직 수행하지 않았다. 기존 GeneralJobDetail의 메모리 기반
+지원 동작을 새 상세 경로에서 호출하지 않는다.
 
 ## 검증
 

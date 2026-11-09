@@ -78,7 +78,7 @@ WHERE schemaname = 'public'
 | [003](../../database/migrations/003_best_review_selection.sql) | 기간별 선정 실행 기록, 기간 내 순위·댓글 중복 방지 |
 | [004](../../database/migrations/004_social_accounts.sql) | 소셜 계정 연결, provider + subject 유니크, username 유니크 |
 
-기존 테이블과 데이터가 준비된 DB를 전제로 한다. 기존 중복·컬럼 차이가 있으면 먼저 조사한다. 개인 로컬 스크립트 `scripts/migrate-local-db.sh`는 001~004만 실행하며 공고 ID 이관이나 배지 변경은 수행하지 않는다. 공용 DB에 개인 실행 스크립트를 사용하지 않는다.
+기존 테이블과 데이터가 준비된 DB를 전제로 한다. 기존 중복·컬럼 차이가 있으면 먼저 조사한다. 개인 로컬 스크립트 `scripts/migrate-local-db.sh`는 001~004와 기업 이메일 도메인 초기 데이터 파일을 실행하며 공고 ID 이관이나 배지 변경은 수행하지 않는다. 공용 DB에 개인 실행 스크립트를 사용하지 않는다.
 
 ## 5. 적용과 검증
 
