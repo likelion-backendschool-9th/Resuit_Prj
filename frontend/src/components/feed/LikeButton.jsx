@@ -18,7 +18,7 @@ export default function LikeButton({ post }) {
   const pending = useRef(false);
   async function toggle() {
     if (pending.current) return;
-    if (!loggedIn) { router.push('/onboarding'); return; }
+    if (!loggedIn) { router.push('/login'); return; }
     pending.current = true;
     setBusy(true);
     setError('');

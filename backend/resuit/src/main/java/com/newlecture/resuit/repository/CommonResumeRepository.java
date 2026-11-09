@@ -1,11 +1,10 @@
 package com.newlecture.resuit.repository;
 
 import com.newlecture.resuit.entity.CommonResume;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,25 +20,12 @@ public interface CommonResumeRepository extends JpaRepository<CommonResume, Long
 
     Optional<CommonResume> findByIdAndUserIdAndIsPublicTrue(Long id, UUID userId);
 
-    @EntityGraph(attributePaths = "user")
-    // 공개 이력서가 여러 개여도 한 사람이 한 줄로 나오도록 회원별 최신 공개 이력서만 읽는다.
-    @Query("""
-        SELECT c FROM CommonResume c
-        WHERE c.isPublic = true AND c.id = (
-            SELECT MAX(o.id) FROM CommonResume o WHERE o.user.id = c.user.id AND o.isPublic = true)
-        ORDER BY c.id DESC
-        """)
-    Page<CommonResume> findLatestPublic(Pageable pageable);
+    // 이 회원에게 공개 이력서가 하나라도 있는지 확인한다. 채용 제안은 인재 찾기에 보이는 회원(공개 이력서 있음)에게만 보낸다.
+    boolean existsByUserIdAndIsPublicTrue(UUID userId);
 
     @EntityGraph(attributePaths = "user")
-    @Query("""
-        SELECT c FROM CommonResume c
-        WHERE c.isPublic = true AND c.field = :field AND c.id = (
-            SELECT MAX(o.id) FROM CommonResume o
-            WHERE o.user.id = c.user.id AND o.isPublic = true AND o.field = :field)
-        ORDER BY c.id DESC
-        """)
-    Page<CommonResume> findLatestPublicByField(@Param("field") String field, Pageable pageable);
+    // IN 조회는 순서를 보장하지 않으므로, 서비스에서 검색 결과 순서대로 다시 정렬한다.
+    List<CommonResume> findByIdIn(Collection<Long> ids);
 
     // 목록 카드의 "받은 피드백 N개". 취소한 요청에 달린 피드백도 받은 피드백으로 센다.
     @Query("""

@@ -60,6 +60,11 @@ public class User extends BaseTimeEntity {
     @Column(name = "subscription")
     private Boolean subscription;
 
+    // 값은 Region enum 이름(SEOUL 등)이다. 엔티티를 enum으로 두면 Hibernate가 값 목록으로 CHECK 제약을 만들어
+    // 지역을 추가할 때 ddl-auto=update인 DB에서 저장이 막힌다. 그래서 문자열로 두고, 값 검증은 요청 DTO에서 Region으로 한다.
+    @Column(name = "region", length = 20)
+    private String region;
+
     public void updateProfile(String nickname, String selfIntroduction,
             String profileImageUrl, Map<String, Object> widgets) {
         if (nickname != null) this.nickname = nickname;

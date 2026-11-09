@@ -39,4 +39,18 @@ public class CreditPayment extends BaseCreatedEntity {
 
     @Column(name = "status", nullable = false, length = 20)
     private String status;
+
+    // 결제 승인이 끝나면 PAID로 바꾸고, 토스 결제 키(paymentKey)를 결제사 거래 아이디로 남긴다.
+    public void markPaid(String paymentKey) {
+        this.pgTransactionId = paymentKey;
+        this.status = "PAID";
+    }
+
+    public void markFailed() {
+        this.status = "FAILED";
+    }
+
+    public boolean isPending() {
+        return "PENDING".equals(status);
+    }
 }

@@ -11,7 +11,7 @@
 | 공고·이력서 | 공고 목록·상세, 일반·특화 공고 지원과 취소, 공고 작성·임시 저장·수정·삭제, 요구 문항(2.1~2.12), 공통·특화 이력서 목록·생성·수정·삭제·상세(3.1, 3.4~3.13) | 공고는 `GENERAL`(일반), `SPECIAL`(특화) 두 종류다. 임시 저장은 `DRAFT` 상태로 저장한다. 일반 공고는 공통 이력서로, 특화 공고는 그 공고용 특화 이력서로 지원한다. 지원 취소는 지원 기록을 지우지 않고 상태를 바꾼다. 한 사람은 공고 하나에 한 번만 지원한다. 특화 이력서는 공통 이력서를 바탕으로 만들거나 빈 상태에서 만든다. |
 | 피드백·베스트 리뷰 | 피드백 요청과 취소(3.2~3.3), 피드백 게시글 목록·작성·필터·내 요청, 이력서 미리보기, 피드백 댓글 목록·작성, 분야 선택, 채택(4.1~4.10), 리뷰 좋아요, 주간·월간 베스트 리뷰, 명예의 전당 | 베스트 리뷰의 "리뷰"는 피드백 댓글이다. 피드백 요청은 공개 게시판 글이며 공통 이력서와 특화 이력서 중 정확히 하나를 대상으로 한다. 요청을 취소해도 이미 달린 피드백 댓글은 남긴다. 채택은 요청자가 피드백 댓글에 표시한다. 베스트 리뷰는 기간마다 선정한 결과를 기록으로 남기고, 명예의 전당은 이 기록을 보여 준다. |
 | 유료 피드백·크레딧 | 현직자 목록·상세, 유료 피드백 요청 작성·목록·상세, 현직자 답변 등록, 크레딧 잔액·내역 조회, 크레딧 충전 | 유료 피드백은 공개 피드백과 다른 테이블에 둔다. 요청자와 지정한 현직자만 보고, 진행 상태와 결제가 있기 때문이다. 현직자는 현직자 인증을 마친 회원이다. 크레딧은 변동 기록을 한 줄씩 쌓고, 잔액은 마지막 기록의 변동 후 잔액으로 구한다. 실제 돈 결제는 크레딧 내역과 따로 기록한다. |
-| 기업 인재 검색 | 인재 목록(무료), 상세 필터(Pro), 공개 이력서 열람, 채용 제안 보내기·받은 제안 조회, 기업 요금제 조회·체험 전환 | 기업은 본인이 공개로 설정한 공통 이력서만 열람한다. 상세 필터 사용 여부는 기업 요금제로 판단한다. 필터 값(배지, 잔디, 기술, 경력, 게시글 수)은 기존 테이블과 GitHub API로 계산하고 별도로 저장하지 않는다. |
+| 기업 인재 검색 | 인재 목록(무료), 상세 필터(Pro), 공개 이력서 열람, 채용 제안 보내기·받은 제안 조회, 기업 요금제 조회·체험 전환 | 기업은 본인이 공개로 설정한 공통 이력서만 열람한다. 상세 필터 사용 여부는 기업 요금제로 판단한다. 필터 값 중 배지, 기술, 경력, 게시글 수, 지역은 기존 테이블에서 계산한다. GitHub 기여 수는 검색할 때마다 GitHub API를 부르지 않도록 `github_contribution_stats`에 저장해 두고 매일 갱신한다. |
 
 검색, 무한 스크롤, 랜딩 페이지, 댓글 펼치기·접기처럼 저장할 데이터가 없는 기능은 테이블을 만들지 않는다.
 
@@ -26,7 +26,7 @@ WBS에서 같은 기능이 여러 곳에 적힌 경우 하나로 정리한다.
 팀에서 정해야 할 것이 남아 있다. 정해지면 이 문서를 고친다.
 
 - `users.is_subscribed`가 무엇을 구독하는지. 기업 요금제를 뜻한다면 `company_subscriptions`와 겹치므로 컬럼을 지운다.
-- 인재 검색에서 지역으로 거를지. 그렇다면 `users`에 지역 컬럼이 필요하다.
+- (정함, 2026-11-06) 인재 검색은 지역으로 거른다. `users.region`(`SEOUL`, `BUSAN`, `DAEGU`, `INCHEON`, `GWANGJU`, `DAEJEON`, `ULSAN`, `GYEONGGI`, `JEJU`, `ETC`)을 둔다. 회원이 지역을 입력하는 경로는 프로필 수정 작업이 끝난 뒤 정한다.
 - 피드백 요청 하나에 몇 개까지 채택할 수 있는지.
 - 베스트 리뷰를 기간마다 몇 개, 어떤 기준(좋아요 수, 채택 여부)으로 뽑을지.
 - 지원한 뒤 이력서를 고치면 기업이 보는 내용도 바뀐다. 제출 시점 내용을 따로 남길지. 남긴다면 `job_applications`에 내용 복사본 컬럼이 필요하다.
@@ -543,7 +543,7 @@ erDiagram
 
 | 테이블 | 필수 컬럼 | 제약 및 읽기 방식 |
 | --- | --- | --- |
-| `users` | `id`, `username`, `role`, `created_at`; 선택 `email`, `password`, `nickname`, `profile_image_url`, `self_introduction`, `widgets`, `pinned_common_resume_id`, `displayed_badge_id`, `is_subscribed`, `updated_at` | `username`은 유일하며 프로필 주소 `/{username}`에 쓴다. `email`은 값이 있으면 소문자로 바꾼 뒤 유일해야 한다. `role IN ('USER','COMPANY','ADMIN')`. `password`는 해시이며 GitHub로 가입한 회원은 NULL이다. 대표 이력서는 본인의 공통 이력서만, 표시 배지는 본인이 보유하고 자격이 유지되는 배지만 고를 수 있다(서비스에서 검사). 고정을 풀거나 배지를 내리면 NULL로 바꾼다. |
+| `users` | `id`, `username`, `role`, `created_at`; 선택 `email`, `password`, `nickname`, `profile_image_url`, `self_introduction`, `widgets`, `pinned_common_resume_id`, `displayed_badge_id`, `region`, `is_subscribed`, `updated_at` | `username`은 유일하며 프로필 주소 `/{username}`에 쓴다. `email`은 값이 있으면 소문자로 바꾼 뒤 유일해야 한다. `role IN ('USER','COMPANY','ADMIN')`. `password`는 해시이며 GitHub로 가입한 회원은 NULL이다. 대표 이력서는 본인의 공통 이력서만, 표시 배지는 본인이 보유하고 자격이 유지되는 배지만 고를 수 있다(서비스에서 검사). 고정을 풀거나 배지를 내리면 NULL로 바꾼다. |
 | `integrations` | `id`, `user_id`, `provider`, `is_connected`, `created_at`; 선택 `platform`, `external_id`, `rss_url`, `access_token`, `last_synced_at` | `provider IN ('GITHUB','BLOG')`. 회원 한 명에 종류별로 한 줄이다(`UNIQUE(user_id, provider)`). GitHub는 `external_id`에 GitHub 계정 ID를 저장하고 `UNIQUE(provider, external_id)`로 GitHub 로그인 회원을 찾는다. 블로그는 `platform IN ('VELOG','TISTORY','ETC')`이다. 벨로그·티스토리는 블로그 아이디로 서버가 `rss_url`을 만들고, 기타 블로그는 회원이 입력한 RSS 주소를 그대로 쓴다. `access_token`은 GitHub만 쓰며 암호화한다. 연동을 해제하면 행을 지우지 않고 `is_connected=false`, `access_token=NULL`로 바꾼다. 이미 수집한 블로그 글을 남기기 위해서다. |
 | `pinned_repos` | `id`, `user_id`, `repo_full_name`, `order_no`, `created_at` | `repo_full_name`은 `owner/name` 형식이다. `order_no`는 1~3이고 회원별로 겹치지 않는다(`UNIQUE(user_id, order_no)`). 그래서 최대 3개를 DB가 보장한다. 같은 레포는 한 번만 고정한다(`UNIQUE(user_id, repo_full_name)`). 대표 레포 수정(5.12)은 목록 전체를 바꾸는 요청이므로 한 트랜잭션에서 기존 행을 지우고 새로 넣는다. 고정한 레포가 없으면 조회(5.11)는 GitHub API의 공개 레포 목록을 돌려준다. |
 | `blog_posts` | `id`, `user_id`, `integration_id`, `guid`, `title`, `url`, `collected_at`; 선택 `description`, `published_at` | RSS의 글 고유값 `guid`로 중복 수집을 막는다(`UNIQUE(integration_id, guid)`). `user_id`는 연동의 회원과 같아야 한다(서비스에서 검사). 최근 블로그 글(5.13)은 `published_at` 최신순으로 읽는다. 블로그 공유카드는 이 행의 제목·요약·주소를 보여 준다. |
@@ -633,9 +633,10 @@ erDiagram
 | 테이블 | 필수 컬럼 | 제약 및 읽기 방식 |
 | --- | --- | --- |
 | `company_offers` | `id`, `company_id`, `user_id`, `message`, `status`, `created_at`; 선택 `job_id` | `status IN ('SENT','ACCEPTED','DECLINED')`. 보내는 쪽은 `role='COMPANY'` 회원이고, 공고를 함께 보내면 그 기업의 공고여야 한다(서비스에서 검사). 받은 제안 조회는 `user_id`로 읽는다. |
-| `company_subscriptions` | `company_id`, `plan`, `updated_at`; 선택 `trial_ends_at`, `expires_at` | `plan IN ('FREE','PRO')`. 행이 없는 기업은 `FREE`로 본다. 체험 전환은 `PRO`와 `trial_ends_at`을 기록한다. 상세 필터는 `plan='PRO'`이고 체험·이용 기간이 지나지 않았을 때만 쓸 수 있다. |
+| `company_subscriptions` | `company_id`, `plan`, `updated_at`; 선택 `trial_ends_at`, `expires_at` | `plan IN ('FREE','PRO')`. 행이 없는 기업은 `FREE`로 본다. 체험 전환은 `PRO`와 `trial_ends_at`을 기록한다. 상세 필터는 `plan='PRO'`이고 체험·이용 기간이 지나지 않았을 때만 쓸 수 있다. 체험은 기업당 한 번, 14일이다. 요금제 행이 이미 있으면 체험을 다시 시작할 수 없다(409). |
+| `github_contribution_stats` | `user_id`, `total_contributions`, `synced_at` | 회원별 GitHub 최근 1년 기여 수다. 회원 FK를 PK로 쓴다. GitHub 연동이 켜진 회원을 매일 04:30에 갱신하며, 실패하면 이전 값을 유지한다. 인재 검색의 기여 수 필터는 이 값만 읽고, 행이 없으면 0으로 본다. |
 
-인재 목록은 공개 공통 이력서(`is_public=true`)가 있는 회원을 대상으로 한다. 상세 필터의 배지는 `user_badges`, 게시글 수는 `posts`, 잔디와 기여 수는 GitHub API, 기술과 경력은 이력서 `content`에서 구한다.
+인재 목록은 공개 공통 이력서(`is_public=true`)가 있는 회원을 대상으로 한다. 상세 필터의 배지는 `user_badges`, 게시글 수는 `posts`, 기여 수는 `github_contribution_stats`, 기술과 경력은 이력서 `content`에서 구한다.
 
 ## 5. 인덱스와 동시성
 
@@ -695,7 +696,7 @@ PK와 UNIQUE 제약은 인덱스를 함께 만든다. 아래에는 그 밖에 �
 6. **프로필 공개 이력서**: 공통 이력서는 여러 개 만들고 공개할 수 있다(`common_resumes.is_public`). 프로필에 고정하는 대표 이력서는 한 개이며 `users.pinned_common_resume_id`에 저장한다. `PUT /users/me/pinned-resume`의 `cResumeId`를 NULL로 보내면 고정을 해제한다. 고정 대상은 본인 소유의 공개 이력서여야 한다. 추후 여러 개 고정으로 바꾸면 별도 고정 관계 또는 순서 컬럼을 추가하고 기존 ID를 이전한다.
 7. **채택**: 목업의 `adopted`는 채택된 피드백 하나의 순번이다. 요청당 하나만 채택하는 것으로 보이며, 팀 결정(1장)과 함께 확정한다.
 8. **배지**: 공유자 배지(태그별 기술 글 수), 리뷰어 배지(분기마다 채택된 피드백 수와 서로 다른 요청자 수)는 서버가 기존 테이블로 계산해 `user_badges`에 지급한다. 리뷰어 배지 진행 현황(`BADGE_PROGRESS`)도 `feedback_comments`의 채택 기록으로 계산한다. 리뷰어 배지는 최근 2분기 활동을 분기마다 평가하고, 미달 첫 분기에는 유예를 준다. 인재 목록의 배지 상태 `active | grace | expired`는 `user_badges.status`로 구분한다. 세부 기준은 [배지 갱신 규칙](./badge-renewal.md)에 있다.
-9. **인재 목록**: 목업의 `headline`(한 줄 소개), `career`(경력 구간)는 저장 컬럼이 없다. 이력서 `content`에 넣을지, `users`에 컬럼을 더할지 인재 검색을 구현할 때 정한다.
+9. **인재 목록**: 목업의 `headline`(한 줄 소개), `career`(경력 구간)는 저장 컬럼이 없다. 이력서 `content`에 넣을지, `users`에 컬럼을 더할지 인재 검색을 구현할 때 정한다. (2026-11-06) 상세 필터의 경력은 `user_careers` 기간을 합산해 구한다. 겹치는 기간은 한 번만 세고 재직 중은 오늘까지로 계산하며, 1년 미만은 신입이다.
 10. **WBS에 없는 목업 데이터**: 게시글의 `tags`, `source`, `reposts`, 채용 글(`type: 'job'`), 질문 스레드의 답변 채택·좋아요는 저장할 곳이 없다. 1장의 팀 결정 전까지 API로 바꾸지 않는다.
 
 ### API

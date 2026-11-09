@@ -18,7 +18,7 @@ const Composer = forwardRef(function Composer({ onPosted }, textareaRef) {
             const post = await createPost(body);
             onPosted?.(post);
           }} />}
-        {!authLoading && !loggedIn && <Button to="/onboarding" variant="ghost" size="sm">로그인하고 게시하기</Button>}
+        {!authLoading && !loggedIn && <Button to="/login" variant="ghost" size="sm">로그인하고 게시하기</Button>}
       </div>
     </div>
   );

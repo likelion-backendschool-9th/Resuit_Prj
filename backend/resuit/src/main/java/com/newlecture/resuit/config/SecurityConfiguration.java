@@ -2,6 +2,23 @@ package com.newlecture.resuit.config;
 
 import com.newlecture.resuit.service.SocialMemberService;
 import java.util.LinkedHashMap;
+import java.util.List;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.web.context.DelegatingSecurityContextRepository;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
+import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -22,13 +39,54 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SecurityConfiguration {
     @Bean
+    PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+
+    @Bean
+    DaoAuthenticationProvider passwordAuthenticationProvider(UserDetailsService users, PasswordEncoder passwords) {
+        var provider = new DaoAuthenticationProvider(users);
+        provider.setPasswordEncoder(passwords);
+        return provider;
+    }
+
+    @Bean
+    AuthenticationManager authenticationManager(DaoAuthenticationProvider provider) {
+        return new ProviderManager(provider);
+    }
+
+    @Bean
+    SecurityContextRepository securityContextRepository() {
+        return new DelegatingSecurityContextRepository(
+                new RequestAttributeSecurityContextRepository(), new HttpSessionSecurityContextRepository());
+    }
+
+    @Bean
+    CsrfTokenRepository csrfTokenRepository() {
+        return new HttpSessionCsrfTokenRepository();
+    }
+
+    @Bean
+    SessionAuthenticationStrategy sessionAuthenticationStrategy(CsrfTokenRepository csrf) {
+        return new CompositeSessionAuthenticationStrategy(List.of(
+                new ChangeSessionIdAuthenticationStrategy(), new CsrfAuthenticationStrategy(csrf)));
+    }
+
+    @Bean
     SecurityFilterChain security(HttpSecurity http, SocialClientConfiguration.Clients clients,
             SocialMemberService members, LoginRedirectHandler redirects,
+            DaoAuthenticationProvider passwordAuthenticationProvider, SecurityContextRepository contexts,
+            CsrfTokenRepository csrfTokens,
             OAuth2AuthorizationRequestResolver oauth2AuthorizationRequestResolver,
             AuthorizationRequestRepository<OAuth2AuthorizationRequest> oauth2AuthorizationRequestRepository,
             ObjectProvider<DevHeaderAuthenticationFilter> devHeaderAuth,
             @Value("${app.dev-header-auth.enabled:false}") boolean headerAuthEnabled) throws Exception {
-        http.formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable);
+        // Let HttpSecurity build its manager so OAuth2 providers remain registered as well.
+        http.authenticationProvider(passwordAuthenticationProvider)
+            .securityContext(context -> context.securityContextRepository(contexts))
+            .csrf(csrf -> csrf.csrfTokenRepository(csrfTokens))
+            .formLogin(form -> form.successHandler(redirects).permitAll())
+            .httpBasic(AbstractHttpConfigurer::disable);
         if (headerAuthEnabled) {
             // 로컬 프로필 API는 세션 없이 X-Username으로 호출하므로 CSRF를 끈다.
             http.csrf(AbstractHttpConfigurer::disable);
@@ -39,6 +97,8 @@ public class SecurityConfiguration {
         }
         http.authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/v1/jobs/me/**", "/api/v1/jobs/*/applications/me").authenticated()
+            .requestMatchers("/api/v1/users/me", "/api/v1/users/me/**").authenticated()
+            .requestMatchers(HttpMethod.POST, "/api/v1/users/login", "/api/v1/users/signup").permitAll()
             .requestMatchers("/api/v1/auth/session", "/api/oauth2/**", "/api/login/**", "/error").permitAll()
             .requestMatchers(HttpMethod.GET, "/media/image/**", "/media/video/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**", "/api/v1/jobs/**", "/api/v1/posts/**",
