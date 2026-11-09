@@ -8,5 +8,7 @@ import java.util.UUID;
 public interface CompanyVerificationService {
     EmailResponse verify(String username, EmailRequest input);
 
+    MyStatusResponse cancel(String username);
+
     MyStatusResponse getMyStatus(UUID userId);
 }

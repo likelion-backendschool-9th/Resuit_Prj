@@ -197,7 +197,9 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
         <div className="profile__head">
           <div className="profile__head-row">
             {isOwner ? (
-              <Button to="/profile/verification" variant="outline">기업 이메일 인증</Button>
+              <Button to="/profile/verification" variant="outline">
+                {profile?.companyVerified ? '기업 이메일 인증 관리' : '기업 이메일 인증'}
+              </Button>
             ) : (
               <FollowButton
                 handle={displayHandle}
@@ -472,13 +474,18 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
             key={p.id}
             post={{
               id: p.id,
+              detailLink: `/threads/${encodeURIComponent(p.id)}`,
               author: displayName,
               handle: displayHandle,
               initial: (displayName || '?').slice(0, 1),
               av: me.av,
+              profileImage: profile?.profileImageUrl,
               type: p.type,
               body: p.content,
-              time: p.createdAt,
+              image: p.imageUrl,
+              imageAlt: `${displayName}의 첨부 이미지`,
+              video: p.videoUrl,
+              time: p.createdAt?.replace('T', ' ').slice(0, 16) || '',
               tags: p.tags,
               replies: p.replies,
               reposts: p.reposts,

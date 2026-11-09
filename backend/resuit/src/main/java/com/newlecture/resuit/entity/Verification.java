@@ -42,7 +42,15 @@ public class Verification extends BaseCreatedEntity {
 
     @Column(name = "verified_at")
     private LocalDateTime verifiedAt;
+
+    @Column(name = "revoked_at")
+    private LocalDateTime revokedAt;
+
     @Builder.Default
     @Column(name = "failed_attempts", nullable = false)
     private int failedAttempts = 0;
+
+    public void revoke(LocalDateTime revokedAt) {
+        this.revokedAt = revokedAt;
+    }
 }
