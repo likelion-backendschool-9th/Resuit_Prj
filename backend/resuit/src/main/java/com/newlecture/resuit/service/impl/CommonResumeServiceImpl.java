@@ -7,6 +7,10 @@ import com.newlecture.resuit.dto.resume.CommonResumeUpdateCommand;
 import com.newlecture.resuit.entity.CommonResume;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommonResumeRepository;
+import com.newlecture.resuit.repository.FeedbackCommentRepository;
+import com.newlecture.resuit.repository.FeedbackRequestRepository;
+import com.newlecture.resuit.repository.FeedbackRequestSectionRepository;
+import com.newlecture.resuit.repository.FeedbackBoardRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CommonResumeService;
 import com.newlecture.resuit.service.CommonResumeService.InvalidResumeException;
@@ -33,6 +37,10 @@ public class CommonResumeServiceImpl implements CommonResumeService {
     private static final Set<String> FIELDS = Set.of("FRONTEND", "BACKEND");
 
     private final CommonResumeRepository resumes;
+    private final FeedbackBoardRepository feedbackBoard;
+    private final FeedbackRequestRepository feedbackRequests;
+    private final FeedbackRequestSectionRepository feedbackSections;
+    private final FeedbackCommentRepository feedbackComments;
     private final UserRepository users;
 
     @Override
@@ -44,9 +52,16 @@ public class CommonResumeServiceImpl implements CommonResumeService {
         Map<Long, Long> activeRequests = resumes.findActiveFeedbackRequests(user.getId()).stream().collect(
             Collectors.toMap(CommonResumeRepository.ActiveRequestRow::getResumeId,
                 CommonResumeRepository.ActiveRequestRow::getRequestId, (first, second) -> first));
+        Set<Long> requestsWithComments = activeRequests.isEmpty() ? Set.of()
+            : feedbackBoard.countComments(activeRequests.values()).stream()
+                .filter(row -> row.getCount() > 0)
+                .map(FeedbackBoardRepository.CommentCountRow::getRequestId)
+                .collect(Collectors.toSet());
         return resumes.findByUserIdOrderByIdAsc(user.getId()).stream()
             .map(resume -> CommonResumeSummary.of(resume, feedbackCounts.getOrDefault(resume.getId(), 0L),
-                targetCounts.getOrDefault(resume.getId(), 0L), activeRequests.get(resume.getId())))
+                targetCounts.getOrDefault(resume.getId(), 0L), activeRequests.get(resume.getId()),
+                activeRequests.get(resume.getId()) != null
+                    && requestsWithComments.contains(activeRequests.get(resume.getId()))))
             .toList();
     }
 
@@ -80,13 +95,27 @@ public class CommonResumeServiceImpl implements CommonResumeService {
         return CommonResumeDetailResponse.from(resume);
     }
 
-    // 지원·피드백 요청·특화 이력서·대표 이력서가 이 이력서를 가리키면 DB의 FK가 삭제를 막는다.
+    // 댓글이 없는 피드백 요청은 이력서와 함께 정리한다. 댓글이 있으면 기록을 보존한다.
     @Override
     @Transactional
     public void delete(Long resumeId, String username) {
         var user = currentUser(username);
         var resume = ownedResume(resumeId, user);
+        var requests = feedbackRequests.findByCommonResume_IdOrderByIdAsc(resumeId);
+        if (requests.stream().anyMatch(request -> feedbackComments.existsByFeedbackRequest_Id(request.getId()))) {
+            throw new ResumeInUseException("피드백 댓글이 달린 이력서는 삭제할 수 없습니다.");
+        }
         try {
+            for (var request : requests) {
+                feedbackSections.deleteByRequest_Id(request.getId());
+                feedbackRequests.delete(request);
+            }
+            feedbackRequests.flush();
+            if (user.getPinnedCommonResume() != null
+                    && user.getPinnedCommonResume().getId().equals(resumeId)) {
+                user.pinResume(null);
+                users.flush();
+            }
             resumes.delete(resume);
             resumes.flush();
         } catch (DataIntegrityViolationException e) {

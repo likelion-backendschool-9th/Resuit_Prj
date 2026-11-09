@@ -10,7 +10,7 @@ const Composer = forwardRef(function Composer({ onPosted }, textareaRef) {
   const { me, loggedIn, authLoading } = useAppState();
   return (
     <div className="composer" id="compose">
-      <Avatar initial={me.initial} color={me.av} />
+      <Avatar initial={me.initial} color={me.av} src={me.profileImage || undefined} />
       <div className="composer__body">
         {authLoading ? <p role="status">로그인 상태를 확인하고 있어요.</p>
           : <PostForm ref={textareaRef} onSave={async (body) => {

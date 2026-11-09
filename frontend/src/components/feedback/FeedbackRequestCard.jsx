@@ -61,7 +61,7 @@ export default function FeedbackRequestCard({ request }) {
 
         {opened && (
           <div hidden={!open}>
-            <FeedbackComments request={request} onAdded={() => setCount((c) => c + 1)} onAdopted={() => setAdopted(true)} />
+            <FeedbackComments request={request} onAdded={() => setCount((c) => c + 1)} onDeleted={() => setCount((c) => Math.max(0, c - 1))} onAdopted={() => setAdopted(true)} />
           </div>
         )}
       </div>

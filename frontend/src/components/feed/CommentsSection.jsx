@@ -94,7 +94,11 @@ function removeFromTree(items, id) {
     : [{ ...item, replies: removeFromTree(item.replies || [], id) }]);
 }
 
-export default function CommentsSection({ post }) {
+function countComments(items) {
+  return items.reduce((total, item) => total + 1 + countComments(item.replies || []), 0);
+}
+
+export default function CommentsSection({ post, onCountChange }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -104,18 +108,28 @@ export default function CommentsSection({ post }) {
     setLoading(true);
     setError('');
     getComments(post.id, controller.signal).then((items) => {
-      if (!controller.signal.aborted) setComments(items);
+      if (!controller.signal.aborted) {
+        setComments(items);
+        onCountChange?.(countComments(items));
+      }
     }).catch((err) => { if (!controller.signal.aborted) setError(err.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [post.id, retry]);
-  const onReplied = useCallback((parentId, saved) => setComments((items) => addReply(items, parentId, saved)), []);
+  const onReplied = useCallback((parentId, saved) => {
+    setComments((items) => addReply(items, parentId, saved));
+    onCountChange?.((count) => count + 1);
+  }, [onCountChange]);
   const onUpdated = useCallback((saved) => setComments((items) => editTree(items, saved)), []);
-  const onDeleted = useCallback((id) => setComments((items) => removeFromTree(items, id)), []);
+  const onDeleted = useCallback((id) => {
+    setComments((items) => removeFromTree(items, id));
+    onCountChange?.((count) => Math.max(0, count - 1));
+  }, [onCountChange]);
   return <>
     <CommentForm inputId="thread-reply" handle={post.handle} disabled={loading} onSave={async (content) => {
       const saved = await createComment(post.id, content);
       setComments((items) => [...items, saved]);
+      onCountChange?.((count) => count + 1);
     }} />
     <section aria-labelledby="thread-comments-heading" aria-busy={loading}>
       <h2 id="thread-comments-heading" className="thread-comments__heading">댓글</h2>

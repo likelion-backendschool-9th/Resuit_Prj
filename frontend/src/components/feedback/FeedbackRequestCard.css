@@ -40,3 +40,4 @@
   background: var(--bg);
   border: 1px solid var(--line);
 }
+.fb-item--reply { margin-left: 28px; }

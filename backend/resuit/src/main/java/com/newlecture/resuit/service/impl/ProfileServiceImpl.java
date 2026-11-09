@@ -15,11 +15,14 @@ import com.newlecture.resuit.dto.UpdateProfileRequest;
 import com.newlecture.resuit.entity.BadgeStatus;
 import com.newlecture.resuit.entity.CommonResume;
 import com.newlecture.resuit.entity.Follow;
+import com.newlecture.resuit.entity.Post;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.entity.UserBadge;
 import com.newlecture.resuit.entity.UserCareer;
 import com.newlecture.resuit.repository.CommonResumeRepository;
+import com.newlecture.resuit.repository.CommentRepository;
 import com.newlecture.resuit.repository.FollowRepository;
+import com.newlecture.resuit.repository.PostLikeRepository;
 import com.newlecture.resuit.repository.ProfileFeedbackRepository;
 import com.newlecture.resuit.repository.ProfilePostRepository;
 import com.newlecture.resuit.repository.UserBadgeHistoryRepository;
@@ -36,7 +39,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -53,6 +58,8 @@ public class ProfileServiceImpl implements ProfileService {
     private final CommonResumeRepository resumes;
     private final FollowRepository follows;
     private final ProfilePostRepository posts;
+    private final CommentRepository comments;
+    private final PostLikeRepository postLikes;
     private final ProfileFeedbackRepository feedbacks;
     private final UserBadgeRepository userBadges;
     private final UserBadgeHistoryRepository badgeHistory;
@@ -78,13 +85,24 @@ public class ProfileServiceImpl implements ProfileService {
             int page, int size) {
         User user = findByUsername(username);
         PageRequest paging = paging(page, size, "createdAt");
-        Page<ProfilePostResponse> result = ("tech".equalsIgnoreCase(type)
+        Page<Post> postPage = ("tech".equalsIgnoreCase(type)
                 ? posts.findByUserIdAndTypeAndDeletedAtIsNull(user.getId(), "TECH", paging)
-                : posts.findByUserIdAndDeletedAtIsNull(user.getId(), paging))
-                .map(post -> new ProfilePostResponse(post.getId(), post.getType(),
-                        post.getContent(), post.getImageUrl(), post.getVideoUrl(),
-                        post.getCreatedAt()));
-        return PageResponse.from(result);
+                : posts.findByUserIdAndDeletedAtIsNull(user.getId(), paging));
+        List<Long> postIds = postPage.getContent().stream().map(Post::getId).toList();
+        Map<Long, Long> commentCounts = (postIds.isEmpty() ? List.<CommentRepository.PostCount>of()
+                : comments.countActiveByPostIds(postIds)).stream()
+                .collect(Collectors.toMap(CommentRepository.PostCount::getPostId, CommentRepository.PostCount::getCount));
+        Map<Long, Long> likeCounts = (postIds.isEmpty() ? List.<PostLikeRepository.PostCount>of()
+                : postLikes.countByPostIds(postIds)).stream()
+                .collect(Collectors.toMap(PostLikeRepository.PostCount::getPostId, PostLikeRepository.PostCount::getCount));
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        Set<Long> likedIds = postIds.isEmpty() || auth == null || !auth.isAuthenticated()
+                || auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken
+                ? Set.of() : postLikes.findLikedPostIds(auth.getName(), postIds);
+        return PageResponse.from(postPage.map(post -> new ProfilePostResponse(post.getId(), post.getType(),
+                post.getContent(), post.getImageUrl(), post.getVideoUrl(), post.getCreatedAt(),
+                commentCounts.getOrDefault(post.getId(), 0L), likeCounts.getOrDefault(post.getId(), 0L),
+                likedIds.contains(post.getId()))));
     }
 
     @Override

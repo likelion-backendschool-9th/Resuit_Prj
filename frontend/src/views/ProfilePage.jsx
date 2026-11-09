@@ -480,16 +480,17 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
               initial: (displayName || '?').slice(0, 1),
               av: me.av,
               profileImage: profile?.profileImageUrl,
-              type: p.type,
+              type: p.type?.toLowerCase(),
               body: p.content,
               image: p.imageUrl,
               imageAlt: `${displayName}의 첨부 이미지`,
               video: p.videoUrl,
               time: p.createdAt?.replace('T', ' ').slice(0, 16) || '',
               tags: p.tags,
-              replies: p.replies,
-              reposts: p.reposts,
-              likes: p.likes,
+              source: 'api',
+              commentCount: p.commentCount,
+              likeCount: p.likeCount,
+              liked: p.liked,
             }}
           />
         ))}

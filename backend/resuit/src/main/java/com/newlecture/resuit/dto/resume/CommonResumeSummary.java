@@ -17,6 +17,7 @@ public record CommonResumeSummary(
     long feedbackCount,
     long targetResumeCount,
     Long feedbackRequestId,
+    boolean feedbackRequestHasComments,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {
@@ -24,9 +25,11 @@ public record CommonResumeSummary(
     public record Section(String type, int count) {}
 
     // feedbackRequestId: 진행 중인(취소하지 않은) 피드백 요청. 없으면 null
-    public static CommonResumeSummary of(CommonResume resume, long feedbackCount, long targetResumeCount, Long feedbackRequestId) {
+    public static CommonResumeSummary of(CommonResume resume, long feedbackCount, long targetResumeCount,
+                                         Long feedbackRequestId, boolean feedbackRequestHasComments) {
         return new CommonResumeSummary(resume.getId(), resume.getTitle(), resume.getField(), resume.isPublic(),
             sectionsOf(resume.getContent()), feedbackCount, targetResumeCount, feedbackRequestId,
+            feedbackRequestHasComments,
             resume.getCreatedAt(), resume.getUpdatedAt());
     }
 

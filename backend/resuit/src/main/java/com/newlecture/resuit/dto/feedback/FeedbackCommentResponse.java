@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 // reviewerBadge: 작성자가 프로필에 내건 배지 이름. 없으면 null
 public record FeedbackCommentResponse(
     Long commentId,
+    Long parentId,
     FeedbackAuthor author,
     String reviewerBadge,
     String section,
@@ -19,7 +20,8 @@ public record FeedbackCommentResponse(
     public static FeedbackCommentResponse of(FeedbackComment comment, boolean mine) {
         var user = comment.getUser();
         var badge = user.getDisplayedBadge();
-        return new FeedbackCommentResponse(comment.getCommentId(), FeedbackAuthor.of(user),
+        return new FeedbackCommentResponse(comment.getCommentId(),
+            comment.getParent() == null ? null : comment.getParent().getCommentId(), FeedbackAuthor.of(user),
             badge == null ? null : badge.getName(), comment.getSection(), comment.getContent(),
             comment.isAdopted(), comment.getAdoptedAt(), mine, comment.getCreatedAt());
     }

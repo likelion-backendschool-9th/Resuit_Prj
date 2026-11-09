@@ -105,6 +105,12 @@ public class ResumeController {
 			new FeedbackCommentCreateCommand(id, username(principal), commentRequest)));
 	}
 
+	@DeleteMapping("/feedbacks/{feedbackId}")
+	public ResponseEntity<Void> deleteFeedbackComment(@PathVariable Long feedbackId, Principal principal) {
+		feedbackBoardService.deleteComment(feedbackId, username(principal));
+		return ResponseEntity.noContent().build();
+	}
+
 	@PostMapping("/feedbacks/{feedbackId}/adopt")
 	public ResponseEntity<AdoptFeedbackResponse> adoptFeedback(
 			@PathVariable Long feedbackId, Principal principal) {
@@ -198,10 +204,10 @@ public class ResumeController {
 	}
 
 	@ExceptionHandler(CommonResumeService.ResumeInUseException.class)
-	public ResponseEntity<ResumeErrorResponse> resumeInUse() {
+	public ResponseEntity<ResumeErrorResponse> resumeInUse(CommonResumeService.ResumeInUseException e) {
 		return ResponseEntity.status(HttpStatus.CONFLICT)
 			.body(new ResumeErrorResponse("RESUME_IN_USE",
-				"지원, 피드백 요청, 특화 이력서, 대표 이력서에 쓰고 있는 이력서는 삭제할 수 없습니다."));
+				e.getMessage() == null ? "지원, 특화 이력서 등에서 사용 중인 이력서는 삭제할 수 없습니다." : e.getMessage()));
 	}
 
 	@ExceptionHandler(CommonResumeService.InvalidResumeException.class)
@@ -237,6 +243,30 @@ public class ResumeController {
 	public ResponseEntity<ResumeErrorResponse> feedbackRequestExists() {
 		return ResponseEntity.status(HttpStatus.CONFLICT)
 			.body(new ResumeErrorResponse("FEEDBACK_REQUEST_EXISTS", "이 이력서는 이미 피드백을 요청했습니다."));
+	}
+
+	@ExceptionHandler(FeedbackRequestService.FeedbackRequestHasCommentsException.class)
+	public ResponseEntity<ResumeErrorResponse> feedbackRequestHasComments() {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(new ResumeErrorResponse("FEEDBACK_REQUEST_HAS_COMMENTS", "댓글이 달린 피드백 요청은 취소할 수 없습니다."));
+	}
+
+	@ExceptionHandler(FeedbackBoardService.FeedbackCommentNotFoundException.class)
+	public ResponseEntity<ResumeErrorResponse> feedbackCommentNotFound() {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+			.body(new ResumeErrorResponse("FEEDBACK_COMMENT_NOT_FOUND", "피드백 댓글을 찾을 수 없습니다."));
+	}
+
+	@ExceptionHandler(FeedbackBoardService.FeedbackCommentForbiddenException.class)
+	public ResponseEntity<ResumeErrorResponse> feedbackCommentForbidden() {
+		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+			.body(new ResumeErrorResponse("FEEDBACK_COMMENT_FORBIDDEN", "본인이 작성한 피드백 댓글만 삭제할 수 있습니다."));
+	}
+
+	@ExceptionHandler(FeedbackBoardService.FeedbackCommentInUseException.class)
+	public ResponseEntity<ResumeErrorResponse> feedbackCommentInUse() {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(new ResumeErrorResponse("FEEDBACK_COMMENT_IN_USE", "채택되었거나 베스트 리뷰로 선정된 피드백은 삭제할 수 없습니다."));
 	}
 
 	@ExceptionHandler(TargetResumeService.TargetResumeExistsException.class)

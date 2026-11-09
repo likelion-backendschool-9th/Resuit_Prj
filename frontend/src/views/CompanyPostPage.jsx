@@ -28,7 +28,7 @@ export default function CompanyPostPage({ jobId = null, draft = false }) {
     <RightAside showReviews label="리뷰 추천 및 보조 정보">
       <h2 className="company-post__preview-title">피드 미리보기</h2>
       <div className="card company-post__preview">
-        <div className="row"><Avatar initial={loggedIn ? me.initial : '?'} color="co2" size={36} company /><strong>{loggedIn ? me.name : '회사 이름'}</strong></div>
+        <div className="row"><Avatar initial={loggedIn ? me.initial : '?'} color="co2" size={36} company src={loggedIn ? me.profileImage || undefined : undefined} /><strong>{loggedIn ? me.name : '회사 이름'}</strong></div>
         <span className="company-post__preview-badge"><Badge tone={special ? 'special' : 'general'} size="md">{special ? `특화 공고 · 요구 문항 ${preview.questions.length}개` : '일반 공고'}</Badge></span>
         <div className="bold">{preview?.title || '[공고 제목]'}</div>
         <div className="small muted">{special ? '지원자는 공고에서 특화 이력서를 작성해 제출합니다.' : '지원자는 공통 이력서로 바로 지원합니다.'}</div>

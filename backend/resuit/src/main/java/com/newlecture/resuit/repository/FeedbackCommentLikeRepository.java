@@ -20,4 +20,8 @@ public interface FeedbackCommentLikeRepository extends JpaRepository<FeedbackCom
     @Modifying
     @Query("DELETE FROM FeedbackCommentLike l WHERE l.id.commentId = :commentId AND l.id.userId = :userId")
     int deleteLike(@Param("commentId") Long commentId, @Param("userId") UUID userId);
+
+    @Modifying
+    @Query("DELETE FROM FeedbackCommentLike l WHERE l.id.commentId = :commentId")
+    int deleteByCommentId(@Param("commentId") Long commentId);
 }

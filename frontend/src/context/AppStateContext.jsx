@@ -42,6 +42,7 @@ export function AppStateProvider({ children }) {
         initial: (member.nickname || member.username).slice(0, 1),
         av: 'av1',
         github: '',
+        profileImage: member.profileImageUrl || '',
       }
     : GUEST_ME;
   const [composeRequested, setComposeRequested] = useState(false);

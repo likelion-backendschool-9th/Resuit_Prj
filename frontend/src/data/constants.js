@@ -26,4 +26,5 @@ export const GUEST_ME = {
   initial: '?',
   av: 'av1',
   github: '',
+  profileImage: '',
 };

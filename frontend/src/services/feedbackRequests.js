@@ -30,6 +30,8 @@ export const getFeedbackComments = (id, signal) => request(`/feedback-requests/$
 // 피드백 댓글 작성 (WBS 4.7). section: 요청한 이력서 항목. null이면 이력서 전체
 export const createFeedbackComment = (id, body) => request(`/feedback-requests/${id}/comments`, json('POST', body));
 
+export const deleteFeedbackComment = (commentId) => request(`/feedbacks/${commentId}`, { method: 'DELETE' });
+
 // 피드백 채택 (WBS 4.10). 요청한 본인만, 요청 하나에 하나만 채택할 수 있다
 export const adoptFeedback = (commentId) => request(`/feedbacks/${commentId}/adopt`, { method: 'POST' });
 

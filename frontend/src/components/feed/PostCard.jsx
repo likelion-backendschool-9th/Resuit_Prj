@@ -20,12 +20,15 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
   const router = useRouter();
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyNotice, setReplyNotice] = useState('');
+  const [commentCount, setCommentCount] = useState(post.commentCount ?? 0);
   const { me, loggedIn, liked, toggleLike } = useAppState();
   const isLiked = !!liked[post.id];
   const typeBadge = POST_TYPE_BADGE[post.type];
   const job = post.type === 'job' ? post.job : null;
   const detailLink = post.detailLink || (post.source === 'api' ? `/threads/${post.id}` : null);
   const threadLink = post.threadId ? `/threads/${post.threadId}` : null;
+  // 내 글은 세션 이미지를 우선해, 피드 캐시에 옛 URL이 남아 있어도 프로필 변경이 바로 보이게 한다.
+  const avatarSrc = (loggedIn && post.handle === me.handle && me.profileImage) || post.profileImage || undefined;
 
   return (
     <article className={`post-card${detailLink ? ' post-card--linked' : ''}${post.source === 'api' && loggedIn && post.handle === me.handle && onUpdated && onDeleted ? ' post-card--owned' : ''}`} onClick={(event) => {
@@ -33,7 +36,7 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
       if (window.getSelection()?.toString()) return;
       router.push(detailLink);
     }}>
-      <Avatar initial={post.initial} color={post.av} company={post.company} src={post.profileImage} />
+      <Avatar initial={post.initial} color={post.av} company={post.company} src={avatarSrc} />
       <div className="post-card__body">
         <header className="post-card__head">
           <strong>{post.author}</strong>
@@ -69,7 +72,7 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
         {post.source === 'api' && <>
           <div className="post-card__actions">
             <button type="button" className="post-card__action" aria-label="댓글 작성" onClick={() => { setReplyNotice(''); setReplyOpen(true); }}>
-              <Icon name="msg" size={20} /><span>{post.commentCount ?? 0}</span>
+              <Icon name="msg" size={20} /><span>{commentCount}</span>
             </button>
             <button type="button" className="post-card__action" aria-label="리트윗 준비 중" title="리트윗 준비 중" disabled>
               <Icon name="repeat" size={20} />
@@ -77,7 +80,13 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
             <LikeButton post={post} />
           </div>
           {replyNotice && <span className="small muted" role="status">{replyNotice}</span>}
-          {replyOpen && <CommentModal post={post} onClose={(saved) => { setReplyOpen(false); if (saved === true) setReplyNotice('댓글을 등록했어요. 상세 게시글에서 확인할 수 있어요.'); }} />}
+          {replyOpen && <CommentModal post={post} onClose={(saved) => {
+            setReplyOpen(false);
+            if (saved === true) {
+              setCommentCount((count) => count + 1);
+              setReplyNotice('댓글을 등록했어요. 상세 게시글에서 확인할 수 있어요.');
+            }
+          }} />}
         </>}
         {post.source !== 'api' && <div className="post-card__actions">
           <button type="button" className="post-card__action" aria-label="댓글 보기" disabled={!threadLink} onClick={() => router.push(threadLink)}>

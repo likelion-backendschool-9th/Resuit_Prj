@@ -8,6 +8,7 @@ import com.newlecture.resuit.entity.FeedbackRequestSection;
 import com.newlecture.resuit.entity.TargetResume;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommonResumeRepository;
+import com.newlecture.resuit.repository.FeedbackCommentRepository;
 import com.newlecture.resuit.repository.FeedbackRequestRepository;
 import com.newlecture.resuit.repository.FeedbackRequestSectionRepository;
 import com.newlecture.resuit.repository.TargetResumeRepository;
@@ -37,6 +38,7 @@ public class FeedbackRequestServiceImpl implements FeedbackRequestService {
     private static final Set<String> SECTIONS = Set.of("BASIC", "SKILLS", "PROJECTS", "AWARDS", "INTRODUCTION", "ANSWERS");
 
     private final FeedbackRequestRepository requests;
+    private final FeedbackCommentRepository comments;
     private final FeedbackRequestSectionRepository sections;
     private final CommonResumeRepository commonResumes;
     private final TargetResumeRepository targetResumes;
@@ -80,14 +82,16 @@ public class FeedbackRequestServiceImpl implements FeedbackRequestService {
         return FeedbackRequestResponse.of(saved, sectionTypes);
     }
 
-    // 행을 지우지 않고 취소 시각만 남긴다. 이미 달린 피드백 댓글은 그대로 둔다. 두 번 취소해도 결과는 같다.
+    // 댓글이 없는 요청만 취소한다. 취소 이력은 행을 지우지 않고 시각으로 남긴다.
     @Override
     @Transactional
     public void cancel(Long requestId, String username) {
         var user = currentUser(username);
         if (requestId == null || requestId <= 0) throw new FeedbackRequestNotFoundException();
-        var request = requests.findById(requestId).orElseThrow(FeedbackRequestNotFoundException::new);
+        var request = requests.findForAcceptance(requestId).orElseThrow(FeedbackRequestNotFoundException::new);
         if (!request.getUser().getId().equals(user.getId())) throw new FeedbackRequestForbiddenException();
+        if (request.isCanceled()) return;
+        if (comments.existsByFeedbackRequest_Id(requestId)) throw new FeedbackRequestHasCommentsException();
         request.cancel(LocalDateTime.now().truncatedTo(ChronoUnit.MICROS));
     }
 

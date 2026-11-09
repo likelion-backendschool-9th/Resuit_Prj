@@ -111,9 +111,19 @@ export default function ResumesPage() {
   // 피드백 요청(3.2)과 취소(3.3). 진행 중인 요청 ID로 요청 상태를 판단한다
   const toggleRequest = (r) => run(r.id, async () => {
     let requestId = null;
-    if (r.feedbackRequestId) await cancelFeedbackRequest(r.feedbackRequestId);
-    else requestId = (await createFeedbackRequest({ commonResumeId: r.id })).id;
-    setCommonResumes((list) => list.map((x) => (x.id === r.id ? { ...x, feedbackRequestId: requestId } : x)));
+    if (r.feedbackRequestId) {
+      try {
+        await cancelFeedbackRequest(r.feedbackRequestId);
+      } catch (err) {
+        if (err.code === 'FEEDBACK_REQUEST_HAS_COMMENTS') {
+          setCommonResumes((list) => list.map((x) => (x.id === r.id
+            ? { ...x, feedbackRequestHasComments: true } : x)));
+        }
+        throw err;
+      }
+    } else requestId = (await createFeedbackRequest({ commonResumeId: r.id })).id;
+    setCommonResumes((list) => list.map((x) => (x.id === r.id
+      ? { ...x, feedbackRequestId: requestId, feedbackRequestHasComments: false } : x)));
   });
 
   return (
@@ -175,9 +185,10 @@ export default function ResumesPage() {
                     </div>
                     <div className="row-wrap">
                       <Button variant="outline" size="mid" to={`/resumes/common/edit?id=${r.id}`}>편집</Button>
-                      <Button variant={requested ? 'outline' : 'primary'} size="mid" aria-pressed={requested} onClick={() => toggleRequest(r)} disabled={busy}>
+                      <Button variant={requested ? 'outline' : 'primary'} size="mid" aria-pressed={requested} onClick={() => toggleRequest(r)} disabled={busy || (requested && r.feedbackRequestHasComments)}>
                         {requested ? '요청 취소' : '피드백 요청'}
                       </Button>
+                      {requested && r.feedbackRequestHasComments && <span className="small muted">댓글이 달린 요청은 취소할 수 없어요.</span>}
                       <IconButton label={`「${r.title}」 삭제`} className="common-resume__remove" onClick={() => removeCommon(r.id)} disabled={busy}><Icon name="trash" size={16} /></IconButton>
                     </div>
                   </div>
