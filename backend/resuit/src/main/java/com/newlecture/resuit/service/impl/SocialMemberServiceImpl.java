@@ -47,6 +47,12 @@ public class SocialMemberServiceImpl implements SocialMemberService {
         String subject = text(profile.get(provider.equals("google") ? "sub" : "id"));
         if (subject == null || subject.length() > 255) throw new OAuth2AuthenticationException("missing_subject");
 
+        // PostgreSQL에서만 동시 첫 로그인 직렬화. H2(local)에는 해당 함수가 없다.
+        if (datasourceUrl.contains("postgresql")) {
+            entityManager.createNativeQuery("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))")
+                .setParameter("key", provider + ":" + subject).getSingleResult();
+        }
+
         OAuthLinkSession.Intent linkIntent = currentLinkIntent();
         if (linkIntent != null) {
             var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -62,18 +68,11 @@ public class SocialMemberServiceImpl implements SocialMemberService {
             return linkExistingUser(linkIntent.username(), provider, subject);
         }
 
-        // PostgreSQL에서만 동시 첫 로그인 직렬화. H2(local)에는 해당 함수가 없다.
-        if (datasourceUrl.contains("postgresql")) {
-            entityManager.createNativeQuery("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))")
-                .setParameter("key", provider + ":" + subject).getSingleResult();
-        }
-
         String preferredUsername = preferredUsername(provider, profile);
         String nickname = preferredNickname(profile, preferredUsername);
 
         return accounts.findByProviderAndSubject(provider, subject).map(account -> {
             User user = account.getUser();
-            upgradeGeneratedUsername(user, preferredUsername);
             return user.getUsername();
         }).orElseGet(() -> {
             var user = users.save(User.builder()
@@ -87,7 +86,7 @@ public class SocialMemberServiceImpl implements SocialMemberService {
     }
 
     private String linkExistingUser(String username, String provider, String subject) {
-        User current = users.findByUsername(username)
+        User current = users.findWithLockByUsername(username)
                 .orElseThrow(() -> oauthError("link_user_missing", "연결할 로그인 세션 회원을 찾을 수 없습니다."));
 
         var sameProvider = accounts.findByUser_IdAndProvider(current.getId(), provider);
@@ -103,14 +102,9 @@ public class SocialMemberServiceImpl implements SocialMemberService {
             SocialAccount account = existing.get();
             User owner = account.getUser();
             if (owner == null || !owner.getId().equals(current.getId())) {
-                account.assignUser(current);
+                throw oauthError("already_linked", "이미 다른 회원에 연결된 소셜 계정입니다. 기존 계정으로 로그인해 주세요.");
             }
             return current.getUsername();
-        }
-
-        if (datasourceUrl.contains("postgresql")) {
-            entityManager.createNativeQuery("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))")
-                .setParameter("key", "link:" + provider + ":" + subject).getSingleResult();
         }
 
         accounts.save(SocialAccount.builder().provider(provider).subject(subject).user(current).build());
@@ -137,17 +131,6 @@ public class SocialMemberServiceImpl implements SocialMemberService {
             }
         }
         return OAuthLinkSession.read(servletAttrs.getRequest(), linkSecret);
-    }
-
-    private void upgradeGeneratedUsername(User user, String preferred) {
-        String current = user.getUsername();
-        if (current == null || !current.startsWith("u_") || !current.substring(2).matches("[0-9a-fA-F]{32}")) {
-            return;
-        }
-        String next = allocateUsername(preferred);
-        if (!next.equals(current)) {
-            user.changeUsername(next);
-        }
     }
 
     private String preferredUsername(String provider, Map<?, ?> profile) {

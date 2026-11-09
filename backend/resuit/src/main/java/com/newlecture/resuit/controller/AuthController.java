@@ -3,9 +3,10 @@ package com.newlecture.resuit.controller;
 import com.newlecture.resuit.config.OAuthLinkSession;
 import com.newlecture.resuit.config.SocialClientConfiguration;
 import com.newlecture.resuit.dto.SessionMemberResponse;
-import com.newlecture.resuit.entity.SocialAccount;
-import com.newlecture.resuit.repository.SocialAccountRepository;
-import com.newlecture.resuit.repository.UserRepository;
+import com.newlecture.resuit.dto.AuthAccountResponse;
+import com.newlecture.resuit.dto.PasswordSetupRequest;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestBody;
 import com.newlecture.resuit.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,8 +37,6 @@ public class AuthController {
     private static final Set<String> PROVIDERS = Set.of("google", "github", "naver");
 
     private final AuthService authService;
-    private final UserRepository users;
-    private final SocialAccountRepository socialAccounts;
     private final SocialClientConfiguration.Clients clients;
 
     @Value("${resuit.integration.token-secret:}")
@@ -45,25 +44,20 @@ public class AuthController {
 
     public record Provider(String id, boolean enabled, String loginUrl) {}
     public record Session(boolean authenticated, SessionMemberResponse user, List<Provider> providers,
-            List<String> linkedProviders, String csrfHeader, String csrfToken) {}
+            List<String> linkedProviders, boolean passwordLoginEnabled, String csrfHeader, String csrfToken) {}
     public record LinkStartResponse(String authorizationUrl) {}
 
     @GetMapping("/session")
     public ResponseEntity<Session> session(Principal principal, CsrfToken csrf) {
-        var member = principal == null ? null : authService.findSessionMember(principal.getName()).orElse(null);
+        var account = principal == null ? null : authService.findAccount(principal.getName()).orElse(null);
+        var member = account == null ? null : account.user();
         var providers = List.of("google", "github", "naver").stream().map(provider ->
             new Provider(provider, clients.providers().contains(provider), loginUrl(provider))).toList();
-        List<String> linked = List.of();
-        if (member != null) {
-            linked = socialAccounts.findByUser_Id(member.id()).stream()
-                    .map(SocialAccount::getProvider)
-                    .sorted()
-                    .toList();
-        }
+        List<String> linked = account == null ? List.of() : account.linkedProviders();
         String csrfHeader = csrf == null ? null : csrf.getHeaderName();
         String csrfToken = csrf == null ? null : csrf.getToken();
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-            .body(new Session(member != null, member, providers, linked, csrfHeader, csrfToken));
+            .body(new Session(member != null, member, providers, linked, account != null && account.passwordLoginEnabled(), csrfHeader, csrfToken));
     }
 
     @PostMapping("/link/{provider}")
@@ -79,14 +73,10 @@ public class AuthController {
         if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
         }
-        var user = users.findByUsername(principal.getName())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."));
-        if (socialAccounts.findByUser_IdAndProvider(user.getId(), normalized).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 연결된 제공자입니다.");
-        }
-        OAuthLinkSession.store(request, response, user.getUsername(), normalized, linkSecret);
+        authService.validateSocialLink(principal.getName(), normalized);
+        OAuthLinkSession.store(request, response, principal.getName(), normalized, linkSecret);
         String token = URLEncoder.encode(
-                OAuthLinkSession.issue(user.getUsername(), normalized, linkSecret), StandardCharsets.UTF_8);
+                OAuthLinkSession.issue(principal.getName(), normalized, linkSecret), StandardCharsets.UTF_8);
         return new LinkStartResponse(loginUrl(normalized) + "?link=" + token);
     }
 
@@ -102,17 +92,16 @@ public class AuthController {
         if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
         }
-        var user = users.findByUsername(principal.getName())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."));
-        long count = socialAccounts.countByUser_Id(user.getId());
-        if (count <= 1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "마지막 로그인 수단은 해제할 수 없습니다.");
-        }
-        SocialAccount account = socialAccounts.findByUser_IdAndProvider(user.getId(), normalized)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "연결된 제공자가 없습니다."));
-        socialAccounts.delete(account);
+        authService.unlinkSocialAccount(principal.getName(), normalized);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/me/password")
+    public ResponseEntity<AuthAccountResponse> setupPassword(
+            Principal principal, @Valid @RequestBody PasswordSetupRequest request) {
+        if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(authService.setupPassword(principal.getName(), request));
     }
 
     private static String requireProvider(String provider) {

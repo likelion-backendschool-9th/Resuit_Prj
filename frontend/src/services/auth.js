@@ -72,3 +72,21 @@ export async function unlinkSocialProvider(provider) {
     throw new Error(body.detail || body.message || '계정 연결을 해제하지 못했어요.');
   }
 }
+
+/** 현재 소셜 회원에 첫 비밀번호를 설정한다. 기존 비밀번호 변경 API가 아니다. */
+export async function setupPasswordLogin(password) {
+  const response = await authenticatedFetch('/api/v1/auth/me/password', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  if (!response.ok) {
+    const messages = {
+      400: '비밀번호 형식과 소셜 계정 연결 상태를 확인해 주세요.',
+      401: '로그인 후 다시 시도해 주세요.',
+      403: '인증 정보가 만료되었어요. 새로고침 후 다시 시도해 주세요.',
+      409: '이미 비밀번호 로그인이 설정되어 있어요. 새로고침해 주세요.',
+    };
+    throw new Error(messages[response.status] || '비밀번호 설정을 완료하지 못했어요. 다시 시도해 주세요.');
+  }
+  return response.json();
+}

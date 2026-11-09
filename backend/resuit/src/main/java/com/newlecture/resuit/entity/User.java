@@ -73,6 +73,15 @@ public class User extends BaseTimeEntity {
         if (widgets != null) this.widgets = widgets;
     }
 
+    public boolean hasPasswordLogin() {
+        return password != null && !password.isBlank();
+    }
+
+    public void enablePasswordLogin(String encodedPassword) {
+        if (hasPasswordLogin()) throw new IllegalStateException("비밀번호 로그인이 이미 설정되어 있습니다.");
+        this.password = encodedPassword;
+    }
+
     public void changeUsername(String username) {
         this.username = username;
     }
