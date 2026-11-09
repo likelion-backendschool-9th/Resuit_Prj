@@ -670,7 +670,7 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
             {blog?.connected ? `블로그 연결됨 · ${blog.platform} · ${blog.externalId}` : '블로그 RSS 미연결'}
           </div>
           <p className="small muted">기여 기록은 하루 한 번, 블로그 새 글은 RSS로 주기적으로 가져와요.</p>
-          <Link href={isOwner ? '/setting/integrations' : '/onboarding'} className="text-link">연동 관리</Link>
+          <Link href={isOwner ? '/setting/integrations' : '/login'} className="text-link">연동 관리</Link>
         </section>
 
         <section className="card" style={{ gap: 8 }}>

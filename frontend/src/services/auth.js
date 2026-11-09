@@ -9,9 +9,41 @@ export async function authenticatedFetch(url, options = {}) {
   const headers = new Headers(options.headers);
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
     const session = await getAuthSession();
-    headers.set(session.csrfHeader, session.csrfToken);
+    if (session.csrfHeader && session.csrfToken) headers.set(session.csrfHeader, session.csrfToken);
   }
   return fetch(url, { ...options, headers, credentials: 'same-origin' });
+}
+
+async function submitCredentials(path, values) {
+  let response;
+  try {
+    response = await authenticatedFetch(`/api/v1/users/${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values),
+    });
+  } catch {
+    throw new Error('서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
+  }
+  if (!response.ok) {
+    const messages = {
+      400: '입력 내용을 확인해 주세요. 아이디, 이메일과 비밀번호 형식이 올바른지 확인해 주세요.',
+      401: path === 'login' ? '아이디 또는 비밀번호가 일치하지 않아요.' : '보안 정보를 확인하지 못했어요. 새로고침 후 다시 시도해 주세요.',
+      403: '보안 정보가 만료되었어요. 다시 시도해 주세요.',
+      409: '이미 사용 중인 아이디예요. 다른 아이디를 입력해 주세요.',
+      429: '요청이 많아요. 잠시 후 다시 시도해 주세요.',
+    };
+    throw new Error(messages[response.status] || '요청을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.');
+  }
+  return response.json();
+}
+
+export function loginWithPassword(values) {
+  return submitCredentials('login', values);
+}
+
+export function signupWithPassword(values) {
+  return submitCredentials('signup', values);
 }
 
 export async function logoutSession() {

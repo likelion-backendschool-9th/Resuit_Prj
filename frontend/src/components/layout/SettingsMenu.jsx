@@ -15,7 +15,7 @@ export default function SettingsMenu({ onClose }) {
     try { await logout(); }
     catch (err) { setError(err.message); return; }
     onClose();
-    router.push('/onboarding');
+    router.push('/login');
   };
 
   return (
@@ -31,7 +31,7 @@ export default function SettingsMenu({ onClose }) {
       <hr className="settings-menu__divider" />
       <Link href="/setting/profile" className="settings-menu__item" onClick={onClose}>프로필 편집</Link>
       <Link href="/setting/integrations" className="settings-menu__item" onClick={onClose}>연동 관리 (GitHub · 블로그)</Link>
-      {!loggedIn && <Link href="/onboarding" className="settings-menu__item" onClick={onClose}>로그인</Link>}
+      {!loggedIn && <Link href="/login" className="settings-menu__item" onClick={onClose}>로그인</Link>}
       {loggedIn && <button type="button" className="settings-menu__item settings-menu__item--danger" onClick={signOut}>로그아웃</button>}
     </div>
   );

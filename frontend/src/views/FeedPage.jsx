@@ -51,7 +51,7 @@ export default function FeedPage({ initialTimeline }) {
         {followingUnavailable && <div className="empty">
           {authLoading ? <p role="status">로그인 상태를 확인하고 있어요.</p> : <>
             <p>팔로잉 피드는 로그인 후 볼 수 있어요.</p>
-            <Button to="/onboarding" variant="outline">로그인</Button>
+            <Button to="/login" variant="outline">로그인</Button>
           </>}
         </div>}
         {posts.map((p) => <PostCard key={p.id} post={p} onUpdated={upsertPost} onDeleted={removePost} />)}
