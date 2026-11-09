@@ -79,3 +79,24 @@ JobController의 IllegalArgumentException은 다음 형태의 **HTTP 400**으로
 ## 제출 이력서 보존
 
 새 지원은 제출 당시 내용·특화 문항과 사진을 별도로 보존한다. 원본을 수정해도 제출 자료는 변하지 않는다. 원본 삭제 후에는 본인 지원 조회의 `resumeId`가 null일 수 있으나 `applied`와 `resumeType`은 유지된다. 스냅샷은 지원일부터 3개월간만 조회·복원할 수 있다. 상세 컬럼, 복원 API, 사진 저장과 정리 정책은 [RESUME_SNAPSHOTS.md](RESUME_SNAPSHOTS.md)를 참고한다.
+
+## 기업 지원현황 조회
+
+모든 기업 지원현황 API는 `JobController`에서 제공하고 `Cache-Control: no-store`를 사용한다. 로그인 사용자 역할이 COMPANY여야 하며, DB에서 공고 소유권을 확인한다. 다른 기업 공고는 403, 초안·삭제·존재하지 않는 공고는 404이다.
+
+| 메서드 | 경로 | 응답 |
+|---|---|---|
+| GET | `/api/v1/jobs/me/posted?page=0&size=20` | `Page<PostedJobSummary>`: 게시 공고와 `applicationCount` |
+| GET | `/api/v1/jobs/me/posted/{jobId}/applications?page=0&size=20` | `{job, applications}`: 공고 요약과 `Page<CompanyApplicantSummary>` |
+| GET | `/api/v1/jobs/me/posted/{jobId}/applications/{applicationId}` | `{job, application, resume}`: 공고 요약, 지원자, 제출 스냅샷 |
+| GET | `/api/v1/jobs/me/posted/{jobId}/applications/{applicationId}/photo` | 권한 검증 후 보존 사진 바이너리 |
+
+목록의 page는 0 이상, size는 1~100이다. 게시 공고는 OPEN/CLOSED만 포함하며 최신 등록순(createdAt DESC, id DESC)으로 정렬한다. 기존 `/me`는 초안까지 포함한 작성 공고 관리용이고, `/me/posted`는 지원자 수가 필요한 지원현황용이다. 지원자 수는 페이지에 포함된 공고 ID 전체를 한 번에 집계하며 공고마다 반복 조회하지 않는다.
+
+지원자 목록과 인원수는 `status=APPLIED AND canceled_at IS NULL` 기준으로 일치한다. 지원자는 appliedAt DESC, id DESC 순서다. 만료된 제출 자료도 지원 기록·인원수에는 남는다. 목록의 `snapshotAvailable=false`이면 프론트는 열람 버튼을 비활성화한다. 스냅샷 없는 자료를 원본 이력서로 대체하지 않는다.
+
+지원 상세와 사진 API는 공고-지원 내역 연결, 현재 취소 여부, 스냅샷 만료를 매번 확인한다. 취소된 지원·다른 공고의 applicationId는 404이며, 보존 기간이 만료되거나 스냅샷이 없는 경우 410이다. 파일 읽기는 스냅샷 정리와 같은 지원 행 잠금을 사용한다. 사진 URL은 기업용 API로 반환하고 원본 사진 경로나 개인 복원용 API는 사용하지 않는다.
+
+`JobService`는 게시 공고 조회와 공고 관리 권한을, `JobApplicationService`는 지원자·스냅샷·사진 접근을 담당한다. `JobRepository`는 공고를 조회하고 `JobApplicationRepository`는 지원 집계 및 지원자 페이지를 조회한다. `MediaService`의 기존 보존 사진 읽기를 재사용한다. 컨트롤러는 DTO만 반환하며 사진 응답만 바이너리다.
+
+지원자 목록에 공고 요약을, 상세에 지원자와 제출 자료를 함께 내려 화면 진입 시 프로필·공고·현재 이력서 API를 추가 호출하지 않는다. 사진은 별도의 인증된 바이너리 리소스로 요청한다.

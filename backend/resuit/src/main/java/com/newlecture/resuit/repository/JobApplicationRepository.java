@@ -3,9 +3,11 @@ package com.newlecture.resuit.repository;
 import com.newlecture.resuit.entity.JobApplication;
 import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -16,6 +18,29 @@ import org.springframework.data.repository.query.Param;
 public interface JobApplicationRepository extends JpaRepository<JobApplication, Long> {
 	boolean existsByJobIdAndUserIdAndCanceledAtIsNull(Long jobId, UUID userId);
 	Optional<JobApplication> findByJobIdAndUserIdAndCanceledAtIsNull(Long jobId, UUID userId);
+    @Query("""
+        select a.job.id as jobId, count(a) as applicationCount from JobApplication a
+        where a.job.id in :jobIds and a.canceledAt is null and a.status = 'APPLIED'
+        group by a.job.id
+        """)
+    List<ApplicationCount> countActiveByJobs(@Param("jobIds") Collection<Long> jobIds);
+    interface ApplicationCount {
+        Long getJobId();
+        long getApplicationCount();
+    }
+
+    @Query(value = """
+        select a from JobApplication a join fetch a.user
+        where a.job.id = :jobId and a.canceledAt is null and a.status = 'APPLIED'
+        order by a.appliedAt desc, a.id desc
+        """, countQuery = """
+        select count(a) from JobApplication a
+        where a.job.id = :jobId and a.canceledAt is null and a.status = 'APPLIED'
+        """)
+    Page<JobApplication> findActiveApplicants(@Param("jobId") Long jobId, Pageable pageable);
+
+    long countByJobIdAndCanceledAtIsNullAndStatus(Long jobId, String status);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from JobApplication a where a.id = :id")
     Optional<JobApplication> findLockedById(@Param("id") Long id);
