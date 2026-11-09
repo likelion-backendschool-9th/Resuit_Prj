@@ -13,12 +13,18 @@ import TocLink from '../components/resume/TocLink.jsx';
 import BasicInfoFields from '../components/resume/BasicInfoFields.jsx';
 import SkillsEditor from '../components/resume/SkillsEditor.jsx';
 import { TextAreaField } from '../components/resume/ResumeFields.jsx';
+import ProjectsEditor from '../components/resume/ProjectsEditor.jsx';
+import AwardsEditor from '../components/resume/AwardsEditor.jsx';
+import { normalizeContent, cleanContent } from '../components/resume/resumeContent.js';
 import './ResumeEditPage.css';
 
 const MAX_INTRODUCTION = 2000;
-const trimValues = (obj) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v]));
 
-const projectKey = (p, i) => p.id || `p${i}`;
+// 프로젝트의 selected가 없으면 이 회사에 제출하는 것으로 본다
+const withSelected = (content) => ({
+  ...content,
+  ...(Array.isArray(content.projects) && { projects: content.projects.map((p) => ({ ...p, selected: p.selected !== false })) })
+});
 
 // 서버 응답을 화면에서 사용하는 모양으로 맞춘다
 function fromApi(detail) {
@@ -30,7 +36,7 @@ function fromApi(detail) {
     header: `${detail.job.companyName} · ${detail.job.title}`,
     back: { href: '/resumes', label: '내 이력서로 돌아가기' },
     blank: !detail.commonResumeId,
-    content: detail.content || {},
+    content: withSelected(normalizeContent(detail.content || {})),
     questions: detail.questions.map((q) => ({ key: q.id, text: q.content, limit: q.charLimit || undefined })),
     answers: Object.fromEntries((detail.content?.answers || []).map((a) => [a.questionId, a.answer || '']))
   };
@@ -43,7 +49,6 @@ export default function ResumeEditPage({ id, jobId, mode }) {
   const [doc, setDoc] = useState(null);
   const [error, setError] = useState('');
   const [answers, setAnswers] = useState({});
-  const [picked, setPicked] = useState({});
   const [savedLabel, setSavedLabel] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeToc, setActiveToc] = useState('q1');
@@ -54,7 +59,6 @@ export default function ResumeEditPage({ id, jobId, mode }) {
     const show = (next) => {
       setDoc(next);
       setAnswers(next.answers);
-      setPicked(Object.fromEntries((next.content.projects || []).map((p, i) => [projectKey(p, i), p.selected !== false])));
     };
 
     async function load() {
@@ -96,7 +100,7 @@ export default function ResumeEditPage({ id, jobId, mode }) {
   const projects = content.projects || [];
   const done = questions.filter((q) => (answers[q.key] || '').trim()).length;
   const total = questions.length;
-  const pickedCount = projects.filter((p, i) => picked[projectKey(p, i)]).length;
+  const pickedCount = projects.filter((p) => p.selected !== false).length;
   const toc = { active: activeToc, onPick: setActiveToc };
   // 특화 이력서는 시작할 때 복사한 별도 내용이라 여기서 고쳐도 공통 이력서는 바뀌지 않는다
   const changeContent = (key, value) => setDoc((d) => ({ ...d, content: { ...d.content, [key]: value } }));
@@ -106,11 +110,9 @@ export default function ResumeEditPage({ id, jobId, mode }) {
     if (!doc.id) { setSavedLabel('예시 화면이라 저장되지 않아요'); return false; }
     setSaving(true);
     try {
+      // 공백을 지우고 빈 프로젝트·수상은 뺀다. 프로젝트의 제출 여부(selected)는 그대로 남는다
       const next = {
-        ...content,
-        ...(content.basic && { basic: trimValues(content.basic) }),
-        ...(content.introduction !== undefined && { introduction: String(content.introduction ?? '').trim() }),
-        projects: projects.map((p, i) => ({ ...p, selected: !!picked[projectKey(p, i)] })),
+        ...cleanContent(content),
         answers: questions.map((q) => ({ questionId: q.key, answer: answers[q.key] || '' }))
       };
       await updateTargetResume(doc.id, { content: next });
@@ -179,6 +181,7 @@ export default function ResumeEditPage({ id, jobId, mode }) {
           <TocLink target="basic" {...toc}>기본 정보</TocLink>
           <TocLink target="skills" {...toc}>기술 스택</TocLink>
           <TocLink target="projects" {...toc}>프로젝트</TocLink>
+          <TocLink target="awards" {...toc}>수상</TocLink>
           <TocLink target="introduction" {...toc}>자기소개</TocLink>
           <div className="resume-edit__toc-group is-req">회사 요구 문항</div>
           {questions.map((q, i) => <TocLink key={q.key} target={`q${i + 1}`} {...toc}>문항 {i + 1}</TocLink>)}
@@ -201,32 +204,16 @@ export default function ResumeEditPage({ id, jobId, mode }) {
           </section>
 
           <section id="projects" className="resume-block">
-            <div className="resume-block__head"><h2>프로젝트</h2>{!blank && projects.length > 0 && <Badge tone="loaded">공통에서 불러옴 · {projects.length}개 중 {pickedCount}개 선택</Badge>}</div>
-            {!projects.length ? <span className="small muted">아직 작성하지 않았어요</span> : projects.map((p, i) => {
-              const key = projectKey(p, i);
-              return (
-                <div key={key} className="resume-project">
-                  <label className="resume-project__check">
-                    <input type="checkbox" checked={!!picked[key]} onChange={(e) => setPicked((m) => ({ ...m, [key]: e.target.checked }))} />
-                    <span><span className="bold" style={{ display: 'block' }}>{p.title}</span><span className="small muted">{p.desc}</span></span>
-                  </label>
-                  {p.evidence && (
-                    <div className="resume-project__evidence">
-                      <span className="xs bold muted">근거</span>
-                      {p.evidence.map((ev) => {
-                        const type = String(ev.type).toLowerCase();
-                        return (
-                          <Link key={ev.label} href="/profile" className={`evidence-chip evidence-chip--${type}`}>
-                            <Icon name={type === 'repo' ? 'repo' : 'rss'} size={14} />{ev.label}
-                          </Link>
-                        );
-                      })}
-                      {p.canAttach && <button type="button" className="evidence-chip evidence-chip--add">레포 · 블로그 글 첨부</button>}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            <div className="resume-block__head">
+              <h2>프로젝트</h2>
+              {projects.length > 0 && <Badge tone="loaded">{blank ? '' : '공통에서 불러옴 · '}{projects.length}개 중 {pickedCount}개 제출</Badge>}
+            </div>
+            <ProjectsEditor selectable projects={projects} onChange={(v) => changeContent('projects', v)} />
+          </section>
+
+          <section id="awards" className="resume-block">
+            <div className="resume-block__head"><h2>수상</h2>{!blank && content.awards?.length > 0 && <Badge tone="loaded">공통에서 불러옴</Badge>}</div>
+            <AwardsEditor awards={content.awards || []} onChange={(v) => changeContent('awards', v)} />
           </section>
 
           <section id="introduction" className="resume-block">

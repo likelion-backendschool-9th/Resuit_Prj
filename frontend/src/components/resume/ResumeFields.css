@@ -11,6 +11,7 @@
 .resume-skill-add .input { flex: 1; min-width: 0; }
 
 .resume-item { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); }
+.resume-item .check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
 .resume-item__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .resume-item__head .icon-btn:disabled { opacity: 0.35; cursor: default; }
 .resume-item__head .icon-btn:disabled:hover { background: none; }

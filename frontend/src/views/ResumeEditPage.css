@@ -50,10 +50,6 @@
 .resume-block__foot { display: flex; justify-content: space-between; gap: 12px; }
 .resume-skill { font-size: 14px; padding: 6px 12px; border-radius: var(--radius-sm); background: var(--bg-muted); }
 
-.resume-project { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); }
-.resume-project__check { display: flex; gap: 12px; align-items: flex-start; }
-.resume-project__check input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); }
-.resume-project__evidence { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-left: 32px; }
 
 .evidence-chip {
   display: inline-flex;
@@ -71,7 +67,6 @@
 .evidence-chip--blog { background: var(--blog-bg); color: var(--blog); }
 .evidence-chip--repo:hover { color: var(--repo); }
 .evidence-chip--blog:hover { color: var(--blog); }
-.evidence-chip--add { border: 1px dashed var(--accent); background: var(--bg); color: var(--accent-text); font-weight: 700; }
 
 
 .resume-edit__actions { flex-wrap: wrap; justify-content: flex-end; }
