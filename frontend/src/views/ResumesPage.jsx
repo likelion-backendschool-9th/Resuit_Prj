@@ -159,7 +159,7 @@ export default function ResumesPage() {
                       <div className="small" style={{ color: 'var(--accent-text)', fontWeight: 500 }}>받은 피드백 {r.feedbackCount}개{r.targetResumeCount ? ` · 특화 이력서 ${r.targetResumeCount}개의 베이스` : ''}</div>
                     </div>
                     <div className="row-wrap">
-                      <Button variant="outline" size="mid" to="/resumes/edit?job=1&mode=base">편집</Button>
+                      <Button variant="outline" size="mid" to={`/resumes/common/edit?id=${r.id}`}>편집</Button>
                       <Button variant={requested ? 'outline' : 'primary'} size="mid" aria-pressed={requested} onClick={() => toggleRequest(r)} disabled={busy}>
                         {requested ? '요청 취소' : '피드백 요청'}
                       </Button>
