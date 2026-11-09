@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getCommonResume } from '../services/resumes.js';
+import { getCommonResume, updateCommonResume } from '../services/resumes.js';
+import Button from '../components/common/Button.jsx';
 import Badge from '../components/common/Badge.jsx';
 import Icon from '../components/common/Icon.jsx';
 import ThemeToggle from '../components/common/ThemeToggle.jsx';
@@ -45,12 +46,43 @@ const normalize = (content) => ({
   ...(Array.isArray(content.awards) && { awards: content.awards.map((a) => (typeof a === 'string' ? { title: a, date: '' } : a)) })
 });
 
+// 서버 응답을 화면에서 고치는 모양({ title, field, content })으로 바꾼다
+const fromDetail = (detail) => ({ title: detail.title, field: detail.field || '', content: normalize(detail.content || {}) });
+
+const trim = (v) => String(v ?? '').trim();
+
+// 저장할 값: 앞뒤 공백을 지우고 이름·내용이 모두 빈 프로젝트와 수상은 뺀다.
+// 화면이 다루지 않는 content 값(프로젝트 근거 등)은 그대로 둔다.
+function toPayload({ title, field, content }) {
+  const { basic, projects, awards, introduction } = content;
+  return {
+    title: title.trim(),
+    field,
+    content: {
+      ...content,
+      ...(basic && { basic: Object.fromEntries(Object.entries(basic).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])) }),
+      ...(projects && { projects: projects.map((p) => ({ ...p, title: trim(p.title), desc: trim(p.desc) })).filter((p) => p.title || p.desc) }),
+      ...(awards && { awards: awards.map((a) => ({ ...a, title: trim(a.title), date: trim(a.date) })).filter((a) => a.title || a.date) }),
+      ...(introduction !== undefined && { introduction: trim(introduction) })
+    }
+  };
+}
+
 // 공통 이력서 편집 (WBS 3.6). 상세(3.8)로 불러와 섹션별로 고친 뒤 수정 API로 저장한다.
 export default function CommonResumeEditPage({ id }) {
   // draft: 화면에서 고치는 중인 { title, field, content }
   const [draft, setDraft] = useState(null);
+  // baseline: 마지막으로 불러오거나 저장한 값. draft와 다르면 저장하지 않은 변경이 있다
+  const [baseline, setBaseline] = useState('');
   const [error, setError] = useState('');
+  const [status, setStatus] = useState({ text: '', alert: false });
+  const [saving, setSaving] = useState(false);
   const [activeToc, setActiveToc] = useState('info');
+
+  const show = (next) => {
+    setDraft(next);
+    setBaseline(JSON.stringify(toPayload(next)));
+  };
 
   useEffect(() => {
     if (!id || !/^\d+$/.test(id)) {
@@ -59,10 +91,21 @@ export default function CommonResumeEditPage({ id }) {
     }
     const controller = new AbortController();
     getCommonResume(id, controller.signal)
-      .then((detail) => setDraft({ title: detail.title, field: detail.field || '', content: normalize(detail.content || {}) }))
+      .then((detail) => show(fromDetail(detail)))
       .catch((err) => { if (!controller.signal.aborted) setError(err.message); });
     return () => controller.abort();
   }, [id]);
+
+  const payload = draft && toPayload(draft);
+  const dirty = !!payload && JSON.stringify(payload) !== baseline;
+
+  // 저장하지 않고 새로고침하거나 창을 닫으면 브라우저가 한 번 묻는다
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const warn = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
 
   if (error || !draft) {
     return (
@@ -76,7 +119,30 @@ export default function CommonResumeEditPage({ id }) {
 
   const { content } = draft;
   const basic = content.basic || {};
-  const done = SECTIONS.filter((s) => s.filled(content)).length;
+  const done = SECTIONS.filter((s) => s.filled(payload.content)).length;
+  const statusText = status.alert ? status.text : dirty ? '저장하지 않은 변경이 있어요' : status.text;
+
+  async function save() {
+    if (!payload.title) {
+      setStatus({ text: '이력서 이름을 입력해 주세요.', alert: true });
+      document.getElementById('resume-title')?.focus();
+      return;
+    }
+    setSaving(true);
+    setStatus({ text: '', alert: false });
+    try {
+      show(fromDetail(await updateCommonResume(id, payload)));
+      setStatus({ text: '저장했어요', alert: false });
+    } catch (err) {
+      setStatus({ text: err.message, alert: true });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const confirmLeave = (e) => {
+    if (dirty && !window.confirm('저장하지 않은 내용이 있어요. 저장하지 않고 나갈까요?')) e.preventDefault();
+  };
   const toc = { active: activeToc, onPick: setActiveToc };
   const change = (key, value) => setDraft((d) => ({ ...d, [key]: value }));
   // 화면이 다루지 않는 content 값(프로젝트 근거 등)은 그대로 두고 바꾼 항목만 덮는다
@@ -87,15 +153,19 @@ export default function CommonResumeEditPage({ id }) {
     <div className="resume-edit">
       <header className="resume-edit__bar">
         <div className="resume-edit__bar-in">
-          <Link href="/resumes" className="icon-btn icon-btn--plain" aria-label="내 이력서로 돌아가기"><Icon name="back" /></Link>
+          <Link href="/resumes" className="icon-btn icon-btn--plain" aria-label="내 이력서로 돌아가기" onClick={confirmLeave}><Icon name="back" /></Link>
           <div className="grow" style={{ flexBasis: 320 }}>
             <div className="row" style={{ gap: 6 }}>
               <Badge tone="accent" size="md">공통 이력서</Badge>
               {draft.field && <Badge tone="general" size="md">{FIELD_LABEL[draft.field] || draft.field}</Badge>}
+              <span className="small muted" role={status.alert ? 'alert' : 'status'}>{statusText}</span>
             </div>
             <h1 className="resume-edit__title">{draft.title.trim() || '이름 없는 이력서'}</h1>
           </div>
-          <div className="row"><ThemeToggle /></div>
+          <div className="row">
+            <ThemeToggle />
+            <Button onClick={save} disabled={!dirty || saving}>{saving ? '저장 중…' : '저장'}</Button>
+          </div>
         </div>
       </header>
 
