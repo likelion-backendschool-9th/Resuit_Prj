@@ -159,6 +159,7 @@ export default function TalentCard({ person, loadResume, sendOffer }) {
         {open && (
           <div className="talent-card__resume">
             <div className="xs muted">공개 이력서 · {person.resumeTitle}</div>
+            {resume?.photoUrl && <img className="talent-card__photo" src={resume.photoUrl} alt={`${name} 이력서 사진`} />}
             {!resume && !resumeError && <div className="small muted">이력서를 불러오는 중…</div>}
             {resumeError && <p role="alert" className="small talent-card__error">{resumeError}</p>}
             {resume && projects.length === 0 && <div className="small muted">등록한 프로젝트가 없어요.</div>}

@@ -13,6 +13,7 @@ public record TargetResumeDetailResponse(
     Long commonResumeId,
     String title,
     Map<String, Object> content,
+    String photoUrl,
     String status,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
@@ -21,7 +22,7 @@ public record TargetResumeDetailResponse(
         var base = resume.getCommonResume();
         return new TargetResumeDetailResponse(resume.getId(), JobInfo.from(resume.getJob()),
             questions.stream().map(JobInfo.Question::from).toList(),
-            base == null ? null : base.getId(), resume.getTitle(), resume.getContent(),
+            base == null ? null : base.getId(), resume.getTitle(), resume.getContent(), resume.getPhotoUrl(),
             submitted ? "SUBMITTED" : "WRITING", resume.getCreatedAt(), resume.getUpdatedAt());
     }
 }

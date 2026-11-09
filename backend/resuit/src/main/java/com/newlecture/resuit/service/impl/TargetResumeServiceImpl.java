@@ -16,6 +16,7 @@ import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenExceptio
 import com.newlecture.resuit.service.CommonResumeService.ResumeInUseException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
+import com.newlecture.resuit.service.ResumePhotoResolver;
 import com.newlecture.resuit.service.TargetResumeService;
 
 import java.util.LinkedHashMap;
@@ -37,6 +38,8 @@ public class TargetResumeServiceImpl implements TargetResumeService {
     private final TargetResumeRepository resumes;
     private final CommonResumeRepository commonResumes;
     private final UserRepository users;
+    // 사진 경로를 저장할 주소로 바꾼다(임시 업로드 → 정식 폴더).
+    private final ResumePhotoResolver photos;
 
     @Override
     @Transactional(readOnly = true)
@@ -85,6 +88,8 @@ public class TargetResumeServiceImpl implements TargetResumeService {
             .commonResume(base)
             .title(title.length() > MAX_TITLE ? title.substring(0, MAX_TITLE) : title)
             .content(content)
+            // 공통 이력서에서 시작하면 사진도 복사한다. 그 뒤로는 특화 이력서 사진을 따로 바꾼다.
+            .photoUrl(base == null ? null : base.getPhotoUrl())
             .build();
         return TargetResumeDetailResponse.of(resumes.save(resume), resumes.findQuestions(job.getId()), false);
     }
@@ -102,6 +107,9 @@ public class TargetResumeServiceImpl implements TargetResumeService {
         resume.update(
             request.title() == null ? resume.getTitle() : validTitle(request.title()),
             request.content() == null ? resume.getContent() : request.content());
+        // 사진: null이면 그대로, ""이면 삭제, 새로 올렸으면 정식 폴더로 옮긴 주소를 저장한다.
+        String photo = photos.resolve(user.getId(), request.photoUrl());
+        if (photo != null) resume.changePhoto(photo.isEmpty() ? null : photo);
         resumes.flush();
         return TargetResumeDetailResponse.of(resume, questions, isSubmitted(resume, user));
     }

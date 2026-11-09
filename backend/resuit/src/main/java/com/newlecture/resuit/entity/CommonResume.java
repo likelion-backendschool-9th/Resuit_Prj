@@ -33,6 +33,10 @@ public class CommonResume extends BaseTimeEntity {
     @Column(name = "content", columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> content;
 
+    // 이력서 사진 주소(/media/image/{회원ID}/파일). 없으면 null이다.
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
     @Builder.Default
     @Column(name = "is_public", nullable = false)
     private boolean isPublic = false;
@@ -42,6 +46,11 @@ public class CommonResume extends BaseTimeEntity {
         this.title = Objects.requireNonNull(title);
         this.field = field;
         this.content = Objects.requireNonNull(content);
+    }
+
+    // 사진을 바꾸거나(주소) 지운다(null).
+    public void changePhoto(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 
     public void setPublic(boolean isPublic) {

@@ -10,11 +10,12 @@ public record CommonResumeDetailResponse(
     String field,
     boolean isPublic,
     Map<String, Object> content,
+    String photoUrl,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {
     public static CommonResumeDetailResponse from(CommonResume resume) {
         return new CommonResumeDetailResponse(resume.getId(), resume.getTitle(), resume.getField(),
-            resume.isPublic(), resume.getContent(), resume.getCreatedAt(), resume.getUpdatedAt());
+            resume.isPublic(), resume.getContent(), resume.getPhotoUrl(), resume.getCreatedAt(), resume.getUpdatedAt());
     }
 }

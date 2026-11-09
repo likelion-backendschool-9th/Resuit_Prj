@@ -48,12 +48,15 @@ export default function ResumePreview({ type, id, requested = [] }) {
   return (
     <div className="resume-preview">
       {block('BASIC', (
-        <dl className="resume-preview__basic">
-          {BASIC_FIELDS.filter(([k]) => !isEmpty(basic[k])).map(([k, label]) => (
-            <div key={k}><dt className="xs muted">{label}</dt><dd>{basic[k]}</dd></div>
-          ))}
-        </dl>
-      ), BASIC_FIELDS.every(([k]) => isEmpty(basic[k])))}
+        <div className="resume-preview__basic-row">
+          {resume.photoUrl && <img className="resume-preview__photo" src={resume.photoUrl} alt="이력서 사진" />}
+          <dl className="resume-preview__basic">
+            {BASIC_FIELDS.filter(([k]) => !isEmpty(basic[k])).map(([k, label]) => (
+              <div key={k}><dt className="xs muted">{label}</dt><dd>{basic[k]}</dd></div>
+            ))}
+          </dl>
+        </div>
+      ), !resume.photoUrl && BASIC_FIELDS.every(([k]) => isEmpty(basic[k])))}
 
       {block('SKILLS', (
         <div className="row-wrap">{(content.skills || []).map((s) => <span key={s} className="resume-preview__skill">{s}</span>)}</div>

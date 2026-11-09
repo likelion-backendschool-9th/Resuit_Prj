@@ -11,6 +11,7 @@ import Icon from '../components/common/Icon.jsx';
 import ThemeToggle from '../components/common/ThemeToggle.jsx';
 import TocLink from '../components/resume/TocLink.jsx';
 import BasicInfoFields from '../components/resume/BasicInfoFields.jsx';
+import PhotoField from '../components/resume/PhotoField.jsx';
 import SkillsEditor from '../components/resume/SkillsEditor.jsx';
 import { TextAreaField } from '../components/resume/ResumeFields.jsx';
 import ProjectsEditor from '../components/resume/ProjectsEditor.jsx';
@@ -37,6 +38,8 @@ function fromApi(detail) {
     back: { href: '/resumes', label: '내 이력서로 돌아가기' },
     blank: !detail.commonResumeId,
     content: withSelected(normalizeContent(detail.content || {})),
+    // 특화 이력서 사진. 공통 이력서에서 시작하면 그 사진이 복사돼 있다.
+    photoUrl: detail.photoUrl || '',
     questions: detail.questions.map((q) => ({ key: q.id, text: q.content, limit: q.charLimit || undefined })),
     answers: Object.fromEntries((detail.content?.answers || []).map((a) => [a.questionId, a.answer || '']))
   };
@@ -115,7 +118,9 @@ export default function ResumeEditPage({ id, jobId, mode }) {
         ...cleanContent(content),
         answers: questions.map((q) => ({ questionId: q.key, answer: answers[q.key] || '' }))
       };
-      await updateTargetResume(doc.id, { content: next });
+      const saved = await updateTargetResume(doc.id, { content: next, photoUrl: doc.photoUrl || '' });
+      // 방금 올린 사진(tmpImage)은 저장되면 정식 주소로 바뀐다. 다음 저장에 다시 보내지 않도록 바꿔 둔다.
+      setDoc((d) => ({ ...d, photoUrl: saved.photoUrl || '' }));
       setSavedLabel('임시 저장됨 · 방금 전');
       return true;
     } catch (err) {
@@ -195,6 +200,7 @@ export default function ResumeEditPage({ id, jobId, mode }) {
 
           <section id="basic" className="resume-block">
             <div className="resume-block__head"><h2>기본 정보</h2>{!blank && <Badge tone="loaded">공통에서 불러옴</Badge>}</div>
+            <PhotoField value={doc.photoUrl} onChange={(v) => setDoc((d) => ({ ...d, photoUrl: v }))} disabled={saving} />
             <BasicInfoFields basic={content.basic} onChange={(v) => changeContent('basic', v)} />
           </section>
 

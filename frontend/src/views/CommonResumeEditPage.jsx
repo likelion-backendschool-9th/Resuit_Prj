@@ -13,6 +13,7 @@ import TocLink from '../components/resume/TocLink.jsx';
 import { TextField, TextAreaField } from '../components/resume/ResumeFields.jsx';
 import SkillsEditor from '../components/resume/SkillsEditor.jsx';
 import BasicInfoFields from '../components/resume/BasicInfoFields.jsx';
+import PhotoField from '../components/resume/PhotoField.jsx';
 import ProjectsEditor from '../components/resume/ProjectsEditor.jsx';
 import AwardsEditor from '../components/resume/AwardsEditor.jsx';
 import { normalizeContent, cleanContent } from '../components/resume/resumeContent.js';
@@ -34,10 +35,11 @@ const SECTIONS = [
 ];
 
 // 서버 응답을 화면에서 고치는 모양({ title, field, content })으로 바꾼다
-const fromDetail = (detail) => ({ title: detail.title, field: detail.field || '', content: normalizeContent(detail.content || {}) });
+const fromDetail = (detail) => ({ title: detail.title, field: detail.field || '', content: normalizeContent(detail.content || {}), photoUrl: detail.photoUrl || '' });
 
 // 저장할 값: 이름과 content의 앞뒤 공백을 지우고 빈 프로젝트·수상은 뺀다
-const toPayload = ({ title, field, content }) => ({ title: title.trim(), field, content: cleanContent(content) });
+// photoUrl: ''이면 사진 없음, tmpImage/...면 서버가 정식 폴더로 옮겨 저장한다.
+const toPayload = ({ title, field, content, photoUrl }) => ({ title: title.trim(), field, content: cleanContent(content), photoUrl: photoUrl || '' });
 
 // 저장 시각을 "방금 전", "3분 전"처럼 보여 준다
 function agoText(time) {
@@ -208,6 +210,7 @@ export default function CommonResumeEditPage({ id }) {
 
           <section id="basic" className="resume-block">
             <div className="resume-block__head"><h2>기본 정보</h2></div>
+            <PhotoField value={draft.photoUrl} onChange={(v) => change('photoUrl', v)} disabled={saving} />
             <BasicInfoFields basic={basic} onChange={(v) => changeContent('basic', v)} />
           </section>
 

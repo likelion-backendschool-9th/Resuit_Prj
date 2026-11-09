@@ -13,6 +13,7 @@ import com.newlecture.resuit.repository.FeedbackRequestSectionRepository;
 import com.newlecture.resuit.repository.FeedbackBoardRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CommonResumeService;
+import com.newlecture.resuit.service.ResumePhotoResolver;
 import com.newlecture.resuit.service.CommonResumeService.InvalidResumeException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenException;
 import com.newlecture.resuit.service.CommonResumeService.ResumeInUseException;
@@ -42,6 +43,8 @@ public class CommonResumeServiceImpl implements CommonResumeService {
     private final FeedbackRequestSectionRepository feedbackSections;
     private final FeedbackCommentRepository feedbackComments;
     private final UserRepository users;
+    // 사진 경로를 저장할 주소로 바꾼다(임시 업로드 → 정식 폴더).
+    private final ResumePhotoResolver photos;
 
     @Override
     @Transactional(readOnly = true)
@@ -91,6 +94,9 @@ public class CommonResumeServiceImpl implements CommonResumeService {
             request.title() == null ? resume.getTitle() : validTitle(request.title()),
             request.field() == null ? resume.getField() : validField(request.field()),
             request.content() == null ? resume.getContent() : request.content());
+        // 사진: null이면 그대로, ""이면 삭제, 새로 올렸으면 정식 폴더로 옮긴 주소를 저장한다.
+        String photo = photos.resolve(user.getId(), request.photoUrl());
+        if (photo != null) resume.changePhoto(photo.isEmpty() ? null : photo);
         resumes.flush();
         return CommonResumeDetailResponse.from(resume);
     }
