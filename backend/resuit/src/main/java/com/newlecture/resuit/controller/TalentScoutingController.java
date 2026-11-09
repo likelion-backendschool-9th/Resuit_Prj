@@ -66,6 +66,13 @@ public class TalentScoutingController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(offerService.send(principal.getName(), request));
 	}
 
+	// 보낸 제안 조회: GET /api/v1/company/offers. 기업 회원이 보낸 제안을 최신순으로 돌려준다.
+	@GetMapping("/company/offers")
+	public ResponseEntity<List<CompanyOfferResponse>> getSentOffers(
+			Principal principal) {
+		return ResponseEntity.ok(offerService.getSent(principal.getName()));
+	}
+
 	@GetMapping("/users/me/offers")
 	public ResponseEntity<List<CompanyOfferResponse>> getReceivedOffers(
 			Principal principal) {

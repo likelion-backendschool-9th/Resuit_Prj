@@ -32,6 +32,8 @@ export function AppStateProvider({ children }) {
         id: member.id,
         name: member.nickname || member.username,
         handle: member.username,
+        // 회원 역할(USER, COMPANY, ADMIN). 좌측 메뉴를 역할별로 나눌 때 쓴다.
+        role: member.role,
         initial: (member.nickname || member.username).slice(0, 1),
         av: 'av1',
         github: '',

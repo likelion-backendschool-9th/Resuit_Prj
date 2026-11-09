@@ -74,6 +74,17 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
                 .toList();
     }
 
+    // 우리 회사가 보낸 제안을 최신순으로 돌려준다. 기업 회원만 볼 수 있다.
+    @Override
+    @Transactional(readOnly = true)
+    public List<CompanyOfferResponse> getSent(String username) {
+        User company = companyGuard.requireCompany(username);
+        // 받은 회원·공고를 함께 읽어 응답 DTO로 바꾼다. 받은 제안과 같은 모양이라 DTO를 재사용한다.
+        return offers.findByCompany_IdOrderByIdDesc(company.getId()).stream()
+                .map(CompanyOfferResponse::from)
+                .toList();
+    }
+
     // 내 회사의 공개된 공고를 찾는다. 남의 공고, 삭제된 공고, 임시 저장 공고는 없는 공고처럼 404다.
     private Job findMyJob(Long jobId, User company) {
         return jobs.findByIdAndDeletedAtIsNull(jobId)

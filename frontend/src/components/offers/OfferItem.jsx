@@ -4,19 +4,21 @@ import Badge from '../common/Badge.jsx';
 import { avatarColor } from '../feedback/labels.js';
 import './OfferItem.css';
 
-// 받은 채용 제안 하나. 보낸 회사, 받은 날짜, 연결된 공고, 메시지를 보여 준다.
-export default function OfferItem({ offer }) {
-  const { company, job } = offer;
-  const name = company.nickname || company.username;
+// 채용 제안 하나. 받은 제안(box=received)은 보낸 회사를, 보낸 제안(box=sent)은 받은 회원을 보여 준다.
+export default function OfferItem({ offer, box = 'received' }) {
+  const sent = box === 'sent';
+  const person = sent ? offer.user : offer.company;
+  const { job } = offer;
+  const name = person.nickname || person.username;
 
   return (
     <article className="offer-item">
-      <Avatar initial={name.slice(0, 1)} color={avatarColor(company.username)} src={company.profileImageUrl} size={44} company />
+      <Avatar initial={name.slice(0, 1)} color={avatarColor(person.username)} src={person.profileImageUrl} size={44} company={!sent} />
       <div className="offer-item__body">
         <div className="row-wrap" style={{ gap: 6 }}>
-          <Link href={`/${encodeURIComponent(company.username)}`} className="offer-item__company">{name}</Link>
-          <span className="small muted">@{company.username}</span>
-          <Badge tone="accent">채용 제안</Badge>
+          <Link href={`/${encodeURIComponent(person.username)}`} className="offer-item__company">{name}</Link>
+          <span className="small muted">@{person.username}</span>
+          <Badge tone="accent">{sent ? '보낸 제안' : '채용 제안'}</Badge>
           <span className="xs muted offer-item__date">{offer.createdAt?.slice(0, 10)}</span>
         </div>
         {job && <Link href={`/jobs/${job.id}`} className="small offer-item__job">공고 · {job.title}</Link>}

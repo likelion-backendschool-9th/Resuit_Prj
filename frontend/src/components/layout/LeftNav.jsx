@@ -11,6 +11,7 @@ import SettingsMenu from './SettingsMenu.jsx';
 import './LeftNav.css';
 
 // 메뉴 항목. 순서를 바꾸거나 추가하려면 여기만 고치면 된다.
+// roles가 있으면 그 역할(users.role)의 회원에게만 보인다. 없으면 모두에게 보인다. ADMIN은 모두 본다.
 const ITEMS_TOP = [
   { to: '/', icon: 'home', label: '홈', end: true },
   { to: '/jobs', icon: 'job', label: '공고' }
@@ -23,12 +24,16 @@ const RESUME_CHILDREN = [
 ];
 const ITEMS_BOTTOM = [
   { to: '/threads/1', icon: 'bell', label: '알림' },
-  { to: '/offers', icon: 'msg', label: '받은 제안' },
+  { to: '/offers', icon: 'msg', label: '받은 제안', roles: ['USER'] },
   { to: '/profile', icon: 'user', label: '프로필' },
   { to: '/credits', icon: 'coin', label: '크레딧' },
-  { to: '/company/post', icon: 'plus', label: '공고 작성', tag: '회사' },
-  { to: '/talent', icon: 'talent', label: '인재 찾기', pill: '기업' }
+  { to: '/company/post', icon: 'plus', label: '공고 작성', tag: '회사', roles: ['COMPANY'] },
+  { to: '/talent', icon: 'talent', label: '인재 찾기', pill: '기업', roles: ['COMPANY'] },
+  { to: '/company/offers', icon: 'msg', label: '보낸 제안', roles: ['COMPANY'] }
 ];
+
+// 역할별 메뉴를 보여 줄지 정한다. 로그인 전(역할을 모를 때)에는 역할별 메뉴를 숨긴다.
+const visibleFor = (role) => (item) => !item.roles || role === 'ADMIN' || item.roles.includes(role);
 
 function NavItem({ item, pathname }) {
   const active = item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`);
@@ -44,7 +49,7 @@ function NavItem({ item, pathname }) {
 
 export default function LeftNav() {
   const pathname = usePathname();
-  const { requestCompose } = useAppState();
+  const { requestCompose, me } = useAppState();
   const inResume = RESUME_CHILDREN.some((c) => pathname.startsWith(c.to));
   // undefined 면 "지금 이력서 화면에 있으면 펼침"을 따른다.
   const [resumeOpen, setResumeOpen] = useState();
@@ -80,7 +85,7 @@ export default function LeftNav() {
         </div>
       )}
 
-      {ITEMS_BOTTOM.map((it) => <NavItem key={it.to} item={it} pathname={pathname} />)}
+      {ITEMS_BOTTOM.filter(visibleFor(me.role)).map((it) => <NavItem key={it.to} item={it} pathname={pathname} />)}
 
       <button type="button" className="nav-item nav-item--button" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((v) => !v)}>
         <Icon name="settings" size={22} />
