@@ -1,6 +1,20 @@
 package com.newlecture.resuit.controller;
 
 import com.newlecture.resuit.dto.PinnedResumeRequest;
+import com.newlecture.resuit.dto.LoginRequest;
+import com.newlecture.resuit.dto.SignupRequest;
+import com.newlecture.resuit.dto.SessionMemberResponse;
+import com.newlecture.resuit.service.AuthService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.server.ResponseStatusException;
 import com.newlecture.resuit.dto.DisplayedBadgeRequest;
 import com.newlecture.resuit.dto.FollowStatusResponse;
 import com.newlecture.resuit.dto.MyProfileResponse;
@@ -42,13 +56,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping ("/api/v1/users")
 public class UserController {
+    private final AuthService authService;
+    private final AuthenticationManager authenticationManager;
+    private final SecurityContextRepository securityContexts;
+    private final SessionAuthenticationStrategy sessionAuthentication;
 	private final ProfileService profiles;
 	private final CurrentUserResolver currentUser;
 	private final ProfileIntegrationService integrations;
 	private final GithubContributionService githubContributions;
 
 	public UserController(ProfileService profiles, CurrentUserResolver currentUser,
-			ProfileIntegrationService integrations, GithubContributionService githubContributions) {
+			ProfileIntegrationService integrations, GithubContributionService githubContributions,
+            AuthService authService, AuthenticationManager authenticationManager,
+            SecurityContextRepository securityContexts, SessionAuthenticationStrategy sessionAuthentication) {
+        this.authService = authService;
+        this.authenticationManager = authenticationManager;
+        this.securityContexts = securityContexts;
+        this.sessionAuthentication = sessionAuthentication;
 		this.profiles = profiles;
 		this.currentUser = currentUser;
 		this.integrations = integrations;
@@ -205,4 +229,35 @@ public class UserController {
 			@PathVariable String provider) {
 		return integrations.disconnect(currentUser.requireUserId(username), provider);
 	}
+
+    @PostMapping("/signup")
+    @ResponseStatus(HttpStatus.CREATED)
+    public SessionMemberResponse signup(@Valid @RequestBody SignupRequest request) {
+        return authService.signup(request);
+    }
+
+    // The generated /login form is handled by Security's filter; this endpoint accepts JSON.
+    @PostMapping("/login")
+    public SessionMemberResponse login(@Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+        try {
+            var authentication = authenticationManager.authenticate(
+                    UsernamePasswordAuthenticationToken.unauthenticated(request.username(), request.password()));
+
+            var member = authService.findSessionMember(authentication.getName())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."));
+
+            sessionAuthentication.onAuthentication(authentication, httpRequest, httpResponse);
+
+            var context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(authentication);
+            SecurityContextHolder.setContext(context);
+            securityContexts.saveContext(context, httpRequest, httpResponse);
+            httpResponse.setHeader("Cache-Control", "no-store");
+            return member;
+			
+        } catch (AuthenticationException exception) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호를 확인해 주세요.");
+        }
+    }
 }
