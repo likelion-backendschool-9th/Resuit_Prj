@@ -94,6 +94,11 @@ public class User extends BaseTimeEntity {
         this.displayedBadge = badge;
     }
 
+    // 프로필 편집에서 고른 지역(Region enum 이름)을 저장한다. 값 검증은 요청 DTO에서 Region으로 끝낸다.
+    public void changeRegion(String region) {
+        this.region = region;
+    }
+
     public void changeRole(String role) {
         this.role = role;
     }

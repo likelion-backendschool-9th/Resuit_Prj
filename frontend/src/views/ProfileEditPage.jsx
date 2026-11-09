@@ -8,6 +8,7 @@ import Avatar from '../components/common/Avatar.jsx';
 import Button from '../components/common/Button.jsx';
 import useProfileData from '../components/profile/useProfileData.js';
 import { profileApi } from '../services/profileApi.js';
+import { REGIONS } from '../data/constants.js';
 import './ProfileEditPage.css';
 
 function nextCareerKey() {
@@ -61,6 +62,7 @@ export default function ProfileEditPage() {
   });
   const [nickname, setNickname] = useState('');
   const [intro, setIntro] = useState('');
+  const [region, setRegion] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [pendingFile, setPendingFile] = useState(null);
   const [localPreview, setLocalPreview] = useState('');
@@ -72,6 +74,7 @@ export default function ProfileEditPage() {
     if (!data.profile) return;
     setNickname(data.profile.nickname || '');
     setIntro(data.profile.selfIntroduction || '');
+    setRegion(data.profile.region || '');
     setImageUrl(data.profile.profileImageUrl || '');
     setCareers((data.profile.careers || []).map(careerFromProfile));
     setPendingFile(null);
@@ -193,6 +196,8 @@ export default function ProfileEditPage() {
       await data.updateProfile({
         nickname: nickname.trim() || null,
         selfIntroduction: intro.trim(),
+        // 고르지 않았으면 보내지 않아 서버가 기존 값을 유지한다.
+        region: region || null,
         profileImageUrl: nextImage || '',
         careers: careers
           .filter((item) => item.mode === 'read')
@@ -273,6 +278,18 @@ export default function ProfileEditPage() {
                 onChange={(event) => setIntro(event.target.value)}
                 placeholder="간단한 소개를 적어 보세요"
               />
+            </label>
+            <label className="profile-edit__field">
+              지역
+              <select
+                value={region}
+                disabled={!loggedIn || data.loading}
+                onChange={(event) => setRegion(event.target.value)}
+              >
+                {!region && <option value="">선택해 주세요</option>}
+                {REGIONS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+              </select>
+              <span className="small muted">기업 회원이 인재 찾기에서 지역으로 찾을 때 쓰여요.</span>
             </label>
             <div className="profile-edit__field">
               <span>프로필 사진</span>

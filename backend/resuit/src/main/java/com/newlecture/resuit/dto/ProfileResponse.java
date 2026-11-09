@@ -13,7 +13,9 @@ public record ProfileResponse(
         boolean isFollowing, ResumeSummary pinnedResume,
         BadgeSummary displayedBadge, List<BadgeSummary> badges,
         List<BadgeHistorySummary> badgeHistory, List<CareerResponse> careers,
-        boolean companyVerified, LocalDateTime companyVerifiedAt) {
+        boolean companyVerified, LocalDateTime companyVerifiedAt,
+        // 지역(Region enum 이름). 입력하지 않았으면 null이다.
+        String region) {
 
     public record ResumeSummary(Long id, String title, String field) {
     }

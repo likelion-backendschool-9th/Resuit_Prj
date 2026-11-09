@@ -116,6 +116,10 @@ public class ProfileServiceImpl implements ProfileService {
         }
         user.updateProfile(request.nickname(), request.selfIntroduction(),
                 profileImageUrl, normalizeWidgets(request.widgets()));
+        // 지역은 고른 경우에만 바꾼다. 비어 있으면 기존 값을 유지한다.
+        if (request.region() != null) {
+            user.changeRegion(request.region().name());
+        }
         replaceCareers(user, request.careers());
         return toMyResponse(user);
     }
@@ -355,7 +359,7 @@ public class ProfileServiceImpl implements ProfileService {
                 follows.countByFollowingId(id), follows.countByFollowerId(id),
                 posts.countByUserIdAndDeletedAtIsNull(id), feedbacks.countByUserId(id),
                 isFollowing, resume, displayed, badges, history, careerItems,
-                companyVerified, companyVerifiedAt);
+                companyVerified, companyVerifiedAt, user.getRegion());
     }
 
     private ProfileResponse.BadgeSummary toBadgeSummary(UserBadge owned) {
