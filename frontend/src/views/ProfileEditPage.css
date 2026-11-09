@@ -33,7 +33,8 @@
 }
 
 .profile-edit__field input,
-.profile-edit__field textarea {
+.profile-edit__field textarea,
+.profile-edit__field select {
   width: 100%;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
