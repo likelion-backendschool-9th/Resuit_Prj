@@ -8,20 +8,8 @@ import Badge from '../components/common/Badge.jsx';
 import Button from '../components/common/Button.jsx';
 import Icon from '../components/common/Icon.jsx';
 import ThemeToggle from '../components/common/ThemeToggle.jsx';
+import TocLink from '../components/resume/TocLink.jsx';
 import './ResumeEditPage.css';
-
-// 왼쪽 목차: 누른 섹션을 표시하고 그 위치로 스크롤한다.
-function TocLink({ target, active, onPick, children }) {
-  const go = () => {
-    onPick(target);
-    document.getElementById(target)?.scrollIntoView({ behavior: 'smooth' });
-  };
-  return (
-    <button type="button" className={`resume-edit__toc-link${active === target ? ' is-active' : ''}`} aria-current={active === target ? 'true' : undefined} onClick={go}>
-      {children}
-    </button>
-  );
-}
 
 const projectKey = (p, i) => p.id || `p${i}`;
 
