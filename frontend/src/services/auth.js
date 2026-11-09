@@ -9,7 +9,7 @@ export async function authenticatedFetch(url, options = {}) {
   const headers = new Headers(options.headers);
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
     const session = await getAuthSession();
-    headers.set(session.csrfHeader, session.csrfToken);
+    if (session.csrfHeader && session.csrfToken) headers.set(session.csrfHeader, session.csrfToken);
   }
   return fetch(url, { ...options, headers, credentials: 'same-origin' });
 }

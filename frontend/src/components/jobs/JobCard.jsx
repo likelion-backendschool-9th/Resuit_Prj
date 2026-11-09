@@ -8,9 +8,7 @@ import './JobCard.css';
 export default function JobCard({ job, compact = false, meta, sub }) {
   const special = job.type === 'special';
 
-  const action = special
-    ? <Button to={`/jobs/${job.id}`}>공고 보고 특화 이력서 작성</Button>
-    : <Button variant="accent-outline" to={`/jobs/${job.id}`}>공고 보고 공통 이력서로 지원</Button>;
+  const action = <Button variant={special ? 'primary' : 'accent-outline'} to={`/jobs/${job.id}`}>공고 상세 보기</Button>;
 
   return (
     <article className={`job-card${special ? ' job-card--special' : ''}${compact ? ' job-card--compact' : ''}`}>

@@ -1,31 +1,16 @@
-import Avatar from '../common/Avatar.jsx';
-import Badge from '../common/Badge.jsx';
-import FollowButton from '../common/FollowButton.jsx';
+import Link from 'next/link';
+import Avatar from '@/components/common/Avatar.jsx';
+import Badge from '@/components/common/Badge.jsx';
 
-// 공고 상세 윗부분 (회사 · 제목 · 소개 · 자격 요건 · 우대 사항). 일반 · 특화 공고가 함께 쓴다.
 export default function JobHead({ job }) {
-  const special = job.type === 'special';
-  return (
-    <div className="section" style={{ gap: 20, padding: 24 }}>
-      <div className="row" style={{ gap: 12 }}>
-        <Avatar initial={job.initial} color={job.av} size={56} company />
-        <div className="grow"><div className="bold" style={{ fontSize: 16 }}>{job.company}</div><div className="muted" style={{ fontSize: 14 }}>@{job.handle} · 팔로워 [N]명</div></div>
-        <FollowButton handle={job.handle} offVariant="outline" className="job-detail__follow" />
-      </div>
-      <div className="stack" style={{ gap: 10 }}>
-        <div className="row-wrap" style={{ gap: 6 }}>
-          <Badge tone={special ? 'special' : 'general'} size="md">{special ? '특화 공고' : '일반 공고'}</Badge>
-          <Badge size="md">마감 {job.dday}</Badge>
-          <Badge size="md">{job.employment}</Badge>
-        </div>
-        <h2 className="job-detail__title">{job.title}</h2>
-        <div className="muted" style={{ fontSize: 14 }}>{job.detailMeta}</div>
-      </div>
-      <p style={{ lineHeight: 1.75 }}>{job.intro}</p>
-      <div className="grid-2" style={{ gap: 16 }}>
-        <section className="job-detail__box"><h3>자격 요건</h3><ul>{job.requirements.map((r) => <li key={r}>{r}</li>)}</ul></section>
-        <section className="job-detail__box"><h3>우대 사항</h3><ul>{job.preferred.map((r) => <li key={r}>{r}</li>)}</ul></section>
-      </div>
-    </div>
-  );
+  const company = job.company.nickname || job.company.username;
+  return <div className="section">
+    <div className="row"><Avatar initial={company.slice(0, 1)} src={job.company.profileImageUrl} color="co2" size={48} company /><div><strong>{company}</strong><div><Link className="text-link" href={`/${encodeURIComponent(job.company.username)}`}>@{job.company.username}</Link></div></div></div>
+    <div className="row-wrap"><Badge tone={job.type === 'SPECIAL' ? 'special' : 'general'}>{job.type === 'SPECIAL' ? '특화 공고' : '일반 공고'}</Badge><Badge>{job.status === 'CLOSED' ? '마감' : '모집 중'}</Badge></div>
+    <h2>{job.title}</h2>
+    <p className="muted">{[job.location, job.employmentType, job.career].filter(Boolean).join(' · ') || '상세 조건 미등록'}</p>
+    <p className="small muted">마감일: {job.deadline || '미정'}</p>
+    {[['상세 내용', job.description], ['자격 요건', job.requirements], ['우대 사항', job.preferred]].map(([title, body]) => <section key={title} className="jobs-description"><h3>{title}</h3><p className="pre-line">{body || '등록된 내용이 없어요.'}</p></section>)}
+    {job.type === 'SPECIAL' && <section className="jobs-description"><h3>요구 문항</h3><ol className="jobs-questions">{(job.questions || []).map((q) => <li key={q.id}><p className="pre-line">{q.content}</p><span className="small muted">{q.charLimit ? `${q.charLimit}자 이내` : '글자 수 제한 없음'}</span></li>)}</ol></section>}
+  </div>;
 }
