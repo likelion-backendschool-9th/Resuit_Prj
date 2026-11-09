@@ -6,9 +6,10 @@
 
 - 화면: `/profile/verification`, 프로필의 기업 이메일 인증 버튼으로 이동.
 - `GET /api/v1/verifications/me` → 내 기업 이메일 인증 상태 (`type`, `status`, `email`, `verifiedAt`).
-  - `status`: `NONE` | `VERIFIED`. 완료 기록이 있으면 `VERIFIED`다.
+  - `status`: `NONE` | `VERIFIED`. 완료 기록이 있으면 `VERIFIED`다. 이메일은 본인 조회에만 포함한다.
 - `POST /api/v1/verifications/email`, JSON: `{"email":"user@newlecture.com"}`.
   - 성공: `verificationId`, `email`, `verifiedAt`. 이때 `users.role`이 `COMPANY`가 된다.
+- 공개 프로필(`GET /api/v1/users/{username}`, `GET /api/v1/users/me`)에는 `companyVerified`와 `companyVerifiedAt`만 넣는다. 이메일과 `status`는 넣지 않는다. 인증된 회원 프로필에는 “현직자 인증” 배지를 표시한다.
 - 인증 API는 인증된 Principal 이름을 `users.username`으로 조회한다. 상태 조회는 로그인 사용자(세션 또는 `X-Username`) 기준이다. 요청에서 사용자 ID나 권한을 받지 않는다.
 
 ## 처리 규칙
@@ -22,4 +23,5 @@
 
 ## 변경 이력
 
+- 2026-11-09: 공개 프로필에 `companyVerified`·`companyVerifiedAt`을 넣고 닉네임 옆 “현직자 인증” 배지를 표시한다. `GET /verifications/me`는 `CompanyVerificationController`로 둔다.
 - 2026-11-06: 메일 발송, 6자리 코드 확인(`POST /email/confirm`), 재발송 제한, 입력 실패 횟수, SMTP 설정을 제거했다. 등록된 도메인 이메일을 입력하면 바로 기업 회원으로 전환한다. `verifications.failed_attempts` 컬럼은 남아 있지만 더 이상 쓰지 않는다.

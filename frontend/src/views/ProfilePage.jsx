@@ -225,7 +225,12 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
             ) : <span />}
           </div>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 900 }}>{displayName}</div>
+            <div className="profile__name-row">
+              <div className="profile__display-name">{displayName}</div>
+              {profile?.companyVerified && (
+                <Badge tone="company" size="md">현직자 인증</Badge>
+              )}
+            </div>
             <div className="muted">@{displayHandle}</div>
           </div>
           <p>{profile?.selfIntroduction || intro}</p>
@@ -275,9 +280,6 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
           {profile?.displayedBadge && (
             <div className="profile__sharer">
               <Badge tone="sharer" size="md">{profile.displayedBadge.name}</Badge>
-              <span className="small" style={{ color: 'var(--tech)' }}>
-                표시 배지 · {statusLabel(profile.displayedBadge.status)}
-              </span>
             </div>
           )}
         </div>
