@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.newlecture.resuit.dto.CreditBalanceResponse;
 import com.newlecture.resuit.dto.CreditTransactionResponse;
+import com.newlecture.resuit.entity.CreditPayment;
 import com.newlecture.resuit.entity.CreditTransaction;
 import com.newlecture.resuit.entity.PaidFeedbackRequest;
 import com.newlecture.resuit.entity.User;
@@ -46,7 +47,6 @@ public class CreditServiceImpl implements CreditService {
 	@Override
 	@Transactional
 	public void use(PaidFeedbackRequest request) {
-		// 잠근 뒤에 잔액을 읽어야 동시에 온 요청도 앞선 차감이 반영된 값으로 계산한다.
 		User user = lockUser(request.getRequester().getId());
 		int balance = currentBalance(user.getId());
 		if (balance < request.getCredits()) {
@@ -74,6 +74,22 @@ public class CreditServiceImpl implements CreditService {
 				.build());
 	}
 
+	// 승인된 결제만큼 크레딧을 충전한다. 결제 승인과 같은 트랜잭션에서 불린다(설계 문서 기준).
+	@Override
+	@Transactional
+	public int charge(CreditPayment payment) {
+		User user = lockUser(payment.getUser().getId());
+		int balanceAfter = currentBalance(user.getId()) + payment.getCredits();
+		creditTransactionRepository.save(CreditTransaction.builder()
+				.user(user)
+				.type("CHARGE")
+				.amount(payment.getCredits())
+				.balanceAfter(balanceAfter)
+				.creditPayment(payment)
+				.build());
+		return balanceAfter;
+	}
+
 	private UUID findUserId(String username) {
 		return userRepository.findByUsername(username)
 				.map(User::getId)
@@ -85,7 +101,6 @@ public class CreditServiceImpl implements CreditService {
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 	}
 
-	// 잔액은 가장 최근 내역의 변동 후 잔액이고, 내역이 없으면 0이다.
 	private int currentBalance(UUID userId) {
 		return creditTransactionRepository.findFirstByUser_IdOrderByIdDesc(userId)
 				.map(CreditTransaction::getBalanceAfter)
