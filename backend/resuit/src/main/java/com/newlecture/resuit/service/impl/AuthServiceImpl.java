@@ -115,7 +115,7 @@ public class AuthServiceImpl implements AuthService {
         
         var user = User.builder().username(request.username()).email(request.email())
                 .password(passwords.encode(request.password())).nickname(request.nickname())
-                .role("USER").subscription(false).build();
+                .role("COMPANY".equals(request.accountType()) ? "COMPANY" : "USER").subscription(false).build();
         try {
             // Flush here so concurrent duplicate signups also return 409.
             users.saveAndFlush(user);

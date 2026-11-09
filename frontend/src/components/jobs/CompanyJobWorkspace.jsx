@@ -29,7 +29,7 @@ export default function CompanyJobWorkspace({ id, draft, owner, onPreviewChange 
         </>}
       </details>
     </div>
-    {state.loading ? <p className="empty" role="status">기업 계정 권한을 확인하고 있어요.</p> : state.error ? <div className="section"><p role="alert">{state.error}</p><Button variant="outline" onClick={state.retry}>다시 확인</Button><Button to="/profile/verification" variant="outline">기업 인증</Button></div>
+    {state.loading ? <p className="empty" role="status">기업 계정 권한을 확인하고 있어요.</p> : state.error ? <div className="section"><p role="alert">{state.error}</p><Button variant="outline" onClick={state.retry}>다시 확인</Button><Button to="/signup" variant="outline">기업 회원 가입</Button></div>
       : <SelectedEditor key={`${draft ? 'draft' : 'job'}-${id || 'new'}`} id={id} draft={draft} owner={owner} onSaved={state.retry} onPreviewChange={onPreviewChange} />}
   </>;
 }

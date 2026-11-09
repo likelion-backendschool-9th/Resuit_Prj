@@ -67,9 +67,9 @@ export default function CompanyProPage() {
       <p className="page-desc">인재 찾기의 배지·기술·경력·지역 필터를 쓰려면 기업 Pro가 필요해요.</p>
       {blocked ? (
         <div className="credits-result">
-          <p className="text-2">{error.status === 401 ? '로그인한 뒤 결제할 수 있어요.' : '기업 회원만 결제할 수 있어요. 회사 이메일을 인증하면 기업 회원으로 바뀌어요.'}</p>
-          <Button to={error.status === 401 ? '/login' : '/profile/verification'} variant="primary" size="sm">
-            {error.status === 401 ? '로그인하기' : '기업 이메일 인증하기'}
+          <p className="text-2">{error.status === 401 ? '로그인한 뒤 결제할 수 있어요.' : '기업 회원만 결제할 수 있어요. 기업 회원으로 가입한 계정으로 로그인해 주세요.'}</p>
+          <Button to={error.status === 401 ? '/login' : '/signup'} variant="primary" size="sm">
+            {error.status === 401 ? '로그인하기' : '기업 회원 가입하기'}
           </Button>
         </div>
       ) : (

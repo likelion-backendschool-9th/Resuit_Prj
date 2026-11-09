@@ -92,3 +92,6 @@
   .auth-field .input { font-size: 16px; }
   .auth-page__footer { margin-top: auto; flex-direction: column; align-items: center; gap: 5px; padding: 20px; text-align: center; }
 }
+.auth-form__type { display: grid; gap: 8px; }
+.auth-form__type-label { font-size: 13px; font-weight: 700; }
+.auth-form__type-hint { color: var(--text-sub); font-size: 11px; line-height: 1.6; }
