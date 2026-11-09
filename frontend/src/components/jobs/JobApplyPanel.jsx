@@ -7,6 +7,7 @@ import { getMyApplication, cancelApplication } from '@/services/jobApplications.
 import { getAllResumes } from '@/services/resumes.js';
 import Button from '@/components/common/Button.jsx';
 import Icon from '@/components/common/Icon.jsx';
+import GeneralApply from './GeneralApply.jsx';
 
 // 서울 기준 오늘(YYYY-MM-DD). 마감일 당일까지 지원할 수 있다
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
@@ -42,6 +43,7 @@ export default function JobApplyPanel({ job }) {
   else if (state.error) body = <div role="alert" className="stack" style={{ gap: 8 }}><p>{state.error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>다시 시도</Button></div>;
   else if (state.application.applied) body = <Applied job={job} application={state.application} resumes={state.resumes} onCanceled={() => setRetry((v) => v + 1)} />;
   else if (job.status === 'CLOSED' || (job.deadline && job.deadline < today())) body = <p className="muted">마감된 공고예요. 지금은 지원할 수 없어요.</p>;
+  else if (job.type === 'GENERAL') body = <GeneralApply job={job} commonResumes={state.resumes.commonResumes} onApplied={() => setRetry((v) => v + 1)} />;
   else body = <p className="muted">아직 지원하지 않았어요.</p>;
 
   return (
