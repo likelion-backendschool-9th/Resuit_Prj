@@ -22,6 +22,7 @@ services:
   backend:
     build:
       context: ./backend/resuit
+      target: development
     volumes:
       - ./backend/resuit:/app
       - gradle_cache:/root/.gradle   # 받은 Gradle 과 라이브러리를 재사용

@@ -10,6 +10,39 @@ docker compose up db
 
 단순 docker compose up만 쓰면 프론트 백도 다 올라갑니다.
 
+기존 로컬 DB에 마이그레이션을 적용하려면 다음 명령어를 사용합니다.
+`database/migrations/`와 `docs/migrations/`의 SQL을 실행하며, 빈 DB의 테이블을
+처음 생성하는 용도는 아닙니다. 실제 적용은 `.env`의 `POSTGRES_HOST`가
+`localhost` 또는 `127.0.0.1`일 때만 가능합니다.
+
+```bash
+# 실행 목록만 확인
+bash scripts/migrate-local-db.sh --list
+
+# 실제 적용
+bash scripts/migrate-local-db.sh
+```
+
+운영 서버에서는 개발용 `compose.override.yml`을 사용하지 않도록 운영 파일을
+명시합니다. 운영 `.env`에는 `RESUIT_AUTH_PUBLIC_BASE_URL`,
+`VERIFICATION_CODE_SECRET`, `INTEGRATION_TOKEN_SECRET`을 반드시 설정합니다.
+
+```bash
+docker compose --env-file .env -f compose.yml -f compose.prod.yml up -d --build --remove-orphans
+```
+
+`compose.prod.yml`은 소스 코드와 Gradle 캐시를 마운트하지 않고 프론트 운영 빌드
+(`next start`)를 실행합니다. DB·백엔드·프론트 포트는 호스트에 공개하지 않으며
+외부 요청은 nginx만 받습니다. 운영 DB 스키마는 자동 변경하지 않고
+`DDL_AUTO=validate`로 검증하므로 마이그레이션은 별도로 적용해야 합니다.
+
+업로드 이미지와 이력서 스냅샷은 서버의 `backend/resuit/src/main/media/`를
+운영 컨테이너의 `/var/lib/resuit/media`에 마운트해 유지합니다. 기존 개발 서버의
+파일도 같은 폴더에서 읽으므로 별도 복사 없이 사용할 수 있습니다. 이 경로는
+배포 rsync의 전송·삭제 대상과 Docker 이미지 빌드에서 제외합니다.
+운영 설정은 `.env`의 `DDL_AUTO=update`와 관계없이 `validate`를 사용하므로,
+첫 전환 전에 필요한 DB 마이그레이션을 적용해야 합니다.
+
 # Resuit 웹 (Next.js 프로토타입)
 
 이력서 피드백 SNS **Resuit**의 프론트엔드 프로토타입입니다.
