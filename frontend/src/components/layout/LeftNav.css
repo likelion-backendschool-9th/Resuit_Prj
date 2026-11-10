@@ -58,8 +58,94 @@
 .nav-sub__item:hover { background: var(--bg-muted); color: var(--text); }
 .nav-sub__item.is-active { color: var(--text); font-weight: 700; }
 
+/* 모바일 상단 바·하단 바는 데스크톱에서 숨긴다. */
+.mobile-bar,
+.mobile-tabs { display: none; }
+
+/* 모바일(800px 이하): 왼쪽 메뉴는 ☰로 여는 서랍이 되고, 상단 바와 하단 바가 대신 보인다. */
 @media (max-width: 800px) {
-  .left-nav { flex-basis: 100%; flex-direction: row; flex-wrap: wrap; padding: 12px; }
-  .nav-item { width: auto; }
-  .left-nav__post { display: none; }
+  .mobile-bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    flex-basis: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    height: var(--mobile-bar-h);
+    padding: 0 8px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .mobile-bar__logo {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  /* 공통 레이아웃의 sticky보다 우선하도록 .app-layout을 붙인다. */
+  .app-layout > .left-nav {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    width: min(300px, 85vw);
+    height: 100dvh;
+    max-height: none;
+    overflow-y: auto;
+    background: var(--bg);
+    box-shadow: var(--shadow);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.2s, visibility 0.2s;
+  }
+  .app-layout > .left-nav.is-open { transform: none; visibility: visible; }
+  .left-nav__scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--text) 40%, transparent);
+  }
+
+  .mobile-tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    height: var(--mobile-tabs-h);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+  }
+  .mobile-tabs__item {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 0;
+    background: none;
+    font-size: 11px;
+    color: var(--text-sub);
+    text-decoration: none;
+  }
+  .mobile-tabs__item.is-active { color: var(--text); font-weight: 700; }
+  .mobile-tabs__post { color: var(--accent-text); font-weight: 700; }
+  .mobile-tabs__post-icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-accent);
+  }
 }
