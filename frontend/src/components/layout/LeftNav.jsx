@@ -9,6 +9,7 @@ import Button from '../common/Button.jsx';
 import ThemeToggle from '../common/ThemeToggle.jsx';
 import SettingsMenu from './SettingsMenu.jsx';
 import { requestFeedTop } from '../feed/feedTop.js';
+import ComposeModal from '../feed/ComposeModal.jsx';
 import './LeftNav.css';
 
 // 메뉴 항목. 순서를 바꾸거나 추가하려면 여기만 고치면 된다.
@@ -64,7 +65,7 @@ function NavItem({ item, pathname }) {
 
 export default function LeftNav() {
   const pathname = usePathname();
-  const { requestCompose, me } = useAppState();
+  const { me } = useAppState();
   const inResume = RESUME_CHILDREN.some((c) => pathname.startsWith(c.to));
   // 하위 메뉴는 그 주소와 그 아래 상세 화면(/mentors/아이디 등)에서 선택된 것으로 보인다.
   const isSubActive = (to) => pathname === to || pathname.startsWith(`${to}/`);
@@ -74,6 +75,8 @@ export default function LeftNav() {
   const [companyExpanded, setCompanyExpanded] = useState(null);
   const companyOpen = companyExpanded?.pathname === pathname ? companyExpanded.open : inCompany;
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // 게시글 작성 모달. 화면 이동 없이 지금 페이지 위에 띄운다.
+  const [composeOpen, setComposeOpen] = useState(false);
   const open = resumeOpen === undefined ? inResume : resumeOpen;
 
   return (
@@ -130,7 +133,8 @@ export default function LeftNav() {
       </button>
       {settingsOpen && <SettingsMenu onClose={() => setSettingsOpen(false)} />}
 
-      <Button size="lg" block to="/" onClick={requestCompose} className="left-nav__post">게시하기</Button>
+      <Button size="lg" block onClick={() => setComposeOpen(true)} aria-haspopup="dialog" className="left-nav__post">게시글 작성</Button>
+      {composeOpen && <ComposeModal onClose={() => setComposeOpen(false)} />}
     </nav>
   );
 }
