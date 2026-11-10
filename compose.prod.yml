@@ -1,0 +1,45 @@
+# 운영 모드.
+#
+# 반드시 compose.override.yml을 자동으로 읽지 않도록 아래처럼 명시적으로
+# 파일을 지정해 실행한다.
+# docker compose --env-file .env -f compose.yml -f compose.prod.yml up -d --build
+services:
+  db:
+    ports: !reset []
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    restart: unless-stopped
+
+  backend:
+    ports: !reset []
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      RESUIT_AUTH_PUBLIC_BASE_URL: ${RESUIT_AUTH_PUBLIC_BASE_URL:?RESUIT_AUTH_PUBLIC_BASE_URL must be set}
+      RESUIT_MEDIA_ROOT: /var/lib/resuit/media
+      VERIFICATION_CODE_SECRET: ${VERIFICATION_CODE_SECRET:?VERIFICATION_CODE_SECRET must be set}
+      INTEGRATION_TOKEN_SECRET: ${INTEGRATION_TOKEN_SECRET:?INTEGRATION_TOKEN_SECRET must be set}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+    volumes:
+      - media_data:/var/lib/resuit/media
+    restart: unless-stopped
+
+  frontend:
+    build:
+      target: production
+      args:
+        BACKEND_URL: http://backend:8080
+    ports: !reset []
+    environment:
+      NODE_ENV: production
+      BACKEND_URL: http://backend:8080
+    restart: unless-stopped
+
+  nginx:
+    restart: unless-stopped
+
+volumes:
+  media_data:
