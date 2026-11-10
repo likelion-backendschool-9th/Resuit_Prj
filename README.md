@@ -25,7 +25,7 @@ bash scripts/migrate-local-db.sh
 
 운영 서버에서는 개발용 `compose.override.yml`을 사용하지 않도록 운영 파일을
 명시합니다. 운영 `.env`에는 `RESUIT_AUTH_PUBLIC_BASE_URL`,
-`VERIFICATION_CODE_SECRET`, `INTEGRATION_TOKEN_SECRET`을 반드시 설정합니다.
+`INTEGRATION_TOKEN_SECRET`을 반드시 설정합니다.
 
 ```bash
 docker compose --env-file .env -f compose.yml -f compose.prod.yml up -d --build --remove-orphans
