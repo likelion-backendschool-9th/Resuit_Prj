@@ -16,6 +16,7 @@ import SkillsEditor from '../components/resume/SkillsEditor.jsx';
 import { TextAreaField } from '../components/resume/ResumeFields.jsx';
 import ProjectsEditor from '../components/resume/ProjectsEditor.jsx';
 import AwardsEditor from '../components/resume/AwardsEditor.jsx';
+import FeedbackRequestPanel from '../components/feedback/FeedbackRequestPanel.jsx';
 import { normalizeContent, cleanContent } from '../components/resume/resumeContent.js';
 import './ResumeEditPage.css';
 
@@ -34,6 +35,8 @@ function fromApi(detail) {
     jobId: detail.job.id,
     // SUBMITTED: 이 특화 이력서로 이미 지원했다
     submitted: detail.status === 'SUBMITTED',
+    // 진행 중인 피드백 요청. 댓글이 달리면 취소할 수 없다
+    feedback: { requestId: detail.feedbackRequestId ?? null, hasComments: !!detail.feedbackRequestHasComments },
     header: `${detail.job.companyName} · ${detail.job.title}`,
     back: { href: '/resumes', label: '내 이력서로 돌아가기' },
     blank: !detail.commonResumeId,
@@ -267,11 +270,16 @@ export default function ResumeEditPage({ id, jobId, mode }) {
             <div className="progress"><div style={{ width: `${total ? (done / total) * 100 : 0}%` }} /></div>
             <div className="text-2" style={{ fontSize: 14 }}>필수 문항 {done} / {total} 작성</div>
           </section>
-          <section className="card" style={{ gap: 10 }}>
-            <h2 style={{ fontSize: 16 }}>제출 전 피드백 받기</h2>
-            <p className="text-2" style={{ fontSize: 14 }}>이 이력서를 회사명을 가린 채 피드에 올려 다른 사용자에게 피드백을 받을 수 있어요.</p>
-            <Button variant="accent-outline" to="/feedback">피드백 게시판에 요청</Button>
-          </section>
+          {/* 이미 지원한 이력서는 "제출 전" 피드백 대상이 아니라 숨긴다 */}
+          {doc.id && !doc.submitted && (
+            <FeedbackRequestPanel
+              resumeId={doc.id}
+              requestId={doc.feedback.requestId}
+              hasComments={doc.feedback.hasComments}
+              beforeRequest={save}
+              onChange={(feedback) => setDoc((d) => ({ ...d, feedback }))}
+            />
+          )}
         </aside>
       </div>
     </div>
