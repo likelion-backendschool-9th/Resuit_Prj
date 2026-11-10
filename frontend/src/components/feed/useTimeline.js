@@ -82,5 +82,7 @@ export default function useTimeline(initialTimeline, tab, userId) {
     loading: enabled && (entry?.loading || (!entry?.timeline && !entry?.error)),
     error: enabled ? entry?.error || '' : '',
     loadMore: () => load(!!entry?.stale), upsertPost, removePost,
+    // 지금 탭을 첫 페이지부터 다시 불러온다. 새로 올라온 글을 볼 때 쓴다.
+    refresh: invalidate,
   };
 }

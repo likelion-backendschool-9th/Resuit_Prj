@@ -16,7 +16,7 @@ import './ResumesPage.css';
 const TABS = [{ id: 'all', label: '전체' }, { id: 'common', label: '공통' }, { id: 'special', label: '특화' }];
 const STATUS = { WRITING: { label: '작성 중', tone: 'special' }, SUBMITTED: { label: '제출 완료', tone: 'accent' } };
 const MAX_NAME = 100;
-const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
+const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드', FULLSTACK: '풀스택' };
 const SECTION_LABEL = { BASIC: '기본 정보', SKILLS: '기술 스택', PROJECTS: '프로젝트', AWARDS: '수상', INTRODUCTION: '자기소개' };
 const COUNTED = new Set(['PROJECTS', 'AWARDS']);
 
@@ -237,7 +237,6 @@ export default function ResumesPage() {
             ))}
           </section>
         )}
-        {!loading && !error && <SubmittedResumeImports submissions={submissions} />}
       </MainColumn>
 
       <RightAside showReviews label="리뷰 추천 및 보조 정보">
@@ -253,6 +252,7 @@ export default function ResumesPage() {
           <h2>이력서 구조</h2>
           <p className="text-2" style={{ fontSize: 14, lineHeight: 1.7 }}>공통 이력서는 용도별로 여러 개 만들고 이름을 붙여 관리해요. 특화 이력서는 공고마다 하나씩, 원하는 공통 이력서를 복사해 시작하거나 빈 상태로 시작합니다.</p>
         </section>
+        {!loading && !error && <SubmittedResumeImports submissions={submissions} />}
       </RightAside>
     </>
   );

@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import Link from 'next/link';
 import Avatar from '../common/Avatar.jsx';
 import Badge from '../common/Badge.jsx';
 import Button from '../common/Button.jsx';
 import Icon from '../common/Icon.jsx';
 import ResumePreview from './ResumePreview.jsx';
 import FeedbackComments from './FeedbackComments.jsx';
-import { FIELD_LABEL, SECTION_LABEL, avatarColor, timeText } from './labels.js';
+import { FIELD_LABEL, SECTION_LABEL, avatarColor, profileHref, timeText } from './labels.js';
 import './FeedbackRequestCard.css';
 
 // 피드백 게시판의 이력서 카드. 펼치면 섹션별 피드백 목록과 작성란이 보인다.
@@ -26,11 +27,14 @@ export default function FeedbackRequestCard({ request }) {
 
   return (
     <article className="fb-card">
-      <Avatar initial={name.charAt(0)} color={avatarColor(author.username)} src={author.profileImageUrl} />
+      {/* 프로필 사진·이름·아이디를 누르면 요청한 사람의 프로필(/아이디)로 이동한다 */}
+      <Link href={profileHref(author.username)} className="fb-profile__avatar" aria-label={`${name} 프로필 보기`}>
+        <Avatar initial={name.charAt(0)} color={avatarColor(author.username)} src={author.profileImageUrl} />
+      </Link>
       <div className="fb-card__body">
         <header className="row-wrap" style={{ gap: 6 }}>
-          <strong>{name}</strong>
-          <span className="muted">@{author.username} · {timeText(request.createdAt)}</span>
+          <Link href={profileHref(author.username)} className="fb-profile__name">{name}</Link>
+          <span className="muted"><Link href={profileHref(author.username)} className="fb-profile__handle">@{author.username}</Link> · {timeText(request.createdAt)}</span>
           {request.category && <Badge tone="general">{FIELD_LABEL[request.category] ?? request.category}</Badge>}
           {request.mine && <Badge tone="accent">내 요청</Badge>}
           {adopted && <Badge tone="accepted">채택 완료</Badge>}
