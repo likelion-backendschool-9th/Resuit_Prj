@@ -237,7 +237,6 @@ export default function ResumesPage() {
             ))}
           </section>
         )}
-        {!loading && !error && <SubmittedResumeImports submissions={submissions} />}
       </MainColumn>
 
       <RightAside showReviews label="리뷰 추천 및 보조 정보">
@@ -253,6 +252,7 @@ export default function ResumesPage() {
           <h2>이력서 구조</h2>
           <p className="text-2" style={{ fontSize: 14, lineHeight: 1.7 }}>공통 이력서는 용도별로 여러 개 만들고 이름을 붙여 관리해요. 특화 이력서는 공고마다 하나씩, 원하는 공통 이력서를 복사해 시작하거나 빈 상태로 시작합니다.</p>
         </section>
+        {!loading && !error && <SubmittedResumeImports submissions={submissions} />}
       </RightAside>
     </>
   );
