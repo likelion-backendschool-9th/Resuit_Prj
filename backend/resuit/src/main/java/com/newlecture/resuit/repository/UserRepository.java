@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
+    boolean existsByIdAndProfileImageUrlIn(UUID ownerId, java.util.Collection<String> paths);
+
     Optional<User> findByUsername(String username);
     boolean existsByUsername(String username);
 

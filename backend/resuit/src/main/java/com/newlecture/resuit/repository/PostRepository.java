@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.newlecture.resuit.entity.Post;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
+    boolean existsByImageUrlInAndUser_IdAndDeletedAtIsNull(java.util.Collection<String> paths, UUID ownerId);
+
 
 	Page<Post> findByDeletedAtIsNullOrderByCreatedAtDesc(Pageable pageable);
 

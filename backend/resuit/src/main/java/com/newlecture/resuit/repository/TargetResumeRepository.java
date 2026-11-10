@@ -13,6 +13,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface TargetResumeRepository extends JpaRepository<TargetResume, Long> {
+    java.util.List<TargetResume> findByPhotoUrlIn(java.util.Collection<String> paths);
+
 
     @Query("""
         SELECT t FROM TargetResume t JOIN FETCH t.job j JOIN FETCH j.company
