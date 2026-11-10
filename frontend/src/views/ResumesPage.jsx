@@ -16,7 +16,7 @@ import './ResumesPage.css';
 const TABS = [{ id: 'all', label: '전체' }, { id: 'common', label: '공통' }, { id: 'special', label: '특화' }];
 const STATUS = { WRITING: { label: '작성 중', tone: 'special' }, SUBMITTED: { label: '제출 완료', tone: 'accent' } };
 const MAX_NAME = 100;
-const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
+const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드', FULLSTACK: '풀스택' };
 const SECTION_LABEL = { BASIC: '기본 정보', SKILLS: '기술 스택', PROJECTS: '프로젝트', AWARDS: '수상', INTRODUCTION: '자기소개' };
 const COUNTED = new Set(['PROJECTS', 'AWARDS']);
 

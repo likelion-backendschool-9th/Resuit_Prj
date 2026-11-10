@@ -33,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FeedbackRequestServiceImpl implements FeedbackRequestService {
     private static final int MAX_CONTENT = 1000;
-    private static final Set<String> CATEGORIES = Set.of("FRONTEND", "BACKEND");
+    private static final Set<String> CATEGORIES = Set.of("FRONTEND", "BACKEND", "FULLSTACK");
     // docs/database-design.md 이력서 항목. ANSWERS는 특화 이력서의 요구 문항 답변
     private static final Set<String> SECTIONS = Set.of("BASIC", "SKILLS", "PROJECTS", "AWARDS", "INTRODUCTION", "ANSWERS");
 
@@ -114,7 +114,7 @@ public class FeedbackRequestServiceImpl implements FeedbackRequestService {
     private static String validCategory(String category) {
         if (category == null || category.isBlank()) return null;
         var normalized = category.trim().toUpperCase(Locale.ROOT);
-        if (!CATEGORIES.contains(normalized)) throw new InvalidResumeException("분야는 FRONTEND 또는 BACKEND여야 해요.");
+        if (!CATEGORIES.contains(normalized)) throw new InvalidResumeException("분야는 FRONTEND, BACKEND, FULLSTACK 중 하나여야 해요.");
         return normalized;
     }
 

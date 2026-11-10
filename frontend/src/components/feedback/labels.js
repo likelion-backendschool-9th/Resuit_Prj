@@ -1,5 +1,5 @@
 // 피드백 게시판에서 서버 값을 화면 문구로 바꾼다
-export const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
+export const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드', FULLSTACK: '풀스택' };
 
 // 3.2 피드백 요청에서 고르는 이력서 항목
 export const SECTION_LABEL = {
