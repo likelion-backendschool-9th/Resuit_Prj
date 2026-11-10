@@ -1,5 +1,7 @@
 package com.newlecture.resuit.repository;
 
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -11,7 +13,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.newlecture.resuit.entity.Post;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
-    boolean existsByImageUrlInAndUser_IdAndDeletedAtIsNull(java.util.Collection<String> paths, UUID ownerId);
+    boolean existsByImageUrlInAndUser_IdAndDeletedAtIsNull(Collection<String> paths, UUID ownerId);
 
 
 	Page<Post> findByDeletedAtIsNullOrderByCreatedAtDesc(Pageable pageable);

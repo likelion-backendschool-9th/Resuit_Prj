@@ -31,3 +31,7 @@
 - 공개 게시글·프로필 이미지 익명 조회 유지
 - 타인이 프로필에 사진 URL을 붙여 공개 판정을 받으려는 우회 차단
 - 공개 이미지에 심볼릭 링크를 연결한 우회 차단
+
+## 코드 배치와 DI
+
+컨트롤러는 `service/ResumePhotoAccessService` 인터페이스를 생성자로 주입받는다. 실제 권한 검사와 파일 조회는 `service/impl/ResumePhotoAccessServiceImpl`의 `@Service` 구현체에서 수행한다. 조회 조건은 `dto/ResumePhotoQuery`, 허용된 바이너리 파일과 MIME 타입은 `dto/ResumePhotoResource`에 둔다. 저장소 조회는 기존 `repository`를 사용하고 설정은 기존 `config`에 둔다.

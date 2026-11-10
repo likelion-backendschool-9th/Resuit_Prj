@@ -1,6 +1,7 @@
 package com.newlecture.resuit.controller;
 
 import com.newlecture.resuit.service.ResumePhotoAccessService;
+import com.newlecture.resuit.dto.ResumePhotoQuery;
 import java.security.Principal;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
@@ -19,7 +20,7 @@ public class ResumePhotoController {
     @GetMapping("/media/{directory:image|resumePhotos}/{owner}/{filename}")
     public ResponseEntity<Resource> read(@PathVariable String directory, @PathVariable String owner,
             @PathVariable String filename, Principal principal) {
-        var photo = photos.read(new ResumePhotoAccessService.Query(directory, owner, filename,
+        var photo = photos.read(new ResumePhotoQuery(directory, owner, filename,
             principal == null ? null : principal.getName()));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).varyBy("Cookie")
             .header("X-Content-Type-Options", "nosniff")
