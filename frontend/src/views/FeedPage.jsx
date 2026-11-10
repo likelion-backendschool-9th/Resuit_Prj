@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppState } from '../context/AppStateContext.jsx';
 import { TECH_TAGS } from '../data/constants.js';
 import { MainColumn, RightAside } from '../components/layout/AppLayout.jsx';
@@ -27,21 +27,10 @@ export default function FeedPage({ initialTimeline }) {
   const { me, loggedIn, authLoading, composedPost, clearComposedPost } = useAppState();
   const [tab, setTab] = useState('recommend');
   const [techFilter, setTechFilter] = useState('all');
-  const { posts, hasMore, loading, error, loadMore, upsertPost, removePost } = useTimeline(initialTimeline, tab, loggedIn ? me.id : null, techFilter);
+  const { posts, hasMore, loading, error, loadMore, upsertPost, removePost, refresh } = useTimeline(initialTimeline, tab, loggedIn ? me.id : null, techFilter);
   const composerRef = useRef(null);
   const composerKind = COMPOSER_KIND[tab];
 
-  // 왼쪽 메뉴 "게시하기"로 들어오면 글쓰기 칸에 포커스. 팔로잉에는 작성란이 없어 추천으로 이동한다.
-  useEffect(() => {
-    if (!composeRequested) return;
-    if (tab === 'following') {
-      setTab('recommend');
-      return;
-    }
-    composerRef.current?.focus();
-    clearComposeRequest();
-  }, [composeRequested, clearComposeRequest, tab]);
-  
   // 왼쪽 메뉴 "게시글 작성" 모달에서 올린 글을 피드 맨 위에 넣는다.
   useEffect(() => {
     if (!composedPost) return;
