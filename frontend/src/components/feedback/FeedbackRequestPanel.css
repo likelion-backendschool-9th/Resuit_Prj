@@ -1,0 +1,8 @@
+.fb-request { gap: 12px; }
+.fb-request__title { font-size: 16px; }
+.fb-request__desc { font-size: 14px; }
+.fb-request__group { display: flex; flex-direction: column; gap: 6px; }
+.fb-request__label { font-weight: 700; color: var(--text-2); }
+.fb-request__count { align-self: flex-end; }
+.fb-request__state { font-size: 14px; color: var(--text-2); }
+.fb-request__state.is-on { color: var(--accent-text); font-weight: 700; }
