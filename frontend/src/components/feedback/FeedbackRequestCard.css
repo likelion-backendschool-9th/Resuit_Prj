@@ -41,3 +41,9 @@
   border: 1px solid var(--line);
 }
 .fb-item--reply { margin-left: 28px; }
+
+/* 작성자 프로필 링크 (요청 카드·피드백 댓글 공통). 인재 찾기 카드와 같은 모양 */
+.fb-profile__avatar { flex: 0 0 auto; align-self: flex-start; border-radius: 50%; }
+.fb-profile__name { font-weight: 700; color: var(--text); }
+.fb-profile__handle { color: inherit; }
+.fb-profile__name:hover, .fb-profile__handle:hover { text-decoration: underline; }

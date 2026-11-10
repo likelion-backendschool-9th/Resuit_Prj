@@ -15,6 +15,9 @@ export function avatarColor(username = '') {
   return AVATAR_COLORS[sum % AVATAR_COLORS.length];
 }
 
+// 작성자 프로필 주소 (/아이디). 다른 화면과 같은 방식으로 아이디를 인코딩한다
+export const profileHref = (username) => `/${encodeURIComponent(username)}`;
+
 export function timeText(value) {
   const minutes = Math.floor((Date.now() - new Date(value).getTime()) / 60000);
   if (!(minutes >= 1)) return '방금';
