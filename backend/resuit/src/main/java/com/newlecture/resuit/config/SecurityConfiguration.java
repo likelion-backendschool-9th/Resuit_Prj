@@ -100,6 +100,7 @@ public class SecurityConfiguration {
             .requestMatchers("/api/v1/users/me", "/api/v1/users/me/**").authenticated()
             .requestMatchers(HttpMethod.POST, "/api/v1/users/login", "/api/v1/users/signup").permitAll()
             .requestMatchers("/api/v1/auth/session", "/api/oauth2/**", "/api/login/**", "/error").permitAll()
+            .requestMatchers(HttpMethod.GET, "/media/resumePhotos/**").authenticated()
             .requestMatchers(HttpMethod.GET, "/media/image/**", "/media/video/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**", "/api/v1/jobs/**", "/api/v1/posts/**",
                     "/api/v1/users/*/tweets", "/api/v1/users/*/feedbacks",

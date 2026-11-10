@@ -115,7 +115,7 @@ public class MediaServiceImpl implements MediaService {
     public String prepareResumePhoto(String path, UUID userId) {
         if (path == null || path.isBlank()) return null;
         var relative = ownedPhoto(path, userId);
-        if (relative.getName(0).toString().equals("tmpImage")) return copyResumePhoto(path, userId);
+        if (!relative.getName(0).toString().equals("resumePhotos")) return copyResumePhoto(path, userId);
         return "/media/" + relative.toString().replace('\\', '/');
     }
 
@@ -140,7 +140,7 @@ public class MediaServiceImpl implements MediaService {
         if (path.length() > 500) throw new IllegalArgumentException("사진 경로는 500자 이하여야 합니다.");
         var relative = parseRelativePath(path.startsWith("/media/") ? path.substring(7) : path);
         if (relative.getNameCount() != 3
-                || !Set.of("image", "tmpImage").contains(relative.getName(0).toString())
+                || !Set.of("image", "tmpImage", "resumePhotos").contains(relative.getName(0).toString())
                 || !relative.getName(1).toString().equals(userId.toString())) {
             throw new IllegalArgumentException("본인이 업로드한 사진만 사용할 수 있습니다.");
         }
@@ -155,7 +155,7 @@ public class MediaServiceImpl implements MediaService {
 
     private String copyPhoto(Path source, UUID userId, boolean snapshot) {
         var name = UUID.randomUUID() + extension(source.getFileName().toString(), IMAGE);
-        var relative = snapshot ? Path.of("resumeSnapshots", name) : Path.of("image", userId.toString(), name);
+        var relative = snapshot ? Path.of("resumeSnapshots", name) : Path.of("resumePhotos", userId.toString(), name);
         var target = resolveInsideMediaRoot(relative);
         try {
             Files.createDirectories(target.getParent());

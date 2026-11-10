@@ -20,8 +20,6 @@ public class MediaResourceConfiguration implements WebMvcConfigurer {
 
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
-		registry.addResourceHandler("/media/image/**")
-				.addResourceLocations("file:" + mediaRoot + "/image/");
 		registry.addResourceHandler("/media/video/**")
 				.addResourceLocations("file:" + mediaRoot + "/video/");
 	}

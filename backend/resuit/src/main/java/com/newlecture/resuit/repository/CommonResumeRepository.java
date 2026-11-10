@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CommonResumeRepository extends JpaRepository<CommonResume, Long> {
+    java.util.List<CommonResume> findByPhotoUrlIn(java.util.Collection<String> paths);
+
 
     List<CommonResume> findByUserIdOrderByIdAsc(UUID userId);
 
