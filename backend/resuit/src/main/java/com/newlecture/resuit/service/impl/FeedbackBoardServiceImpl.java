@@ -82,6 +82,21 @@ public class FeedbackBoardServiceImpl implements FeedbackBoardService {
         }).toList();
     }
 
+    // 피드백 게시글 상세. 목록 카드와 같은 요약을 한 건만 반환한다.
+    @Override
+    @Transactional(readOnly = true)
+    public FeedbackRequestSummary getRequest(Long requestId, String username) {
+        var user = currentUser(username);
+        var request = visibleRequest(requestId, user);
+        var ids = List.of(request.getId());
+        var sections = board.findSections(ids).stream().map(SectionRow::getSectionType).toList();
+        var count = board.countComments(ids).stream().findFirst().orElse(null);
+        return FeedbackRequestSummary.of(request, sections,
+            count == null ? 0 : count.getCount(),
+            count != null && count.getAdoptedCount() > 0,
+            request.getUser().getId().equals(user.getId()));
+    }
+
     // 4.5 미리보기. 남의 이력서는 피드백 요청이 진행 중이거나 공개한 이력서일 때만 보여 준다.
     @Override
     @Transactional(readOnly = true)

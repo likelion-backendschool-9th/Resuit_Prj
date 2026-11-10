@@ -112,9 +112,7 @@ public class ProfileServiceImpl implements ProfileService {
         User user = findByUsername(username);
         Page<ProfileFeedbackResponse> result = feedbacks.findByUserId(user.getId(),
                 paging(page, size, "createdAt"))
-                .map(comment -> new ProfileFeedbackResponse(comment.getCommentId(),
-                        comment.getFeedbackRequest().getId(), comment.getSection(),
-                        comment.getContent(), comment.isAdopted(), comment.getCreatedAt()));
+                .map(ProfileFeedbackResponse::of);
         return PageResponse.from(result);
     }
 
