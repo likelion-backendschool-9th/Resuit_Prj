@@ -1,6 +1,7 @@
 package com.newlecture.resuit.service;
 
 import com.newlecture.resuit.dto.BestReviewsResponse;
+import com.newlecture.resuit.dto.ReviewHighlightsResponse;
 import com.newlecture.resuit.dto.HallOfFameQuery;
 import com.newlecture.resuit.dto.HallOfFameResponse;
 import com.newlecture.resuit.dto.ReviewAcceptResponse;
@@ -8,6 +9,7 @@ import com.newlecture.resuit.dto.ReviewLikeCommand;
 import com.newlecture.resuit.dto.ReviewLikeResponse;
 
 public interface ReviewService {
+    ReviewHighlightsResponse getHighlights();
     BestReviewsResponse getBestReviews(String period, String username);
     HallOfFameResponse getHallOfFame(HallOfFameQuery query);
     ReviewLikeResponse setLiked(ReviewLikeCommand command);

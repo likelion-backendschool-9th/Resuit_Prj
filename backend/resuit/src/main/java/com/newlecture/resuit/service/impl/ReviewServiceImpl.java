@@ -1,6 +1,7 @@
 package com.newlecture.resuit.service.impl;
 
 import com.newlecture.resuit.dto.BestReviewsResponse;
+import com.newlecture.resuit.dto.ReviewHighlightsResponse;
 import com.newlecture.resuit.dto.HallOfFameQuery;
 import com.newlecture.resuit.dto.HallOfFameResponse;
 import com.newlecture.resuit.dto.ReviewAcceptResponse;
@@ -41,6 +42,25 @@ public class ReviewServiceImpl implements ReviewService {
     private final BestReviewRepository bestReviews;
     private final FeedbackRequestRepository requests;
     private final ReviewerBadgeService reviewerBadges;
+
+    @Override
+    @Transactional(readOnly = true)
+    public ReviewHighlightsResponse getHighlights() {
+        var reviews = getBestReviews("weekly", null).reviews().stream().limit(3)
+            .map(review -> new ReviewHighlightsResponse.Review(review.username(), review.nickname(),
+                excerpt(review.content()), review.rank(), review.likeCount())).toList();
+        var reviewers = getHallOfFame(new HallOfFameQuery(0, 3, null)).reviewers().stream()
+            .map(reviewer -> new ReviewHighlightsResponse.Reviewer(reviewer.rank(), reviewer.username(),
+                reviewer.nickname(), reviewer.reviewCount(), reviewer.selectionCount(),
+                excerpt(reviewer.representativeContent()))).toList();
+        return new ReviewHighlightsResponse(reviews, reviewers);
+    }
+
+    private String excerpt(String content) {
+        if (content == null) return "";
+        int count = content.codePointCount(0, content.length());
+        return count <= 100 ? content : content.substring(0, content.offsetByCodePoints(0, 100)) + "…";
+    }
 
     @Override
     @Transactional(readOnly = true)

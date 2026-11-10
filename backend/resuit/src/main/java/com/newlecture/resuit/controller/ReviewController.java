@@ -5,6 +5,7 @@ import com.newlecture.resuit.dto.ReviewAcceptResponse;
 import com.newlecture.resuit.dto.HallOfFameQuery;
 import com.newlecture.resuit.dto.HallOfFameResponse;
 import com.newlecture.resuit.dto.BestReviewsResponse;
+import com.newlecture.resuit.dto.ReviewHighlightsResponse;
 import com.newlecture.resuit.dto.ReviewLikeCommand;
 import com.newlecture.resuit.dto.ReviewLikeResponse;
 import com.newlecture.resuit.service.ReviewService;
@@ -26,6 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReviewController {
 
     private final ReviewService reviewService;
+
+    @GetMapping("/highlights")
+    public ResponseEntity<ReviewHighlightsResponse> getHighlights() {
+        return ResponseEntity.ok(reviewService.getHighlights());
+    }
 
 	@GetMapping("/best")
 	public ResponseEntity<BestReviewsResponse> getBestReviews(
