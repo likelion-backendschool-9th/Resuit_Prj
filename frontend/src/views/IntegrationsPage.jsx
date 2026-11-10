@@ -12,6 +12,37 @@ import './IntegrationsPage.css';
 import PasswordSetupForm from '@/components/auth/PasswordSetupForm.jsx';
 
 const MAX_PINNED_REPOS = 3;
+async function copyVerificationCode(code) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(code);
+      return;
+    } catch {
+      // HTTP 환경이나 브라우저 권한 제한 시 기존 복사 방식으로 시도한다.
+    }
+  }
+
+  const input = document.createElement('textarea');
+  input.value = code;
+  input.setAttribute('readonly', '');
+  input.style.position = 'fixed';
+  input.style.left = '-9999px';
+  document.body.appendChild(input);
+  let copied = false;
+  try {
+    input.focus();
+    input.select();
+    copied = document.execCommand('copy');
+  } catch {
+    // 브라우저에서 대체 복사도 차단할 수 있다.
+  } finally {
+    input.remove();
+  }
+  if (!copied) {
+    throw new Error('복사할 수 없습니다. 위 검증 코드를 직접 선택해 복사해 주세요.');
+  }
+}
+
 const PROVIDER_NAMES = { google: 'Google', github: 'GitHub', naver: '네이버' };
 const LINK_ERRORS = {
   already_linked: '이미 다른 Resuit 계정에 연결된 소셜 계정입니다. 기존 계정과 데이터는 유지되며, 이 계정으로 옮겨지지 않습니다.',
@@ -328,7 +359,7 @@ export default function IntegrationsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => run(async () => {
-                    await navigator.clipboard.writeText(blogVerify.code);
+                    await copyVerificationCode(blogVerify.code);
                   }, '검증 코드를 복사했습니다.')}
                 >
                   코드 복사
