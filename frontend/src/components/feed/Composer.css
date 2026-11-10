@@ -1,6 +1,7 @@
 .composer {
   display: flex;
   gap: 12px;
+  margin-top: 12px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--line);
   scroll-margin-top: 60px;
