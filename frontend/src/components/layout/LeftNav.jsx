@@ -8,6 +8,7 @@ import Icon from '../common/Icon.jsx';
 import Button from '../common/Button.jsx';
 import ThemeToggle from '../common/ThemeToggle.jsx';
 import SettingsMenu from './SettingsMenu.jsx';
+import { requestFeedTop } from '../feed/feedTop.js';
 import './LeftNav.css';
 
 // 메뉴 항목. 순서를 바꾸거나 추가하려면 여기만 고치면 된다.
@@ -50,7 +51,9 @@ const isCompanyMember = (role) => role === 'COMPANY' || role === 'ADMIN';
 function NavItem({ item, pathname }) {
   const active = item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`);
   return (
-    <Link href={item.to} aria-current={active ? 'page' : undefined} className={`nav-item${active ? ' is-active' : ''}`}>
+    // 홈에서 홈을 다시 누르면 피드를 맨 위로 올리고 새로 불러온다.
+    <Link href={item.to} aria-current={active ? 'page' : undefined} className={`nav-item${active ? ' is-active' : ''}`}
+      onClick={item.to === '/' && pathname === '/' ? requestFeedTop : undefined}>
       <Icon name={item.icon} size={22} />
       {item.label}
       {item.tag && <span className="nav-item__tag">{item.tag}</span>}

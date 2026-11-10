@@ -11,6 +11,8 @@ import Composer from '../components/feed/Composer.jsx';
 import PostCard from '../components/feed/PostCard.jsx';
 import Button from '../components/common/Button.jsx';
 import useTimeline from '../components/feed/useTimeline.js';
+import FeedTopButton from '../components/feed/FeedTopButton.jsx';
+import { onFeedTopRequest } from '../components/feed/feedTop.js';
 
 const TABS = [
   { id: 'recommend', label: '추천' },
@@ -23,7 +25,7 @@ const TECH_FILTERS = [{ id: 'all', label: '전체' }, ...TECH_TAGS.map((t) => ({
 export default function FeedPage({ initialTimeline }) {
   const { me, loggedIn, authLoading, composeRequested, clearComposeRequest } = useAppState();
   const [tab, setTab] = useState('recommend');
-  const { posts, hasMore, loading, error, loadMore, upsertPost, removePost } = useTimeline(initialTimeline, tab, loggedIn ? me.id : null);
+  const { posts, hasMore, loading, error, loadMore, upsertPost, removePost, refresh } = useTimeline(initialTimeline, tab, loggedIn ? me.id : null);
   const [techFilter, setTechFilter] = useState('all');
   const composerRef = useRef(null);
 
@@ -35,6 +37,14 @@ export default function FeedPage({ initialTimeline }) {
   }, [composeRequested, clearComposeRequest]);
 
   const followingUnavailable = tab === 'following' && !loggedIn;
+
+  // 맨 위로 올라가면서 지금 탭을 새로 불러와 새로 올라온 글을 보여 준다.
+  function goTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    refresh();
+  }
+  // 왼쪽 메뉴에서 홈을 다시 눌러도 같은 동작을 한다.
+  useEffect(() => onFeedTopRequest(goTop));
 
   return (
     <>
@@ -67,6 +77,7 @@ export default function FeedPage({ initialTimeline }) {
             </Button>
           )}
         </div>
+        <FeedTopButton onClick={goTop} />
       </MainColumn>
 
       {/* 검색 아래는 추후 활용 영역 */}
