@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Avatar from '../common/Avatar.jsx';
 import { StarIcon } from '../common/Icon.jsx';
-import { getBestReviews, getHallOfFame } from '@/services/reviews.js';
+import { getReviewHighlights } from '@/services/reviews.js';
 import './ReviewHighlights.css';
 
 function HighlightSection({ title, href, description, state, historic }) {
@@ -47,12 +47,17 @@ export default function ReviewHighlights() {
   const [history, setHistory] = useState({ loading: true, items: [] });
   useEffect(() => {
     const controller = new AbortController();
-    getBestReviews('WEEKLY', controller.signal)
-      .then((data) => { if (!controller.signal.aborted) setBest({ loading: false, items: data.reviews.slice(0, 3).map((review) => ({ key: review.reviewId, review })) }); })
-      .catch(() => { if (!controller.signal.aborted) setBest({ loading: false, items: [], error: true }); });
-    getHallOfFame(0, controller.signal, 3)
-      .then((data) => { if (!controller.signal.aborted) setHistory({ loading: false, items: data.reviewers.slice(0, 3).map((reviewer) => ({ key: reviewer.username, reviewer })) }); })
-      .catch(() => { if (!controller.signal.aborted) setHistory({ loading: false, items: [], error: true }); });
+    getReviewHighlights(controller.signal)
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setBest({ loading: false, items: data.reviews.map((review) => ({ key: review.rank, review })) });
+        setHistory({ loading: false, items: data.reviewers.map((reviewer) => ({ key: reviewer.username, reviewer })) });
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setBest({ loading: false, items: [], error: true });
+        setHistory({ loading: false, items: [], error: true });
+      });
     return () => controller.abort();
   }, []);
   return <>

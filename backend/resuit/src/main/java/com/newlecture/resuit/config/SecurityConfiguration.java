@@ -101,11 +101,10 @@ public class SecurityConfiguration {
             .requestMatchers(HttpMethod.POST, "/api/v1/users/login", "/api/v1/users/signup").permitAll()
             .requestMatchers("/api/v1/auth/session", "/api/oauth2/**", "/api/login/**", "/error").permitAll()
             .requestMatchers(HttpMethod.GET, "/media/image/**", "/media/video/**").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**", "/api/v1/jobs/**", "/api/v1/posts/**",
-                    "/api/v1/users/*/tweets", "/api/v1/users/*/feedbacks",
-                    "/api/v1/users/*/github/repos", "/api/v1/users/*/github/contributions",
-                    "/api/v1/users/*/blog-posts").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/v1/users/{username}").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/reviews/highlights",
+                    "/api/v1/jobs", "/api/v1/jobs/{id}",
+                    "/api/v1/posts", "/api/v1/posts/{id}",
+                    "/api/v1/posts/{id}/comments", "/api/v1/posts/feeds").permitAll()
             .anyRequest().authenticated());
         // Keep session CSRF protection. The session endpoint exposes a masked token for JS requests.
         http.exceptionHandling(errors -> errors

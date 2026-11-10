@@ -1242,3 +1242,17 @@ ALTER TABLE "notifications" ADD CONSTRAINT "FK_users_TO_notifications_2" FOREIGN
 REFERENCES "users" (
 	"id"
 );
+
+-- 게시글 기술 태그: database/migrations/008_post_tags.sql 기준.
+CREATE TABLE "post_tags" (
+    "post_id" BIGINT NOT NULL,
+    "tag" VARCHAR(50) NOT NULL,
+    CONSTRAINT "PK_post_tags" PRIMARY KEY ("post_id", "tag"),
+    CONSTRAINT "FK_posts_TO_post_tags" FOREIGN KEY ("post_id")
+        REFERENCES "posts" ("id") ON DELETE CASCADE
+);
+
+COMMENT ON TABLE "post_tags" IS '게시글 기술 태그 (태그가 없으면 행 없음)';
+COMMENT ON COLUMN "post_tags"."post_id" IS '게시글 아이디';
+COMMENT ON COLUMN "post_tags"."tag" IS '기술 태그';
+CREATE INDEX "idx_post_tags_tag_post" ON "post_tags" ("tag", "post_id");

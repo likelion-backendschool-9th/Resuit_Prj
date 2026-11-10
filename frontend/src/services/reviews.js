@@ -16,3 +16,5 @@ export const setReviewLiked = (id, liked) => request(`/${id}/likes`, { method: l
 export const getHallOfFame = (page, signal, size = 20) => request(`/hall-of-fame?page=${page}&size=${size}`, { signal });
 
 export const acceptReview = (id) => request(`/${id}/accept`, { method: 'POST' });
+
+export const getReviewHighlights = (signal) => request('/highlights', { signal });
