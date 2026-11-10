@@ -34,19 +34,15 @@ public class Mentor {
     @Column(name = "job_title", nullable = false, length = 100)
     private String jobTitle;
 
-    @Column(name = "career_years")
-    private Integer careerYears;
-
     @Column(name = "price_credits", nullable = false)
     private int priceCredits;
 
     @Column(name = "verified_at", nullable = false)
     private LocalDateTime verifiedAt;
 
-    // 현직자가 직무·경력 연차·피드백 가격을 고친다.
-    public void updateProfile(String jobTitle, Integer careerYears, int priceCredits) {
+    // 현직자가 직무·피드백 가격을 고친다. 경력은 프로필 경력(user_careers)으로 계산한다.
+    public void updateProfile(String jobTitle, int priceCredits) {
         this.jobTitle = jobTitle;
-        this.careerYears = careerYears;
         this.priceCredits = priceCredits;
     }
 

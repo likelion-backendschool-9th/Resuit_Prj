@@ -74,7 +74,7 @@ public class PaidFeedbackController {
 		return ResponseEntity.ok(mentorService.getMyMentor(principal.getName()));
 	}
 
-	// 현직자 정보 저장: PUT /api/v1/users/me/mentor  {"jobTitle":"백엔드 개발자","careerYears":5,"priceCredits":50}
+	// 현직자 정보 저장: PUT /api/v1/users/me/mentor  {"jobTitle":"백엔드 개발자","priceCredits":50}
 	@PutMapping("/users/me/mentor")
 	public ResponseEntity<MyMentorResponse> saveMyMentor(
 			@Valid @RequestBody MentorProfileRequest request, Principal principal) {

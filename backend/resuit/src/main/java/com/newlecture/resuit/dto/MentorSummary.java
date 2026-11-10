@@ -11,10 +11,11 @@ public record MentorSummary(
 		String profileImageUrl,
 		String companyName,
 		String jobTitle,
+		// 프로필 경력으로 계산한 경력 연수. 프로필 경력이 없으면 null이다.
 		Integer careerYears,
 		int priceCredits) {
 
-	public static MentorSummary from(Mentor mentor) {
+	public static MentorSummary of(Mentor mentor, Integer careerYears) {
 		return new MentorSummary(
 				mentor.getUserId(),
 				mentor.getUser().getUsername(),
@@ -22,7 +23,7 @@ public record MentorSummary(
 				mentor.getUser().getProfileImageUrl(),
 				mentor.getCompanyName(),
 				mentor.getJobTitle(),
-				mentor.getCareerYears(),
+				careerYears,
 				mentor.getPriceCredits());
 	}
 }

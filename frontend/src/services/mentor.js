@@ -18,12 +18,12 @@ export async function getMyMentor() {
   return read(await authenticatedFetch('/api/v1/users/me/mentor'), '현직자 정보를 불러오지 못했어요.');
 }
 
-// 현직자 정보 저장. 처음 저장하면 현직자 목록에 나온다. 회사명은 인증한 이메일로 정해져 보내지 않는다.
-export async function saveMyMentor({ jobTitle, careerYears, priceCredits }) {
+// 현직자 정보 저장. 처음 저장하면 현직자 목록에 나온다. 회사명은 인증한 이메일로, 경력은 프로필 경력으로 정해져 보내지 않는다.
+export async function saveMyMentor({ jobTitle, priceCredits }) {
   const response = await authenticatedFetch('/api/v1/users/me/mentor', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jobTitle, careerYears, priceCredits }),
+    body: JSON.stringify({ jobTitle, priceCredits }),
   });
   return read(response, '현직자 정보를 저장하지 못했어요.');
 }

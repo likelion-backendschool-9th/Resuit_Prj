@@ -395,7 +395,6 @@ CREATE TABLE "mentors" (
 	"user_id"	UUID		NOT NULL,
 	"company_name"	VARCHAR(100)		NOT NULL,
 	"job_title"	VARCHAR(100)		NOT NULL,
-	"career_years"	INT		NULL,
 	"price_credits"	INT		NOT NULL,
 	"verified_at"	TIMESTAMP		NOT NULL
 );
@@ -405,8 +404,6 @@ COMMENT ON COLUMN "mentors"."user_id" IS '유저 아이디';
 COMMENT ON COLUMN "mentors"."company_name" IS '회사 이름';
 
 COMMENT ON COLUMN "mentors"."job_title" IS '직무';
-
-COMMENT ON COLUMN "mentors"."career_years" IS '경력 연수';
 
 COMMENT ON COLUMN "mentors"."price_credits" IS '피드백 가격(크레딧)';
 

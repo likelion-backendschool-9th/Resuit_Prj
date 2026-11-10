@@ -1,5 +1,8 @@
 package com.newlecture.resuit.service.impl;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -21,6 +24,7 @@ import com.newlecture.resuit.repository.CompanyEmailDomainRepository;
 import com.newlecture.resuit.repository.FeedbackCommentRepository;
 import com.newlecture.resuit.repository.MentorRepository;
 import com.newlecture.resuit.repository.PaidFeedbackRequestRepository;
+import com.newlecture.resuit.repository.TalentSearchRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.repository.VerificationRepository;
 import com.newlecture.resuit.service.MentorService;
@@ -30,6 +34,7 @@ import com.newlecture.resuit.service.MentorService;
 public class MentorServiceImpl implements MentorService {
 
 	private static final String COMPLETED = "COMPLETED";
+	private static final int YEAR_DAYS = 365;
 
 	private final MentorRepository mentorRepository;
 	private final PaidFeedbackRequestRepository paidFeedbackRequestRepository;
@@ -37,6 +42,8 @@ public class MentorServiceImpl implements MentorService {
 	private final UserRepository userRepository;
 	private final VerificationRepository verificationRepository;
 	private final CompanyEmailDomainRepository companyDomainRepository;
+	// 프로필 경력 일수 계산. 인재 찾기 경력 필터와 같은 계산식(겹친 기간은 한 번만)을 쓴다.
+	private final TalentSearchRepository talentSearchRepository;
 	// 현직자 인증 기록의 종류(CompanyVerificationServiceImpl과 같은 값)
 	private static final String VERIFICATION_TYPE = "company_email";
 
@@ -46,20 +53,24 @@ public class MentorServiceImpl implements MentorService {
 			FeedbackCommentRepository feedbackCommentRepository,
 			UserRepository userRepository,
 			VerificationRepository verificationRepository,
-			CompanyEmailDomainRepository companyDomainRepository) {
+			CompanyEmailDomainRepository companyDomainRepository,
+			TalentSearchRepository talentSearchRepository) {
 		this.mentorRepository = mentorRepository;
 		this.paidFeedbackRequestRepository = paidFeedbackRequestRepository;
 		this.feedbackCommentRepository = feedbackCommentRepository;
 		this.userRepository = userRepository;
 		this.verificationRepository = verificationRepository;
 		this.companyDomainRepository = companyDomainRepository;
+		this.talentSearchRepository = talentSearchRepository;
 	}
 
 	@Override
 	public Page<MentorSummary> getMentors(Pageable pageable) {
-		// 인증이 유효한 현직자를 인증일 최신순으로 읽고
-		return mentorRepository.findActive(pageable)
-				.map(MentorSummary::from);
+		// 인증이 유효한 현직자를 인증일 최신순으로 읽고, 한 페이지의 경력을 한 번에 계산한다.
+		Page<Mentor> page = mentorRepository.findActive(pageable);
+		Map<UUID, Long> careerDays = talentSearchRepository.careerDays(
+				page.getContent().stream().map(Mentor::getUserId).toList(), LocalDate.now());
+		return page.map(mentor -> MentorSummary.of(mentor, careerYears(careerDays.get(mentor.getUserId()))));
 	}
 
 	@Override
@@ -77,7 +88,8 @@ public class MentorServiceImpl implements MentorService {
 						.map(MentorDetailResponse.RecentReview::from)
 						.toList());
 
-		return MentorDetailResponse.of(mentor, reviewHistory);
+		Long days = talentSearchRepository.careerDays(List.of(id), LocalDate.now()).get(id);
+		return MentorDetailResponse.of(mentor, careerYears(days), reviewHistory);
 	}
 
 	// 내 현직자 인증 상태와 현직자 정보를 돌려준다.
@@ -103,14 +115,18 @@ public class MentorServiceImpl implements MentorService {
 					.user(me)
 					.companyName(companyName(verification))
 					.jobTitle(jobTitle)
-					.careerYears(request.careerYears())
 					.priceCredits(request.priceCredits())
 					.verifiedAt(verification.getVerifiedAt())
 					.build());
 		} else {
-			mentor.updateProfile(jobTitle, request.careerYears(), request.priceCredits());
+			mentor.updateProfile(jobTitle, request.priceCredits());
 		}
 		return toMyResponse(verification, mentor);
+	}
+
+	// 경력 일수를 만 연수로 바꾼다. 프로필 경력이 없으면(0일) null이라 화면에 연차를 표시하지 않는다.
+	private static Integer careerYears(Long days) {
+		return days == null || days <= 0 ? null : (int) (days / YEAR_DAYS);
 	}
 
 	private User findUser(String username) {
@@ -140,7 +156,6 @@ public class MentorServiceImpl implements MentorService {
 				verified ? companyName(verification) : null,
 				verified && mentor != null,
 				mentor == null ? null : mentor.getJobTitle(),
-				mentor == null ? null : mentor.getCareerYears(),
 				mentor == null ? null : mentor.getPriceCredits(),
 				verified ? verification.getVerifiedAt() : null);
 	}
