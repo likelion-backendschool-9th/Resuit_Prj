@@ -15,7 +15,7 @@ async function request(path, options = {}) {
 
 const json = (method, body) => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
-// 피드백 게시판 목록 (WBS 4.1 전체, 4.3 category=FRONTEND|BACKEND, 4.4 mine=true)
+// 피드백 게시판 목록 (WBS 4.1 전체, 4.3 category=FRONTEND|BACKEND|FULLSTACK, 4.4 mine=true)
 export const getFeedbackRequests = ({ category, mine } = {}, signal) => {
   const params = new URLSearchParams();
   if (category) params.set('category', category);

@@ -12,6 +12,7 @@ const TABS = [
   { id: 'all', label: '전체' },
   { id: 'FRONTEND', label: '프론트엔드' },
   { id: 'BACKEND', label: '백엔드' },
+  { id: 'FULLSTACK', label: '풀스택' },
   { id: 'mine', label: '내 요청' }
 ];
 

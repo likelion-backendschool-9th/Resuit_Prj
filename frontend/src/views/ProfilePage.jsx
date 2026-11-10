@@ -13,7 +13,7 @@ import Tabs from '../components/common/Tabs.jsx';
 import ContributionGraph from '../components/profile/ContributionGraph.jsx';
 import PostCard from '../components/feed/PostCard.jsx';
 import ResumePreview from '../components/feedback/ResumePreview.jsx';
-import { SECTION_LABEL } from '../components/feedback/labels.js';
+import { FIELD_LABEL, SECTION_LABEL } from '../components/feedback/labels.js';
 import useProfileData from '../components/profile/useProfileData.js';
 import './ProfilePage.css';
 
@@ -394,7 +394,7 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
                         />
                         <span className="grow">
                           <strong>{title}</strong>
-                          <span className="muted"> · {r.field}</span>
+                          <span className="muted"> · {FIELD_LABEL[r.field] || r.field}</span>
                         </span>
                         <span className={`profile__order${on ? ' is-on' : ''}`}>
                           {on && publicOrder >= 0 ? publicOrder + 1 : ''}
@@ -426,7 +426,7 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
                   <div className="resume-thumb" aria-hidden="true"><span /><span /><span /></div>
                   <div className="grow">
                     <div className="bold">{pinnedResume.title}</div>
-                    <div className="small muted">{pinnedResume.field}</div>
+                    <div className="small muted">{FIELD_LABEL[pinnedResume.field] || pinnedResume.field}</div>
                   </div>
                   {isOwner ? (
                     <Link href="/resumes" className="text-link">보기</Link>
@@ -455,7 +455,7 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
                   <div className="resume-thumb" aria-hidden="true"><span /><span /><span /></div>
                   <div className="grow">
                     <div className="bold">{r.title || r.name}</div>
-                    <div className="small muted">{r.field}</div>
+                    <div className="small muted">{FIELD_LABEL[r.field] || r.field}</div>
                   </div>
                   <Link href="/resumes" className="text-link">보기</Link>
                 </div>

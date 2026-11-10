@@ -19,9 +19,10 @@ import AwardsEditor from '../components/resume/AwardsEditor.jsx';
 import { normalizeContent, cleanContent } from '../components/resume/resumeContent.js';
 import './ResumeEditPage.css';
 
-const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
+const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드', FULLSTACK: '풀스택' };
 // 분야를 비우면('') 수정 API가 분야를 지운다
-const FIELD_OPTIONS = [{ id: 'FRONTEND', label: '프론트엔드' }, { id: 'BACKEND', label: '백엔드' }, { id: '', label: '정하지 않음' }];
+// 분야는 셋 중 하나를 꼭 고른다. 피드백 게시판과 인재 찾기의 분야 필터에 쓰인다.
+const FIELD_OPTIONS = [{ id: 'FRONTEND', label: '프론트엔드' }, { id: 'BACKEND', label: '백엔드' }, { id: 'FULLSTACK', label: '풀스택' }];
 const MAX_TITLE = 100;
 const MAX_INTRODUCTION = 2000;
 
@@ -127,6 +128,11 @@ export default function CommonResumeEditPage({ id }) {
       document.getElementById('resume-title')?.focus();
       return false;
     }
+    if (!payload.field) {
+      setAlertText('이력서 분야를 골라 주세요.');
+      document.getElementById('info')?.scrollIntoView({ block: 'start' });
+      return false;
+    }
     setSaving(true);
     setAlertText('');
     try {
@@ -202,9 +208,9 @@ export default function CommonResumeEditPage({ id }) {
               hint="지원할 때와 프로필에 이 이름으로 보여요" value={draft.title} onChange={(v) => change('title', v)}
             />
             <div className="field resume-field">
-              <span className="label" style={{ fontSize: 14 }}>분야</span>
+              <span className="label" style={{ fontSize: 14 }}>분야 (필수)</span>
               <ChipRadioGroup options={FIELD_OPTIONS} value={draft.field} onChange={(v) => change('field', v)} label="이력서 분야" />
-              <span className="xs muted">피드백 게시판의 분야 필터에 쓰여요</span>
+              <span className="xs muted">피드백 게시판과 인재 찾기의 분야 필터에 쓰여요</span>
             </div>
           </section>
 
