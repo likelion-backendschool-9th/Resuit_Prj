@@ -10,6 +10,7 @@ function toPost(post) {
     profileImage: post.author.profileImageUrl,
     type: post.type?.toLowerCase(),
     body: post.content,
+    tags: post.tags || [],
     image: post.imageUrl,
     imageAlt: `${author}님의 첨부 이미지`,
     video: post.videoUrl,
@@ -78,8 +79,9 @@ export async function getPostDetail(id, { baseUrl = '', headers } = {}) {
 }
 
 
-export async function getFeed({ tab = 'recommend', userId, page = 0, baseUrl = '', signal, headers } = {}) {
+export async function getFeed({ tab = 'recommend', userId, tag, page = 0, baseUrl = '', signal, headers } = {}) {
   const query = new URLSearchParams({ tab, page: String(page), size: '20' });
+  if (tab === 'tech' && tag && tag !== 'all') query.set('tag', tag);
   if (tab === 'following') {
     if (!userId) throw new Error('팔로잉 피드는 로그인 후 볼 수 있어요.');
     query.set('userId', userId);

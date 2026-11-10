@@ -53,14 +53,14 @@ public class PostsController {
 	}
 
 	@PostMapping("")
-	public PostDetailResponse createPost(@RequestBody CreatePostRequest request, Principal principal) {
+	public PostDetailResponse createPost(@jakarta.validation.Valid @RequestBody CreatePostRequest request, Principal principal) {
 		return postService.createPost(request, principal.getName());
 	}
 
 	@PatchMapping("/{id}")
 	public PostDetailResponse updatePost(
 			@PathVariable Long id,
-			@RequestBody UpdatePostRequest request,
+			@jakarta.validation.Valid @RequestBody UpdatePostRequest request,
 			Principal principal) {
 		return postService.updatePost(id, request, principal.getName());
 	}
@@ -139,9 +139,10 @@ public class PostsController {
 
 	@GetMapping(value = "/feeds", params = "tab=tech")
 	public Page<PostTimelineResponse> getTechFeed(
+            @RequestParam(required = false) String tag,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return postService.getTechFeed(PageRequest.of(page, size));
+		return postService.getTechFeed(tag, PageRequest.of(page, size));
 	}
 
 	@GetMapping(value = "/feeds", params = "tab=question")

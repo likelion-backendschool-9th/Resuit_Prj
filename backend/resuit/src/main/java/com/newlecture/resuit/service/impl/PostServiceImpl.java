@@ -67,7 +67,8 @@ public class PostServiceImpl implements PostService {
 	@Override
 	@Transactional
 	public PostDetailResponse createPost(CreatePostRequest request, String username) {
-		var user = findUser(username);
+		var tags = validateTags(request.type(), request.tags());
+        var user = findUser(username);
 		var imagePath = mediaService.finalizeForPost(request.imageUrl(), user.getId(), "IMAGE");
 		var videoPath = mediaService.finalizeForPost(request.videoUrl(), user.getId(), "VIDEO");
 
@@ -80,7 +81,8 @@ public class PostServiceImpl implements PostService {
 				.repoFullName(request.repoFullName())
 				.build();
 
-		return detail(postRepository.save(post));
+		post.replaceTags(tags);
+        return detail(postRepository.save(post));
 	}
 
 	@Override
@@ -88,6 +90,8 @@ public class PostServiceImpl implements PostService {
 	public PostDetailResponse updatePost(Long id, UpdatePostRequest request, String username) {
 		var post = findPost(id);
 		validateOwner(post, findUser(username).getId());
+		var tags = validateTags(request.type(), request.tags());
+        post.replaceTags(tags);
 		post.update(
 				request.type(),
 				request.content(),
@@ -145,14 +149,28 @@ public class PostServiceImpl implements PostService {
 	}
 
 	@Override
-	public Page<PostTimelineResponse> getTechFeed(Pageable pageable) {
-		return getFeedByType("TECH", pageable);
+	public Page<PostTimelineResponse> getTechFeed(String tag, Pageable pageable) {
+        if (tag == null) return getFeedByType("TECH", pageable);
+        validateTags("TECH", List.of(tag));
+        return timeline(postRepository.findTechFeedByTag(tag, pageable));
 	}
 
 	@Override
 	public Page<PostTimelineResponse> getQuestionFeed(Pageable pageable) {
 		return getFeedByType("QUESTION", pageable);
 	}
+
+    private static final java.util.Set<String> TECH_TAGS = java.util.Set.of(
+            "React", "TypeScript", "Spring", "Java", "Docker", "AI");
+
+    private java.util.Set<String> validateTags(String type, List<String> tags) {
+        if (!"TECH".equalsIgnoreCase(type) || tags == null) return java.util.Set.of();
+        if (tags.size() > 3 || tags.stream().anyMatch(tag -> tag == null || !TECH_TAGS.contains(tag))) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "기술 태그는 허용된 항목 중 최대 3개까지 선택할 수 있습니다.");
+        }
+        return new java.util.LinkedHashSet<>(tags);
+    }
 
 	/*
 	findPost 사용처

@@ -20,5 +20,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			List<UUID> userIds,
 			Pageable pageable);
 
+    @org.springframework.data.jpa.repository.Query("""
+            select p from Post p where upper(p.type) = 'TECH' and p.deletedAt is null
+            and :tag member of p.tags order by p.createdAt desc, p.id desc
+            """)
+    Page<Post> findTechFeedByTag(@org.springframework.data.repository.query.Param("tag") String tag, Pageable pageable);
+
 	Optional<Post> findByIdAndDeletedAtIsNull(Long id);
 }

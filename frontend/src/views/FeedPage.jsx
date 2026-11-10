@@ -23,8 +23,8 @@ const TECH_FILTERS = [{ id: 'all', label: '전체' }, ...TECH_TAGS.map((t) => ({
 export default function FeedPage({ initialTimeline }) {
   const { me, loggedIn, authLoading, composeRequested, clearComposeRequest } = useAppState();
   const [tab, setTab] = useState('recommend');
-  const { posts, hasMore, loading, error, loadMore, upsertPost, removePost } = useTimeline(initialTimeline, tab, loggedIn ? me.id : null);
   const [techFilter, setTechFilter] = useState('all');
+  const { posts, hasMore, loading, error, loadMore, upsertPost, removePost } = useTimeline(initialTimeline, tab, loggedIn ? me.id : null, techFilter);
   const composerRef = useRef(null);
 
   // 왼쪽 메뉴 "게시하기"로 들어오면 글쓰기 칸에 포커스
@@ -43,9 +43,7 @@ export default function FeedPage({ initialTimeline }) {
         <Composer ref={composerRef} onPosted={(post) => { upsertPost(post); setTab('recommend'); }} />
         {tab === 'tech' && (
           <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--line)', background: 'var(--bg-sub)' }}>
-            <fieldset disabled className="composer__unsupported" title="기술 태그 필터는 준비 중이에요.">
             <ChipRadioGroup options={TECH_FILTERS} value={techFilter} onChange={setTechFilter} label="기술 태그 필터" tone="tech" size="filter" />
-            </fieldset>
           </div>
         )}
         {followingUnavailable && <div className="empty">

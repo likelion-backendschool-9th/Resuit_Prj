@@ -13,6 +13,7 @@ public record PostDetailResponse(
 		String videoUrl,
 		String blogPostUrl,
 		String repoFullName,
+        java.util.Set<String> tags,
 		LocalDateTime createdAt,
 		long commentCount,
 		long likeCount,
@@ -35,6 +36,7 @@ public record PostDetailResponse(
 				post.getVideoUrl(),
 				post.getBlogPost() == null ? null : post.getBlogPost().getUrl(),
 				post.getRepoFullName(),
+                post.getTags().isEmpty() ? null : new java.util.LinkedHashSet<>(post.getTags()),
 				post.getCreatedAt(), commentCount, likeCount, liked);
 	}
 

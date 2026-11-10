@@ -47,6 +47,21 @@ public class Post extends BaseTimeEntity {
     @Column(name = "repo_full_name", length = 200)
     private String repoFullName;
 
+    // 태그가 없는 게시글은 컬렉션 테이블에 행을 만들지 않는다.
+    @ElementCollection
+    @CollectionTable(name = "post_tags", joinColumns = @JoinColumn(name = "post_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"post_id", "tag"}),
+            indexes = @Index(name = "idx_post_tags_tag_post", columnList = "tag, post_id"))
+    @Column(name = "tag", nullable = false, length = 50)
+    @org.hibernate.annotations.BatchSize(size = 100)
+    @Builder.Default
+    private Set<String> tags = new LinkedHashSet<>();
+
+    public void replaceTags(Set<String> tags) {
+        this.tags.clear();
+        if (tags != null) this.tags.addAll(tags);
+    }
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
