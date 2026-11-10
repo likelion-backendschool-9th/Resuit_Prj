@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAppState } from '../../context/AppStateContext.jsx';
 import Icon from '../common/Icon.jsx';
 import Button, { IconButton } from '../common/Button.jsx';
@@ -78,6 +78,7 @@ function NavItem({ item, pathname, count = 0 }) {
 
 export default function LeftNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { me, loggedIn } = useAppState();
   // 안 읽은 알림 수. 알림 메뉴와 모바일 ☰ 버튼에 표시한다.
   const unread = useUnreadNotifications(loggedIn, pathname);
@@ -97,6 +98,16 @@ export default function LeftNav() {
   const [drawerPath, setDrawerPath] = useState(null);
   const drawerOpen = drawerPath === pathname;
   const closeDrawer = () => setDrawerPath(null);
+
+  // 로그인 회원만 글쓰기 모달을 연다. 비로그인이면 로그인 화면으로 보낸다.
+  function openCompose() {
+    closeDrawer();
+    if (loggedIn) {
+      setComposeOpen(true);
+      return;
+    }
+    router.push('/login');
+  }
 
   // 서랍 메뉴가 열려 있으면 Esc로 닫는다.
   useEffect(() => {
@@ -176,16 +187,30 @@ export default function LeftNav() {
       </button>
       {settingsOpen && <SettingsMenu onClose={() => setSettingsOpen(false)} />}
 
-      <Button size="lg" block onClick={() => { closeDrawer(); setComposeOpen(true); }} aria-haspopup="dialog" className="left-nav__post">게시글 작성</Button>
+      <Button
+        size="lg"
+        block
+        onClick={openCompose}
+        aria-haspopup={loggedIn ? 'dialog' : undefined}
+        className="left-nav__post"
+      >
+        {loggedIn ? '게시글 작성' : '로그인하기'}
+      </Button>
     </nav>
     {drawerOpen && <div className="left-nav__scrim" aria-hidden="true" onClick={closeDrawer} />}
 
     {/* 모바일(800px 이하)에서만 보이는 하단 바. 자주 쓰는 메뉴와 게시글 작성 버튼을 둔다. */}
     <nav className="mobile-tabs" aria-label="빠른 메뉴">
       {MOBILE_TABS.slice(0, 2).map((item) => <MobileTab key={item.to} item={item} active={tabActive(item)} onClick={homeClick(item, pathname)} />)}
-      <button type="button" className="mobile-tabs__item mobile-tabs__post" aria-haspopup="dialog" onClick={() => setComposeOpen(true)}>
+      <button
+        type="button"
+        className="mobile-tabs__item mobile-tabs__post"
+        aria-haspopup={loggedIn ? 'dialog' : undefined}
+        aria-label={loggedIn ? '게시글 작성' : '로그인하기'}
+        onClick={openCompose}
+      >
         <span className="mobile-tabs__post-icon"><Icon name="plus" size={22} /></span>
-        작성
+        {loggedIn ? '작성' : '로그인'}
       </button>
       {/* 기업 회원은 이력서 대신 인재 찾기를 둔다. */}
       {(isCompanyMember(me.role) && me.role !== 'ADMIN' ? [COMPANY_ITEMS[0], MOBILE_TABS[3]] : MOBILE_TABS.slice(2))
