@@ -5,5 +5,6 @@ public record UpdatePostRequest(
 		String content,
 		String imageUrl,
 		String videoUrl,
-		String repoFullName) {
+		String repoFullName,
+        @jakarta.validation.constraints.Size(max = 3) java.util.List<String> tags) {
 }

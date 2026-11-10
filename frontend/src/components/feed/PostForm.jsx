@@ -29,7 +29,7 @@ const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, 
   const [kind, setKind] = useState(lockedKind || post?.type || 'general');
   const [initialContent] = useState(() => splitPostForEditing(post?.body || ''));
   const [text, setText] = useState(initialContent.body);
-  const [tags, setTags] = useState([]);
+  const [tags, setTags] = useState(post?.tags || []);
   const [source, setSource] = useState('');
   const [codeOpen, setCodeOpen] = useState(!!initialContent.code);
   const [codeFile, setCodeFile] = useState(initialContent.code?.file || '');
@@ -52,10 +52,10 @@ const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, 
     setSaving(true);
     setError('');
     try {
-      await onSave({ type: kind, content: serializePostContent(text, hasCode ? { file: codeFile, text: codeText } : null), imageUrl: post?.image || media.items.find((item) => item.mediaType === 'IMAGE')?.path || null,
+      await onSave({ type: kind, tags: kind === 'tech' ? tags : null, content: serializePostContent(text, hasCode ? { file: codeFile, text: codeText } : null), imageUrl: post?.image || media.items.find((item) => item.mediaType === 'IMAGE')?.path || null,
         videoUrl: post?.video || media.items.find((item) => item.mediaType === 'VIDEO')?.path || null, repoFullName: post?.repoFullName || null });
       media.finishPublish(true);
-      if (!post) { setText(''); setCodeFile(''); setCodeText(''); setCodeOpen(false); }
+      if (!post) { setTags([]); setText(''); setCodeFile(''); setCodeText(''); setCodeOpen(false); }
     } catch (err) {
       media.finishPublish(false);
       setError(err.message || '저장하지 못했어요. 다시 시도해 주세요.');
@@ -82,13 +82,11 @@ const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, 
         {kind === 'tech' && (
           <div className="composer__tech">
             <span className="composer__tech-label">기술 태그 선택 (최대 {MAX_TAGS}개)</span>
-            <fieldset disabled className="composer__unsupported" title="기술 태그 저장은 아직 지원하지 않아요.">
             <div className="chips" style={{ gap: 6 }}>
               {TECH_TAGS.map((t) => (
                 <ToggleChip key={t} tone="tech" size="filter" on={tags.includes(t)} onClick={() => toggleTag(t)}>#{t}</ToggleChip>
               ))}
             </div>
-            </fieldset>
             <label className="composer__source">
               출처
               <input type="url" placeholder="공식 문서나 원문 링크 (선택)" disabled title="출처 저장은 아직 지원하지 않아요." value={source} onChange={(e) => setSource(e.target.value)} />

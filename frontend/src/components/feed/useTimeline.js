@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getFeed } from '../../services/posts.js';
 
-export default function useTimeline(initialTimeline, tab, userId) {
-  const key = tab === 'following' ? `following:${userId || 'guest'}` : tab;
+export default function useTimeline(initialTimeline, tab, userId, techFilter = 'all') {
+  const tag = tab === 'tech' ? techFilter : null;
+  const key = tab === 'following' ? `following:${userId || 'guest'}` : tab === 'tech' ? `tech:${tag}` : tab;
   const enabled = tab !== 'following' || !!userId;
   const [entries, setEntries] = useState(() => ({
     recommend: { timeline: initialTimeline, error: '', loading: false },
@@ -25,7 +26,7 @@ export default function useTimeline(initialTimeline, tab, userId) {
     pending.current = controller;
     update((all) => ({ ...all, [key]: { ...all[key], loading: true, error: '' } }));
     try {
-      const next = await getFeed({ tab, userId, page: reset ? 0 : (previous?.page ?? -1) + 1, signal: controller.signal });
+      const next = await getFeed({ tab, userId, tag, page: reset ? 0 : (previous?.page ?? -1) + 1, signal: controller.signal });
       if (controller.signal.aborted) return;
       const posts = new Map((reset ? [] : previous?.posts || []).map((post) => [post.id, post]));
       next.posts.forEach((post) => posts.set(post.id, post));
@@ -35,7 +36,7 @@ export default function useTimeline(initialTimeline, tab, userId) {
     } finally {
       if (pending.current === controller) pending.current = null;
     }
-  }, [enabled, key, tab, userId, update]);
+  }, [enabled, key, tab, userId, tag, update]);
 
   useEffect(() => {
     // 처음 여는 탭과 변경된 피드만 조회한다. 최초 추천 목록은 SSR 결과를 사용한다.
@@ -60,7 +61,7 @@ export default function useTimeline(initialTimeline, tab, userId) {
   function upsertPost(post) {
     update((all) => Object.fromEntries(Object.entries(all).map(([entryKey, entry]) => {
       if (!entry.timeline) return [entryKey, entry];
-      const matches = entryKey === 'recommend' || entryKey === post.type || entryKey.startsWith('following:');
+      const matches = entryKey === 'recommend' || entryKey === post.type || (post.type === 'tech' && (entryKey === 'tech:all' || (post.tags || []).some((tag) => entryKey === `tech:${tag}`))) || entryKey.startsWith('following:');
       const exists = entry.timeline.posts.some((item) => item.id === post.id);
       const posts = entry.timeline.posts.flatMap((item) => item.id === post.id ? (matches ? [post] : []) : [item]);
       if (!exists && entryKey === 'recommend') posts.unshift(post);

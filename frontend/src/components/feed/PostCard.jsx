@@ -55,7 +55,7 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
         {post.code && <CodeBlock code={post.code} />}
         {post.image && <PostImage src={post.image} alt={post.imageAlt} />}
         {post.video && <PostVideo src={post.video} poster={post.poster} alt={post.imageAlt} duration={post.duration} />}
-        {post.type === 'tech' && post.source !== 'api' && <TechTags tags={post.tags} source={post.source} />}
+        {post.type === 'tech' && (post.tags?.length > 0 || post.source !== 'api') && <TechTags tags={post.tags} source={post.source === 'api' ? undefined : post.source} />}
         {post.blog && <BlogEmbed blog={post.blog} />}
         {post.repo && <RepoEmbed repo={post.repo} />}
         {post.blogPostUrl && <a className="embed" href={post.blogPostUrl} target="_blank" rel="noopener noreferrer">블로그 원문 보기</a>}

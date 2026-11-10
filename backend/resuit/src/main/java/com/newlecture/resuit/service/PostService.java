@@ -30,7 +30,7 @@ public interface PostService {
 
 	Page<PostTimelineResponse> getFollowingFeed(UUID userId, Pageable pageable);
 
-	Page<PostTimelineResponse> getTechFeed(Pageable pageable);
+	Page<PostTimelineResponse> getTechFeed(String tag, Pageable pageable);
 
 	Page<PostTimelineResponse> getQuestionFeed(Pageable pageable);
 }
