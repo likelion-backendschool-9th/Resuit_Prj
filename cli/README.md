@@ -12,7 +12,36 @@ npm link
 resuit login
 ```
 
-기본 API 주소는 `http://localhost:8080`이며 `RESUIT_API_URL`로 변경할 수 있습니다.
+## API 주소 설정
+
+CLI는 [config.ts](./src/config.ts)의 `RESUIT_API_URL` 환경변수로 호출할 백엔드 주소를 결정합니다.
+환경변수가 없으면 기본값으로 `http://localhost:8080`을 사용합니다.
+
+로컬 개발환경에서 cli사용을 위해선 아래의 명령어
+
+```bash
+export RESUIT_API_URL=http://localhost:8080
+```
+
+운영환경에서 cli사용을 위해선 아래의 명령어
+
+```bash
+export RESUIT_API_URL=https://resuit.newlecture.com
+```
+
+매번 설정하지 않으려면 사용하는 셸 설정 파일에 추가합니다.
+
+```bash
+echo 'export RESUIT_API_URL=https://resuit.newlecture.com' >> ~/.zshrc
+source ~/.zshrc
+```
+
+설정된 주소를 확인한 뒤 로그인합니다.
+
+```bash
+echo "$RESUIT_API_URL"
+resuit login
+```
 
 ```bash
 resuit login
