@@ -7,9 +7,15 @@ import { splitPostForEditing, serializePostContent } from '../../utils/postConte
 import { TECH_TAGS } from '../../data/constants.js';
 import Button, { IconButton } from '../common/Button.jsx';
 import Icon from '../common/Icon.jsx';
-import { ToggleChip } from '../common/Chip.jsx';
+import { ChipRadioGroup, ToggleChip } from '../common/Chip.jsx';
 import './Composer.css';
 
+// 글 종류. 홈 상단은 피드 탭이 정하고, 게시글 작성 모달에서는 이 버튼으로 고른다.
+const KINDS = [
+  { id: 'general', label: '일반' },
+  { id: 'tech', label: '기술 정보' },
+  { id: 'question', label: '질문' }
+];
 const PLACEHOLDERS = {
   general: '무슨 일이 있었나요? 면접 후기, 공부 기록 모두 좋아요.',
   tech: '새로 알게 된 기술, 버전 변경점, 꿀팁을 짧게 공유해 주세요.',
@@ -17,7 +23,8 @@ const PLACEHOLDERS = {
 };
 const MAX_TAGS = 3;
 
-// 홈 피드 상단 글쓰기. 글 종류는 피드 탭으로 정한다. (이력서 피드백 요청은 이력서 › 내 이력서에서 한다)
+// 글쓰기 폼. 홈 상단은 피드 탭이 글 종류(kind)를 넘겨 주고, 게시글 작성 모달은 넘기지 않아 폼에서 직접 고른다.
+// 글 수정은 원래 글의 종류를 그대로 쓴다. (이력서 피드백 요청은 이력서 › 내 이력서에서 한다)
 const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, onCancel }, textareaRef) {
   const inputId = useId();
   const fileInput = useRef(null);
@@ -39,6 +46,8 @@ const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, 
     if (lockedKind) setKind(lockedKind);
   }, [lockedKind]);
 
+  // 글 종류를 넘겨받지 않은 새 글(게시글 작성 모달)일 때만 종류 선택 버튼을 보여 준다.
+  const choosesKind = !lockedKind && !post;
   const hasCode = codeOpen && codeText.trim().length > 0;
   const blank = !text.trim() && !hasCode && !media.items.length && !post?.image && !post?.video;
 
@@ -68,6 +77,7 @@ const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, 
   return (
     <form onSubmit={submit} aria-busy={saving}>
       <fieldset className="composer__fields composer__body" disabled={saving}>
+        {choosesKind && <ChipRadioGroup options={KINDS} value={kind} onChange={setKind} label="글 종류" />}
         <label htmlFor={inputId} className="sr-only">새 게시글</label>
         <textarea
           id={inputId}
