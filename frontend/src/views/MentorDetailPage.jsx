@@ -7,7 +7,7 @@ import { MainColumn, RightAside } from '@/components/layout/AppLayout.jsx';
 import Avatar from '@/components/common/Avatar.jsx';
 import Button from '@/components/common/Button.jsx';
 import { avatarColor } from '@/components/feedback/labels.js';
-import { dateText } from '@/components/paidFeedback/labels.js';
+import { dateText, mentorRole } from '@/components/paidFeedback/labels.js';
 import { useAppState } from '@/context/AppStateContext.jsx';
 import { createPaidFeedback, getMentor } from '@/services/paidFeedback.js';
 import { getAllResumes } from '@/services/resumes.js';
@@ -89,7 +89,7 @@ export default function MentorDetailPage({ id }) {
             <div className="row-wrap" style={{ gap: 6 }}><strong style={{ fontSize: 20 }}>{name}</strong><span className="small muted">@{mentor.username}</span></div>
             <div className="row-wrap" style={{ gap: 8 }}>
               <span className="mentor-badge">✓ {mentor.companyName} 현직자</span>
-              <span className="small">{mentor.jobTitle}{mentor.careerYears != null ? ` · 경력 ${mentor.careerYears}년` : ''}</span>
+              <span className="small">{mentorRole(mentor)}</span>
             </div>
             <span className="xs muted">{dateText(mentor.verifiedAt)} 인증</span>
           </div>

@@ -15,12 +15,13 @@ public record MentorDetailResponse(
 		String selfIntroduction,
 		String companyName,
 		String jobTitle,
+		// 프로필 경력으로 계산한 경력 연수. 프로필 경력이 없으면 null이다.
 		Integer careerYears,
 		int priceCredits,
 		LocalDateTime verifiedAt,
 		ReviewHistory reviewHistory) {
 
-	public static MentorDetailResponse of(Mentor mentor, ReviewHistory reviewHistory) {
+	public static MentorDetailResponse of(Mentor mentor, Integer careerYears, ReviewHistory reviewHistory) {
 		return new MentorDetailResponse(
 				mentor.getUserId(),
 				mentor.getUser().getUsername(),
@@ -29,7 +30,7 @@ public record MentorDetailResponse(
 				mentor.getUser().getSelfIntroduction(),
 				mentor.getCompanyName(),
 				mentor.getJobTitle(),
-				mentor.getCareerYears(),
+				careerYears,
 				mentor.getPriceCredits(),
 				mentor.getVerifiedAt(),
 				reviewHistory);

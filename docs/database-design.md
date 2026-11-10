@@ -424,7 +424,6 @@ erDiagram
       uuid user_id PK, FK "유저"
       varchar company_name "회사 이름"
       varchar job_title "직무"
-      int career_years "경력 연수"
       int price_credits "피드백 가격(크레딧)"
       timestamptz verified_at "인증일"
     }
@@ -576,7 +575,7 @@ erDiagram
 | `user_badge_history` | `id`, `user_id`, `badge_id`, `active_from`, `active_until` | 리뷰어 배지가 유예 상태로 내려갈 때 끝난 활성 기간을 기록한다. 같은 배지를 나중에 다시 받아도 지난 인증 기간을 유지한다. |
 | `verifications` | `id`, `user_id`, `type`, `email`, `code_hash`, `expires_at`, `created_at`; 선택 `verified_at` | `type IN ('COMPANY_EMAIL','EMPLOYEE')`. 인증 코드를 보낼 때마다 새 행을 만든다. 확인할 때는 그 회원·종류의 가장 최근 행이 만료 전이고 해시가 일치해야 한다. 성공하면 `verified_at`을 기록한다. 현직자 인증은 등록된 회사 도메인 이메일로 하며(코드 없이 바로 `verified_at` 기록, 지금 `type` 값은 `company_email`), 회원당 유효한(`revoked_at`이 없는) 인증은 하나다. 다른 회사 이메일로 다시 인증하면 이전 인증에 `revoked_at`을 기록하고 `mentors.company_name`을 새 회사로 바꾼다. 인증을 취소해도 `mentors` 행은 지난 유료 피드백 요청 때문에 남기고, 현직자 목록·상세·요청은 유효한 인증이 있는 현직자만 대상으로 한다. |
 | `company_email_domains` | `id`, `domain`, `created_at`; 선택 `company_name` | 현직자 인증에 쓸 수 있는 회사 이메일 도메인이다. `domain`은 `@` 없이 소문자로 저장하며 유일하다(`UNIQUE(domain)`). `company_name`은 그 도메인의 회사명이며 현직자의 회사명(`mentors.company_name`)으로 쓴다. 비어 있으면 도메인을 그대로 쓴다. |
-| `user_careers` | `id`, `user_id`, `company_name`, `job_title`, `start_date`, `display_order`, `created_at`; 선택 `end_date`, `description`, `updated_at` | 회원이 프로필에 적는 경력이다. `jobs.career`, `mentors.career_years`와 연결하지 않는다. `end_date`가 없으면 재직 중이고, 있으면 시작일보다 빠를 수 없다(서비스에서 검사). `display_order`는 1부터이며 회원 안에서 겹치지 않는다(`UNIQUE(user_id, display_order)`). 프로필 수정은 목록 전체를 바꾸므로 한 트랜잭션에서 기존 행을 지우고 새로 넣는다. 최대 20개다. 회원을 지우면 경력도 지운다. |
+| `user_careers` | `id`, `user_id`, `company_name`, `job_title`, `start_date`, `display_order`, `created_at`; 선택 `end_date`, `description`, `updated_at` | 회원이 프로필에 적는 경력이다. `jobs.career`와 연결하지 않는다. 인재 찾기 경력 필터와 현직자 목록·상세의 경력 연수는 모두 이 테이블의 기간으로 계산한다(겹친 기간은 한 번만). `end_date`가 없으면 재직 중이고, 있으면 시작일보다 빠를 수 없다(서비스에서 검사). `display_order`는 1부터이며 회원 안에서 겹치지 않는다(`UNIQUE(user_id, display_order)`). 프로필 수정은 목록 전체를 바꾸므로 한 트랜잭션에서 기존 행을 지우고 새로 넣는다. 최대 20개다. 회원을 지우면 경력도 지운다. |
 
 `users.widgets`는 켜진 위젯을 표시 순서대로 담은 배열이다. 예: `["GRASS", "PINNED_RESUME"]`. 목록에 없는 위젯은 꺼진 것이다. 위젯 종류는 Java enum으로 관리하며 지금 화면에는 GitHub 잔디(`GRASS`)와 대표 이력서(`PINNED_RESUME`)가 있다.
 
@@ -636,7 +635,7 @@ erDiagram
 
 | 테이블 | 필수 컬럼 | 제약 및 읽기 방식 |
 | --- | --- | --- |
-| `mentors` | `user_id`, `company_name`, `job_title`, `price_credits`, `verified_at`; 선택 `career_years` | 회사 이메일 인증을 마친 회원이 현직자 정보(직무, 경력 연차, 유료 피드백 가격)를 처음 저장할 때 행을 만든다(`PUT /users/me/mentor`). `company_name`은 인증한 도메인의 회사명이라 직접 고칠 수 없고, 다시 인증해야 바뀐다. `price_credits > 0`. 현직자 목록은 이 테이블과 회원 정보를 함께 읽고, 유효한 인증이 있는 현직자만 보여 준다. |
+| `mentors` | `user_id`, `company_name`, `job_title`, `price_credits`, `verified_at` | 회사 이메일 인증을 마친 회원이 현직자 정보(직무, 유료 피드백 가격)를 처음 저장할 때 행을 만든다(`PUT /users/me/mentor`). `company_name`은 인증한 도메인의 회사명이라 직접 고칠 수 없고, 다시 인증해야 바뀐다. `price_credits > 0`. 현직자 목록은 이 테이블과 회원 정보를 함께 읽고, 유효한 인증이 있는 현직자만 보여 준다. 경력은 따로 입력받지 않고 프로필 경력(`user_careers`)으로 계산한다. |
 | `paid_feedback_requests` | `id`, `requester_id`, `mentor_id`, `credits`, `status`, `created_at`; 선택 `common_resume_id`, `target_resume_id`, `content`, `updated_at` | `status IN ('REQUESTED','IN_PROGRESS','COMPLETED','CANCELED')`. 공통 이력서와 특화 이력서 중 정확히 하나만 값이 있다(CHECK). 자기 자신에게는 요청하지 않는다. `credits`는 요청 시점의 현직자 가격이며, 현직자가 나중에 가격을 바꿔도 그대로 둔다. 요청자와 담당 현직자만 조회할 수 있다. |
 | `paid_feedback_responses` | `id`, `paid_feedback_request_id`, `content`, `created_at` | 담당 현직자만 답변을 등록한다(서비스에서 검사). 요청 하나에 답변이 여러 개 달릴 수 있다. |
 | `credit_transactions` | `id`, `user_id`, `type`, `amount`, `balance_after`, `created_at`; 선택 `paid_feedback_request_id`, `credit_payment_id` | `type IN ('CHARGE','USE','EARN','REFUND','WITHDRAW')`. `USE`·`WITHDRAW`는 음수, 나머지는 양수다. `balance_after >= 0`. `CHARGE`는 `credit_payment_id`가, `USE`·`EARN`·`REFUND`는 `paid_feedback_request_id`가, `WITHDRAW`는 `credit_withdrawal_id`가 꼭 있어야 한다(CHECK). 행은 추가만 하고 고치거나 지우지 않는다. 현재 잔액은 회원의 가장 최근 행의 `balance_after`이고, 행이 없으면 0이다. 환전 가능 크레딧은 `min(잔액, EARN 합계 - WITHDRAW 합계)`다(사용은 충전분부터 빠진 것으로 본다). |

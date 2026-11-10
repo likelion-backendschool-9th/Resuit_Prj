@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { MainColumn, RightAside } from '@/components/layout/AppLayout.jsx';
 import Button from '@/components/common/Button.jsx';
 import { cancelCompanyEmailVerification, verifyCompanyEmail } from '@/services/verifications.js';
@@ -15,7 +16,7 @@ export default function CompanyVerificationPage() {
   const [mentor, setMentor] = useState(null);
   const [email, setEmail] = useState('');
   const [changing, setChanging] = useState(false);
-  const [form, setForm] = useState({ jobTitle: '', careerYears: '', priceCredits: '' });
+  const [form, setForm] = useState({ jobTitle: '', priceCredits: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -24,7 +25,6 @@ export default function CompanyVerificationPage() {
     setMentor(data);
     setForm({
       jobTitle: data.jobTitle || '',
-      careerYears: data.careerYears ?? '',
       priceCredits: data.priceCredits ?? '',
     });
   }
@@ -56,7 +56,6 @@ export default function CompanyVerificationPage() {
     try {
       apply(await saveMyMentor({
         jobTitle: form.jobTitle.trim(),
-        careerYears: form.careerYears === '' ? null : Number(form.careerYears),
         priceCredits: Number(form.priceCredits),
       }));
       setNotice('현직자 정보를 저장했어요. 현직자 목록에 보여요.');
@@ -110,12 +109,10 @@ export default function CompanyVerificationPage() {
               <label htmlFor="mentor-job">직무</label>
               <input id="mentor-job" required maxLength={100} placeholder="예: 백엔드 개발자" disabled={busy}
                 value={form.jobTitle} onChange={(event) => setForm((f) => ({ ...f, jobTitle: event.target.value }))} />
-              <label htmlFor="mentor-career">경력 연차 (선택)</label>
-              <input id="mentor-career" type="number" min={0} max={60} placeholder="예: 5" disabled={busy}
-                value={form.careerYears} onChange={(event) => setForm((f) => ({ ...f, careerYears: event.target.value }))} />
               <label htmlFor="mentor-price">유료 피드백 가격 (크레딧)</label>
               <input id="mentor-price" type="number" required min={1} max={10000} placeholder="예: 50" disabled={busy}
                 value={form.priceCredits} onChange={(event) => setForm((f) => ({ ...f, priceCredits: event.target.value }))} />
+              <p className="small muted">경력은 <Link href="/setting/profile" className="text-link">프로필 경력</Link>으로 계산해 현직자 목록에 보여요.</p>
               <Button type="submit" disabled={busy}>{mentor.registered ? '현직자 정보 저장' : '현직자로 등록'}</Button>
             </form>
 
@@ -132,7 +129,7 @@ export default function CompanyVerificationPage() {
     </MainColumn>
     <RightAside label="현직자 인증 안내"><section className="card"><h2>인증 안내</h2>
       <p className="text-2">등록된 회사 도메인의 이메일만 인증할 수 있어요. 회사명은 인증한 이메일 도메인으로 정해져요.</p>
-      <p className="text-2">이직하면 새 회사 이메일로 다시 인증해 주세요. 직무·경력·가격은 언제든 고칠 수 있어요.</p>
+      <p className="text-2">이직하면 새 회사 이메일로 다시 인증해 주세요. 직무·가격은 언제든 고칠 수 있고, 경력은 프로필 편집에서 고쳐요.</p>
     </section></RightAside>
   </>;
 }

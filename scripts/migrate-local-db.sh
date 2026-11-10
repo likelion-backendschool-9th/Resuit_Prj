@@ -23,6 +23,7 @@ migrations=(
   docs/migrations/2026-11-09-company-plan-periods.sql
   docs/migrations/2026-11-10-mentor-verification.sql
   docs/migrations/2026-11-10-resume-photo.sql
+  docs/migrations/2026-11-10-drop-mentor-career-years.sql
 )
 for migration in "${migrations[@]}"; do
   echo "적용: $migration"

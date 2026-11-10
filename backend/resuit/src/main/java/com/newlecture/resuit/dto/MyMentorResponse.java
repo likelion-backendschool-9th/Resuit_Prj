@@ -10,7 +10,6 @@ public record MyMentorResponse(
 		// 현직자 정보를 저장해 현직자 목록에 나오는지. 인증만 하고 정보를 저장하지 않았으면 false다.
 		boolean registered,
 		String jobTitle,
-		Integer careerYears,
 		Integer priceCredits,
 		LocalDateTime verifiedAt) {
 }
