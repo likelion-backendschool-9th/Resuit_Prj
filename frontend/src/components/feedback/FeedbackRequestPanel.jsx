@@ -78,7 +78,7 @@ export default function FeedbackRequestPanel({ resumeId, requestId, hasComments,
   return (
     <section className="card fb-request">
       <h2 className="fb-request__title">제출 전 피드백 받기</h2>
-      <p className="text-2 fb-request__desc">회사명을 가린 채 피드백 게시판에 올려 다른 사용자에게 피드백을 받을 수 있어요. 이력서 제목에 회사명이 있다면 바꿔 주세요.</p>
+      <p className="text-2 fb-request__desc">회사명을 가린 채 피드백 게시판에 올려 다른 사용자에게 피드백을 받을 수 있어요.</p>
 
       <div className="fb-request__group">
         <span className="small fb-request__label">봐 줬으면 하는 항목</span>
