@@ -1,6 +1,7 @@
 package com.newlecture.resuit.service.impl;
 
 import com.newlecture.resuit.dto.feedback.FeedbackCommentCreateCommand;
+import com.newlecture.resuit.dto.notification.NotificationCommand;
 import com.newlecture.resuit.dto.feedback.FeedbackCommentResponse;
 import com.newlecture.resuit.dto.feedback.FeedbackRequestSearchCondition;
 import com.newlecture.resuit.dto.feedback.FeedbackRequestSummary;
@@ -24,6 +25,8 @@ import com.newlecture.resuit.service.CommonResumeService.ResumeForbiddenExceptio
 import com.newlecture.resuit.service.CommonResumeService.ResumeNotFoundException;
 import com.newlecture.resuit.service.CommonResumeService.UnauthenticatedUserException;
 import com.newlecture.resuit.service.FeedbackBoardService;
+import com.newlecture.resuit.service.NotificationService;
+import com.newlecture.resuit.service.NotificationType;
 import com.newlecture.resuit.service.FeedbackBoardService.FeedbackCommentForbiddenException;
 import com.newlecture.resuit.service.FeedbackBoardService.FeedbackCommentInUseException;
 import com.newlecture.resuit.service.FeedbackBoardService.FeedbackCommentNotFoundException;
@@ -56,6 +59,7 @@ public class FeedbackBoardServiceImpl implements FeedbackBoardService {
     private final CommonResumeRepository commonResumes;
     private final TargetResumeRepository targetResumes;
     private final UserRepository users;
+    private final NotificationService notifications;
 
     // 4.1 전체, 4.3 분야 필터, 4.4 내 요청. 섹션과 댓글 수는 요청마다 따로 묻지 않고 한 번에 모아 온다.
     @Override
@@ -150,6 +154,9 @@ public class FeedbackBoardServiceImpl implements FeedbackBoardService {
             .section(validSection(body.section(), request))
             .content(body.content().trim())
             .build());
+        // 피드백 요청자에게 피드백이 달렸다고 알린다.
+        notifications.notify(new NotificationCommand(request.getUser().getId(), user.getId(), NotificationType.FEEDBACK_COMMENT,
+            NotificationService.nameOf(user) + " 님이 내 이력서에 피드백을 남겼어요.", "/feedback/" + request.getId()));
         return FeedbackCommentResponse.of(saved, true);
     }
 

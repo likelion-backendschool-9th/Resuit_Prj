@@ -29,6 +29,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import com.newlecture.resuit.dto.notification.NotificationCommand;
+import com.newlecture.resuit.service.NotificationService;
+import com.newlecture.resuit.service.NotificationType;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +45,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final BestReviewRepository bestReviews;
     private final FeedbackRequestRepository requests;
     private final ReviewerBadgeService reviewerBadges;
+    private final NotificationService notifications;
 
     @Override
     @Transactional(readOnly = true)
@@ -117,6 +121,9 @@ public class ReviewServiceImpl implements ReviewService {
             review.accept(now);
             comments.flush();
             reviewerBadges.refreshAfterActivity(review.getUser().getId(), now);
+            // 피드백 작성자에게 채택됐다고 알린다.
+            notifications.notify(new NotificationCommand(review.getUser().getId(), user.getId(), NotificationType.FEEDBACK_ADOPTED,
+                NotificationService.nameOf(user) + " 님이 내 피드백을 채택했어요.", "/feedback/" + requestId));
         }
         return new ReviewAcceptResponse(reviewId, review.isAdopted(), review.getAdoptedAt());
     }
