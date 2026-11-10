@@ -21,7 +21,15 @@ const PLACEHOLDERS = {
   tech: '새로 알게 된 기술, 버전 변경점, 꿀팁을 짧게 공유해 주세요.',
   question: '취업, 이력서, 개발에 대해 궁금한 걸 물어보세요.'
 };
-const MAX_TAGS = 3;
+const MAX_TECH_TAGS = 3;
+const MAX_HASHTAGS = 10;
+const HASHTAG_PATTERN = /^[\p{L}\p{N}_-]{1,50}$/u;
+
+function normalizeHashtag(value) {
+  let tag = String(value || '').trim();
+  if (tag.startsWith('#')) tag = tag.slice(1).trim();
+  return tag;
+}
 
 // 글쓰기 폼. 홈 상단은 피드 탭이 글 종류(kind)를 넘겨 주고, 게시글 작성 모달은 넘기지 않아 폼에서 직접 고른다.
 // 글 수정은 원래 글의 종류를 그대로 쓴다. (이력서 피드백 요청은 이력서 › 내 이력서에서 한다)
@@ -36,7 +44,10 @@ const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, 
   const [kind, setKind] = useState(lockedKind || post?.type || 'general');
   const [initialContent] = useState(() => splitPostForEditing(post?.body || ''));
   const [text, setText] = useState(initialContent.body);
-  const [tags, setTags] = useState(post?.tags || []);
+  const [techTags, setTechTags] = useState(post?.techTags || post?.tags || []);
+  const [hashtags, setHashtags] = useState(post?.hashtags || []);
+  const [hashOpen, setHashOpen] = useState((post?.hashtags || []).length > 0);
+  const [hashDraft, setHashDraft] = useState('');
   const [source, setSource] = useState('');
   const [codeOpen, setCodeOpen] = useState(!!initialContent.code);
   const [codeFile, setCodeFile] = useState(initialContent.code?.file || '');
@@ -51,8 +62,23 @@ const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, 
   const hasCode = codeOpen && codeText.trim().length > 0;
   const blank = !text.trim() && !hasCode && !media.items.length && !post?.image && !post?.video;
 
-  const toggleTag = (t) =>
-    setTags((list) => (list.includes(t) ? list.filter((x) => x !== t) : list.length < MAX_TAGS ? [...list, t] : list));
+  const toggleTechTag = (t) =>
+    setTechTags((list) => (list.includes(t) ? list.filter((x) => x !== t) : list.length < MAX_TECH_TAGS ? [...list, t] : list));
+
+  const addHashtag = () => {
+    const tag = normalizeHashtag(hashDraft);
+    if (!tag) return;
+    if (!HASHTAG_PATTERN.test(tag)) {
+      setError('해시태그는 한글·영문·숫자·_·- 만 쓸 수 있어요.');
+      return;
+    }
+    setError('');
+    setHashtags((list) => {
+      if (list.includes(tag) || list.length >= MAX_HASHTAGS) return list;
+      return [...list, tag];
+    });
+    setHashDraft('');
+  };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -61,10 +87,26 @@ const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, 
     setSaving(true);
     setError('');
     try {
-      await onSave({ type: kind, tags: kind === 'tech' ? tags : null, content: serializePostContent(text, hasCode ? { file: codeFile, text: codeText } : null), imageUrl: post?.image || media.items.find((item) => item.mediaType === 'IMAGE')?.path || null,
-        videoUrl: post?.video || media.items.find((item) => item.mediaType === 'VIDEO')?.path || null, repoFullName: post?.repoFullName || null });
+      await onSave({
+        type: kind,
+        techTags: kind === 'tech' ? techTags : null,
+        hashtags,
+        content: serializePostContent(text, hasCode ? { file: codeFile, text: codeText } : null),
+        imageUrl: post?.image || media.items.find((item) => item.mediaType === 'IMAGE')?.path || null,
+        videoUrl: post?.video || media.items.find((item) => item.mediaType === 'VIDEO')?.path || null,
+        repoFullName: post?.repoFullName || null,
+      });
       media.finishPublish(true);
-      if (!post) { setTags([]); setText(''); setCodeFile(''); setCodeText(''); setCodeOpen(false); }
+      if (!post) {
+        setTechTags([]);
+        setHashtags([]);
+        setHashDraft('');
+        setHashOpen(false);
+        setText('');
+        setCodeFile('');
+        setCodeText('');
+        setCodeOpen(false);
+      }
     } catch (err) {
       media.finishPublish(false);
       setError(err.message || '저장하지 못했어요. 다시 시도해 주세요.');
@@ -91,15 +133,42 @@ const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, 
 
         {kind === 'tech' && (
           <div className="composer__tech">
-            <span className="composer__tech-label">기술 태그 선택 (최대 {MAX_TAGS}개)</span>
+            <span className="composer__tech-label">기술 태그 선택 (최대 {MAX_TECH_TAGS}개)</span>
             <div className="chips" style={{ gap: 6 }}>
               {TECH_TAGS.map((t) => (
-                <ToggleChip key={t} tone="tech" size="filter" on={tags.includes(t)} onClick={() => toggleTag(t)}>#{t}</ToggleChip>
+                <ToggleChip key={t} tone="tech" size="filter" on={techTags.includes(t)} onClick={() => toggleTechTag(t)}>#{t}</ToggleChip>
               ))}
             </div>
             <label className="composer__source">
               출처
               <input type="url" placeholder="공식 문서나 원문 링크 (선택)" disabled title="출처 저장은 아직 지원하지 않아요." value={source} onChange={(e) => setSource(e.target.value)} />
+            </label>
+          </div>
+        )}
+
+        {hashOpen && (
+          <div className="composer__tech">
+            <span className="composer__tech-label">해시태그 (최대 {MAX_HASHTAGS}개)</span>
+            <div className="chips" style={{ gap: 6 }}>
+              {hashtags.map((t) => (
+                <ToggleChip key={t} size="filter" on onClick={() => setHashtags((list) => list.filter((x) => x !== t))}>#{t}</ToggleChip>
+              ))}
+            </div>
+            <label className="composer__source">
+              태그 추가
+              <input
+                type="text"
+                placeholder="#면접후기"
+                value={hashDraft}
+                onChange={(e) => setHashDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addHashtag();
+                  }
+                }}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={addHashtag}>추가</Button>
             </label>
           </div>
         )}
@@ -144,7 +213,15 @@ const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, 
             >
               <Icon name="code" />
             </IconButton>
-            <IconButton label="해시태그" disabled title="해시태그 저장은 아직 지원하지 않아요." className="icon-btn--plain icon-btn--sm composer__tool"><Icon name="hash" /></IconButton>
+            <IconButton
+              label="해시태그"
+              title="해시태그 추가"
+              aria-pressed={hashOpen}
+              className={`icon-btn--plain icon-btn--sm composer__tool${hashOpen ? ' is-on' : ''}`}
+              onClick={() => setHashOpen((v) => !v)}
+            >
+              <Icon name="hash" />
+            </IconButton>
           </div>
           <div className="row" style={{ gap: 12 }}>
             <span className="small muted">{text.length}자</span>

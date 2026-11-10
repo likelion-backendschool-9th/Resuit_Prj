@@ -45,7 +45,7 @@ WBS에서 같은 기능이 여러 곳에 적힌 경우 하나로 정리한다.
 | 영역 | 엔티티 → 테이블 |
 | --- | --- |
 | 회원·프로필 | `User`→`users`(유저), `Integration`→`integrations`(연동), `PinnedRepo`→`pinned_repos`(대표 레포), `BlogPost`→`blog_posts`(블로그 글), `Follow`→`follows`(팔로우), `Badge`→`badges`(배지), `UserBadge`→`user_badges`(유저 배지), `Verification`→`verifications`(인증) |
-| 게시글 | `Post`→`posts`(게시글), `Comment`→`comments`(댓글), `PostLike`→`post_likes`(게시글 좋아요) |
+| 게시글 | `Post`→`posts`(게시글), `Comment`→`comments`(댓글), `PostLike`→`post_likes`(게시글 좋아요), 기술 태그 `post_tech_tags`, 해시태그 `PostHashtag`→`post_hashtags` |
 | 공고·이력서 | `Job`→`jobs`(공고), `JobQuestion`→`job_questions`(공고 요구 문항), `JobApplication`→`job_applications`(공고 지원), `CommonResume`→`common_resumes`(공통 이력서), `TargetResume`→`target_resumes`(특화 이력서) |
 | 피드백·베스트 리뷰 | `FeedbackRequest`→`feedback_requests`(피드백 요청), `FeedbackRequestSection`→`feedback_request_sections`(피드백 요청 섹션), `FeedbackComment`→`feedback_comments`(피드백 댓글), `FeedbackCommentLike`→`feedback_comment_likes`(리뷰 좋아요), `BestReview`→`best_reviews`(베스트 리뷰) |
 | 유료 피드백·크레딧 | `Mentor`→`mentors`(현직자), `PaidFeedbackRequest`→`paid_feedback_requests`(유료 피드백 요청), `PaidFeedbackResponse`→`paid_feedback_responses`(유료 피드백 답변), `CreditTransaction`→`credit_transactions`(크레딧 내역), `CreditPayment`→`credit_payments`(크레딧 결제), `CreditWithdrawal`→`credit_withdrawals`(크레딧 환전) |

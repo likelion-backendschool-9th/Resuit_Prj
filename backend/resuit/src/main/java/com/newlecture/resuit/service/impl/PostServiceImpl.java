@@ -67,8 +67,9 @@ public class PostServiceImpl implements PostService {
 	@Override
 	@Transactional
 	public PostDetailResponse createPost(CreatePostRequest request, String username) {
-		var tags = validateTags(request.type(), request.tags());
-        var user = findUser(username);
+		var techTags = validateTechTags(request.type(), request.techTags());
+		var hashtags = normalizeHashtags(request.hashtags());
+		var user = findUser(username);
 		var imagePath = mediaService.finalizeForPost(request.imageUrl(), user.getId(), "IMAGE");
 		var videoPath = mediaService.finalizeForPost(request.videoUrl(), user.getId(), "VIDEO");
 
@@ -81,8 +82,9 @@ public class PostServiceImpl implements PostService {
 				.repoFullName(request.repoFullName())
 				.build();
 
-		post.replaceTags(tags);
-        return detail(postRepository.save(post));
+		post.replaceTechTags(techTags);
+		post.replaceHashtags(hashtags);
+		return detail(postRepository.save(post));
 	}
 
 	@Override
@@ -90,8 +92,8 @@ public class PostServiceImpl implements PostService {
 	public PostDetailResponse updatePost(Long id, UpdatePostRequest request, String username) {
 		var post = findPost(id);
 		validateOwner(post, findUser(username).getId());
-		var tags = validateTags(request.type(), request.tags());
-        post.replaceTags(tags);
+		post.replaceTechTags(validateTechTags(request.type(), request.techTags()));
+		post.replaceHashtags(normalizeHashtags(request.hashtags()));
 		post.update(
 				request.type(),
 				request.content(),
@@ -150,9 +152,9 @@ public class PostServiceImpl implements PostService {
 
 	@Override
 	public Page<PostTimelineResponse> getTechFeed(String tag, Pageable pageable) {
-        if (tag == null) return getFeedByType("TECH", pageable);
-        validateTags("TECH", List.of(tag));
-        return timeline(postRepository.findTechFeedByTag(tag, pageable));
+		if (tag == null) return getFeedByType("TECH", pageable);
+		validateTechTags("TECH", List.of(tag));
+		return timeline(postRepository.findTechFeedByTag(tag, pageable));
 	}
 
 	@Override
@@ -160,17 +162,53 @@ public class PostServiceImpl implements PostService {
 		return getFeedByType("QUESTION", pageable);
 	}
 
-    private static final java.util.Set<String> TECH_TAGS = java.util.Set.of(
-            "React", "TypeScript", "Spring", "Java", "Docker", "AI");
+	@Override
+	public Page<PostTimelineResponse> getHashtagFeed(String tag, Pageable pageable) {
+		var normalized = normalizeHashtags(List.of(tag));
+		if (normalized.isEmpty()) {
+			throw new org.springframework.web.server.ResponseStatusException(
+					org.springframework.http.HttpStatus.BAD_REQUEST, "검색할 해시태그를 입력해 주세요.");
+		}
+		return timeline(postRepository.findByHashtag(normalized.iterator().next(), pageable));
+	}
 
-    private java.util.Set<String> validateTags(String type, List<String> tags) {
-        if (!"TECH".equalsIgnoreCase(type) || tags == null) return java.util.Set.of();
-        if (tags.size() > 3 || tags.stream().anyMatch(tag -> tag == null || !TECH_TAGS.contains(tag))) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.BAD_REQUEST, "기술 태그는 허용된 항목 중 최대 3개까지 선택할 수 있습니다.");
-        }
-        return new java.util.LinkedHashSet<>(tags);
-    }
+	private static final java.util.Set<String> TECH_TAGS = java.util.Set.of(
+			"React", "TypeScript", "Spring", "Java", "Docker", "AI");
+	private static final int MAX_HASHTAGS = 10;
+	private static final java.util.regex.Pattern HASHTAG_PATTERN =
+			java.util.regex.Pattern.compile("^[\\p{L}\\p{N}_-]{1,50}$");
+
+	private java.util.Set<String> validateTechTags(String type, List<String> tags) {
+		if (!"TECH".equalsIgnoreCase(type) || tags == null) return java.util.Set.of();
+		if (tags.size() > 3 || tags.stream().anyMatch(tag -> tag == null || !TECH_TAGS.contains(tag))) {
+			throw new org.springframework.web.server.ResponseStatusException(
+					org.springframework.http.HttpStatus.BAD_REQUEST, "기술 태그는 허용된 항목 중 최대 3개까지 선택할 수 있습니다.");
+		}
+		return new java.util.LinkedHashSet<>(tags);
+	}
+
+	private java.util.Set<String> normalizeHashtags(List<String> tags) {
+		if (tags == null || tags.isEmpty()) return java.util.Set.of();
+		var normalized = new java.util.LinkedHashSet<String>();
+		for (String raw : tags) {
+			if (raw == null) continue;
+			var tag = raw.trim();
+			if (tag.startsWith("#")) tag = tag.substring(1).trim();
+			if (tag.isEmpty()) continue;
+			if (!HASHTAG_PATTERN.matcher(tag).matches()) {
+				throw new org.springframework.web.server.ResponseStatusException(
+						org.springframework.http.HttpStatus.BAD_REQUEST,
+						"해시태그는 한글·영문·숫자·_·- 만 쓸 수 있어요.");
+			}
+			normalized.add(tag);
+			if (normalized.size() > MAX_HASHTAGS) {
+				throw new org.springframework.web.server.ResponseStatusException(
+						org.springframework.http.HttpStatus.BAD_REQUEST,
+						"해시태그는 최대 " + MAX_HASHTAGS + "개까지 추가할 수 있어요.");
+			}
+		}
+		return normalized;
+	}
 
 	/*
 	findPost 사용처

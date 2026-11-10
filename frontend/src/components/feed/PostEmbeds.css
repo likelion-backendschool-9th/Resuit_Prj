@@ -6,7 +6,9 @@
   border-radius: 999px;
   background: var(--tech-bg);
   color: var(--tech);
+  text-decoration: none;
 }
+a.hashtag:hover { text-decoration: underline; }
 .tech-tags__source { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; font-size: 12px; color: var(--text-sub); }
 
 .post-media {

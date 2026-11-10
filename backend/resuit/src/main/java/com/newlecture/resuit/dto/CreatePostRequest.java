@@ -6,5 +6,6 @@ public record CreatePostRequest(
 		String imageUrl,
 		String videoUrl,
 		String repoFullName,
-        @jakarta.validation.constraints.Size(max = 3) java.util.List<String> tags) {
+		@jakarta.validation.constraints.Size(max = 3) java.util.List<String> techTags,
+		@jakarta.validation.constraints.Size(max = 10) java.util.List<String> hashtags) {
 }

@@ -2,12 +2,24 @@ import Link from 'next/link';
 import Icon from '../common/Icon.jsx';
 import './PostEmbeds.css';
 
-// 기술 정보 글: 태그 + 출처
+// 기술 정보 글: 기술 태그 + 출처
 export function TechTags({ tags = [], source }) {
   return (
     <div className="tech-tags">
       {tags.map((t) => <span key={t} className="hashtag">#{t}</span>)}
       {source && <span className="tech-tags__source"><Icon name="link" size={13} />출처 · {source}</span>}
+    </div>
+  );
+}
+
+// 자유 해시태그. 누르면 해당 태그 검색으로 이동한다.
+export function PostHashtags({ tags = [] }) {
+  if (!tags.length) return null;
+  return (
+    <div className="tech-tags" aria-label="해시태그">
+      {tags.map((t) => (
+        <Link key={t} href={`/search?hashtag=${encodeURIComponent(t)}`} className="hashtag">#{t}</Link>
+      ))}
     </div>
   );
 }

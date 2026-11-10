@@ -8,7 +8,7 @@ import './PageAccessGate.css';
 
 // 목록과 상세만 공개한다. /jobs/me 같은 별도 경로를 포괄 허용하지 않는다.
 export function isPublicServicePath(pathname) {
-  return pathname === '/' || pathname === '/jobs'
+  return pathname === '/' || pathname === '/jobs' || pathname === '/search'
     || /^\/jobs\/[0-9]+\/?$/.test(pathname ?? '')
     || /^\/threads\/[^/]+\/?$/.test(pathname ?? '');
 }

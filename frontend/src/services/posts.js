@@ -10,7 +10,10 @@ function toPost(post) {
     profileImage: post.author.profileImageUrl,
     type: post.type?.toLowerCase(),
     body: post.content,
-    tags: post.tags || [],
+    techTags: post.techTags || [],
+    hashtags: post.hashtags || [],
+    // 예전 목업·화면 호환. 기술 태그만 tags로도 노출한다.
+    tags: post.techTags || [],
     image: post.imageUrl,
     imageAlt: `${author}님의 첨부 이미지`,
     video: post.videoUrl,
@@ -56,12 +59,21 @@ async function mutatePost(path, method, body) {
     if (response.status === 401) throw new Error('로그인이 필요해요. 다시 로그인해 주세요.');
     if (response.status === 403) throw new Error('처리 권한이 없거나 인증이 만료되었어요. 새로고침 후 다시 시도해 주세요.');
     if (response.status === 404) throw new Error('게시글을 찾을 수 없어요. 새로고침해 주세요.');
-    throw new Error('게시글을 저장하거나 삭제하지 못했어요. 다시 시도해 주세요.');
+    const message = await response.text().catch(() => '');
+    throw new Error(message || '게시글을 저장하거나 삭제하지 못했어요. 다시 시도해 주세요.');
   }
   return method === 'DELETE' ? null : toPost(await response.json());
 }
 
-const postPayload = (body) => ({ ...body, type: body.type?.toUpperCase() });
+const postPayload = (body) => ({
+  type: body.type?.toUpperCase(),
+  content: body.content,
+  imageUrl: body.imageUrl,
+  videoUrl: body.videoUrl,
+  repoFullName: body.repoFullName,
+  techTags: body.techTags ?? body.tags ?? null,
+  hashtags: body.hashtags ?? null,
+});
 export const createPost = (body) => mutatePost('', 'POST', postPayload(body));
 export const updatePost = (id, body) => mutatePost(`/${encodeURIComponent(id)}`, 'PATCH', postPayload(body));
 export const deletePost = (id) => mutatePost(`/${encodeURIComponent(id)}`, 'DELETE');
@@ -81,7 +93,7 @@ export async function getPostDetail(id, { baseUrl = '', headers } = {}) {
 
 export async function getFeed({ tab = 'recommend', userId, tag, page = 0, baseUrl = '', signal, headers } = {}) {
   const query = new URLSearchParams({ tab, page: String(page), size: '20' });
-  if (tab === 'tech' && tag && tag !== 'all') query.set('tag', tag);
+  if ((tab === 'tech' || tab === 'hashtag') && tag && tag !== 'all') query.set('tag', tag);
   if (tab === 'following') {
     if (!userId) throw new Error('팔로잉 피드는 로그인 후 볼 수 있어요.');
     query.set('userId', userId);

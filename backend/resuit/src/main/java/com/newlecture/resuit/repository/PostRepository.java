@@ -26,9 +26,16 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @org.springframework.data.jpa.repository.Query("""
             select p from Post p where upper(p.type) = 'TECH' and p.deletedAt is null
-            and :tag member of p.tags order by p.createdAt desc, p.id desc
+            and :tag member of p.techTags order by p.createdAt desc, p.id desc
             """)
     Page<Post> findTechFeedByTag(@org.springframework.data.repository.query.Param("tag") String tag, Pageable pageable);
+
+	@org.springframework.data.jpa.repository.Query("""
+			select p from Post p join p.hashtags h
+			where p.deletedAt is null and h.tag = :tag
+			order by p.createdAt desc, p.id desc
+			""")
+	Page<Post> findByHashtag(@org.springframework.data.repository.query.Param("tag") String tag, Pageable pageable);
 
 	Optional<Post> findByIdAndDeletedAtIsNull(Long id);
 }
