@@ -61,7 +61,8 @@ export default function useTimeline(initialTimeline, tab, userId, techFilter = '
   function upsertPost(post) {
     update((all) => Object.fromEntries(Object.entries(all).map(([entryKey, entry]) => {
       if (!entry.timeline) return [entryKey, entry];
-      const matches = entryKey === 'recommend' || entryKey === post.type || (post.type === 'tech' && (entryKey === 'tech:all' || (post.tags || []).some((tag) => entryKey === `tech:${tag}`))) || entryKey.startsWith('following:');
+      const techTags = post.techTags || post.tags || [];
+      const matches = entryKey === 'recommend' || entryKey === post.type || (post.type === 'tech' && (entryKey === 'tech:all' || techTags.some((tag) => entryKey === `tech:${tag}`))) || entryKey.startsWith('following:');
       const exists = entry.timeline.posts.some((item) => item.id === post.id);
       const posts = entry.timeline.posts.flatMap((item) => item.id === post.id ? (matches ? [post] : []) : [item]);
       if (!exists && entryKey === 'recommend') posts.unshift(post);

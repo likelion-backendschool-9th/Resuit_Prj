@@ -2,14 +2,8 @@ package com.newlecture.resuit.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.io.Serializable;
 import java.time.*;
 import java.util.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "posts")
@@ -47,19 +41,42 @@ public class Post extends BaseTimeEntity {
     @Column(name = "repo_full_name", length = 200)
     private String repoFullName;
 
-    // 태그가 없는 게시글은 컬렉션 테이블에 행을 만들지 않는다.
+    // 기술 정보 탭 전용 태그. 없으면 행을 만들지 않는다.
     @ElementCollection
-    @CollectionTable(name = "post_tags", joinColumns = @JoinColumn(name = "post_id"),
+    @CollectionTable(name = "post_tech_tags", joinColumns = @JoinColumn(name = "post_id"),
             uniqueConstraints = @UniqueConstraint(columnNames = {"post_id", "tag"}),
-            indexes = @Index(name = "idx_post_tags_tag_post", columnList = "tag, post_id"))
+            indexes = @Index(name = "idx_post_tech_tags_tag_post", columnList = "tag, post_id"))
     @Column(name = "tag", nullable = false, length = 50)
     @org.hibernate.annotations.BatchSize(size = 100)
     @Builder.Default
-    private Set<String> tags = new LinkedHashSet<>();
+    private Set<String> techTags = new LinkedHashSet<>();
 
-    public void replaceTags(Set<String> tags) {
-        this.tags.clear();
-        if (tags != null) this.tags.addAll(tags);
+    // 모든 게시글 타입의 자유 해시태그.
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @org.hibernate.annotations.BatchSize(size = 100)
+    @Builder.Default
+    private Set<PostHashtag> hashtags = new LinkedHashSet<>();
+
+    public void replaceTechTags(Set<String> tags) {
+        this.techTags.clear();
+        if (tags != null) this.techTags.addAll(tags);
+    }
+
+    public void replaceHashtags(Set<String> tags) {
+        this.hashtags.clear();
+        if (tags != null) {
+            for (String tag : tags) {
+                this.hashtags.add(new PostHashtag(this, tag));
+            }
+        }
+    }
+
+    public Set<String> hashtagValues() {
+        Set<String> values = new LinkedHashSet<>();
+        for (PostHashtag hashtag : hashtags) {
+            values.add(hashtag.getTag());
+        }
+        return values;
     }
 
     @Column(name = "deleted_at")

@@ -33,4 +33,6 @@ public interface PostService {
 	Page<PostTimelineResponse> getTechFeed(String tag, Pageable pageable);
 
 	Page<PostTimelineResponse> getQuestionFeed(Pageable pageable);
+
+	Page<PostTimelineResponse> getHashtagFeed(String tag, Pageable pageable);
 }

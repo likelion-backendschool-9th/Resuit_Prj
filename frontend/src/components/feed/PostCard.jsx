@@ -9,7 +9,7 @@ import Avatar from '../common/Avatar.jsx';
 import Badge, { POST_TYPE_BADGE } from '../common/Badge.jsx';
 import FollowButton from '../common/FollowButton.jsx';
 import Icon from '../common/Icon.jsx';
-import { TechTags, PostImage, PostVideo, BlogEmbed, RepoEmbed, Evidence } from './PostEmbeds.jsx';
+import { TechTags, PostHashtags, PostImage, PostVideo, BlogEmbed, RepoEmbed, Evidence } from './PostEmbeds.jsx';
 import PostContent from './PostContent.jsx';
 import CodeBlock from './CodeBlock.jsx';
 import JobCard from '../jobs/JobCard.jsx';
@@ -55,7 +55,10 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
         {post.code && <CodeBlock code={post.code} />}
         {post.image && <PostImage src={post.image} alt={post.imageAlt} />}
         {post.video && <PostVideo src={post.video} poster={post.poster} alt={post.imageAlt} duration={post.duration} />}
-        {post.type === 'tech' && (post.tags?.length > 0 || post.source !== 'api') && <TechTags tags={post.tags} source={post.source === 'api' ? undefined : post.source} />}
+        {post.type === 'tech' && ((post.techTags || post.tags)?.length > 0 || post.source !== 'api') && (
+          <TechTags tags={post.techTags || post.tags} source={post.source === 'api' ? undefined : post.source} />
+        )}
+        <PostHashtags tags={post.hashtags || []} />
         {post.blog && <BlogEmbed blog={post.blog} />}
         {post.repo && <RepoEmbed repo={post.repo} />}
         {post.blogPostUrl && <a className="embed" href={post.blogPostUrl} target="_blank" rel="noopener noreferrer">블로그 원문 보기</a>}

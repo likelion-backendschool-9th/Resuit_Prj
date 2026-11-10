@@ -1243,16 +1243,30 @@ REFERENCES "users" (
 	"id"
 );
 
--- 게시글 기술 태그: database/migrations/008_post_tags.sql 기준.
-CREATE TABLE "post_tags" (
+-- 게시글 기술 태그: database/migrations/008 · 010 기준.
+CREATE TABLE "post_tech_tags" (
     "post_id" BIGINT NOT NULL,
     "tag" VARCHAR(50) NOT NULL,
-    CONSTRAINT "PK_post_tags" PRIMARY KEY ("post_id", "tag"),
-    CONSTRAINT "FK_posts_TO_post_tags" FOREIGN KEY ("post_id")
+    CONSTRAINT "PK_post_tech_tags" PRIMARY KEY ("post_id", "tag"),
+    CONSTRAINT "FK_posts_TO_post_tech_tags" FOREIGN KEY ("post_id")
         REFERENCES "posts" ("id") ON DELETE CASCADE
 );
 
-COMMENT ON TABLE "post_tags" IS '게시글 기술 태그 (태그가 없으면 행 없음)';
-COMMENT ON COLUMN "post_tags"."post_id" IS '게시글 아이디';
-COMMENT ON COLUMN "post_tags"."tag" IS '기술 태그';
-CREATE INDEX "idx_post_tags_tag_post" ON "post_tags" ("tag", "post_id");
+COMMENT ON TABLE "post_tech_tags" IS '게시글 기술 태그 (태그가 없으면 행 없음)';
+COMMENT ON COLUMN "post_tech_tags"."post_id" IS '게시글 아이디';
+COMMENT ON COLUMN "post_tech_tags"."tag" IS '기술 태그';
+CREATE INDEX "idx_post_tech_tags_tag_post" ON "post_tech_tags" ("tag", "post_id");
+
+-- 자유 해시태그: database/migrations/011_post_hashtags.sql 기준.
+CREATE TABLE "post_hashtags" (
+    "post_id" BIGINT NOT NULL,
+    "tag" VARCHAR(50) NOT NULL,
+    CONSTRAINT "PK_post_hashtags" PRIMARY KEY ("post_id", "tag"),
+    CONSTRAINT "FK_posts_TO_post_hashtags" FOREIGN KEY ("post_id")
+        REFERENCES "posts" ("id") ON DELETE CASCADE
+);
+
+COMMENT ON TABLE "post_hashtags" IS '게시글 해시태그 (모든 글 타입)';
+COMMENT ON COLUMN "post_hashtags"."post_id" IS '게시글 아이디';
+COMMENT ON COLUMN "post_hashtags"."tag" IS '해시태그 (# 제외)';
+CREATE INDEX "idx_post_hashtags_tag_post" ON "post_hashtags" ("tag", "post_id");

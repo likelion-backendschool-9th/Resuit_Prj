@@ -152,6 +152,14 @@ public class PostsController {
 		return postService.getQuestionFeed(PageRequest.of(page, size));
 	}
 
+	@GetMapping(value = "/feeds", params = "tab=hashtag")
+	public Page<PostTimelineResponse> getHashtagFeed(
+			@RequestParam String tag,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return postService.getHashtagFeed(tag, PageRequest.of(page, size));
+	}
+
 	/*
 	이미지, 영상관련
 	이 주석이 남아있는 현재로썬 게시글 당, 영상,이미지 각 1개씩만 업로드 가능
