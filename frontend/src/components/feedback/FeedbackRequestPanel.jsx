@@ -9,7 +9,7 @@ import './FeedbackRequestPanel.css';
 
 const MAX_MESSAGE = 1000;
 const SECTIONS = ['BASIC', 'SKILLS', 'PROJECTS', 'AWARDS', 'INTRODUCTION', 'ANSWERS'];
-const FIELD_OPTIONS = [{ id: 'FRONTEND', label: '프론트엔드' }, { id: 'BACKEND', label: '백엔드' }, { id: '', label: '정하지 않음' }];
+const FIELD_OPTIONS = [{ id: 'FRONTEND', label: '프론트엔드' }, { id: 'BACKEND', label: '백엔드' }, { id: 'FULLSTACK', label: '풀스택' }, { id: '', label: '정하지 않음' }];
 
 // 특화 이력서 작성 화면의 "제출 전 피드백 받기" (WBS 3.2 요청, 3.3 취소).
 // requestId·hasComments: 진행 중인 요청 상태. 요청·취소가 끝나면 onChange로 새 상태를 알린다.
