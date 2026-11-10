@@ -1,4 +1,4 @@
-import { forwardRef, useId, useRef, useState } from 'react';
+import { forwardRef, useEffect, useId, useRef, useState } from 'react';
 import { useAppState } from '../../context/AppStateContext.jsx';
 import { MEDIA_ACCEPT } from '../../services/media.js';
 import useMediaAttachments from './useMediaAttachments.js';
@@ -7,14 +7,9 @@ import { splitPostForEditing, serializePostContent } from '../../utils/postConte
 import { TECH_TAGS } from '../../data/constants.js';
 import Button, { IconButton } from '../common/Button.jsx';
 import Icon from '../common/Icon.jsx';
-import { ChipRadioGroup, ToggleChip } from '../common/Chip.jsx';
+import { ToggleChip } from '../common/Chip.jsx';
 import './Composer.css';
 
-const KINDS = [
-  { id: 'general', label: '일반' },
-  { id: 'tech', label: '기술 정보' },
-  { id: 'question', label: '질문' }
-];
 const PLACEHOLDERS = {
   general: '무슨 일이 있었나요? 면접 후기, 공부 기록 모두 좋아요.',
   tech: '새로 알게 된 기술, 버전 변경점, 꿀팁을 짧게 공유해 주세요.',
@@ -22,8 +17,8 @@ const PLACEHOLDERS = {
 };
 const MAX_TAGS = 3;
 
-// 홈 피드 상단 글쓰기. (이력서 피드백 요청은 이력서 › 내 이력서에서 한다)
-const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textareaRef) {
+// 홈 피드 상단 글쓰기. 글 종류는 피드 탭으로 정한다. (이력서 피드백 요청은 이력서 › 내 이력서에서 한다)
+const PostForm = forwardRef(function PostForm({ post, kind: lockedKind, onSave, onCancel }, textareaRef) {
   const inputId = useId();
   const fileInput = useRef(null);
   const { loggedIn } = useAppState();
@@ -31,7 +26,7 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
   const pending = useRef(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [kind, setKind] = useState(post?.type || 'general');
+  const [kind, setKind] = useState(lockedKind || post?.type || 'general');
   const [initialContent] = useState(() => splitPostForEditing(post?.body || ''));
   const [text, setText] = useState(initialContent.body);
   const [tags, setTags] = useState([]);
@@ -39,6 +34,10 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
   const [codeOpen, setCodeOpen] = useState(!!initialContent.code);
   const [codeFile, setCodeFile] = useState(initialContent.code?.file || '');
   const [codeText, setCodeText] = useState(initialContent.code?.text || '');
+
+  useEffect(() => {
+    if (lockedKind) setKind(lockedKind);
+  }, [lockedKind]);
 
   const hasCode = codeOpen && codeText.trim().length > 0;
   const blank = !text.trim() && !hasCode && !media.items.length && !post?.image && !post?.video;
@@ -69,7 +68,6 @@ const PostForm = forwardRef(function PostForm({ post, onSave, onCancel }, textar
   return (
     <form onSubmit={submit} aria-busy={saving}>
       <fieldset className="composer__fields composer__body" disabled={saving}>
-        <ChipRadioGroup options={KINDS.some((item) => item.id === kind) ? KINDS : [...KINDS, { id: kind, label: kind }]} value={kind} onChange={setKind} label="글 종류" />
         <label htmlFor={inputId} className="sr-only">새 게시글</label>
         <textarea
           id={inputId}
