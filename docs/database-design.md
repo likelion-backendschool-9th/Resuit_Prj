@@ -50,6 +50,7 @@ WBS에서 같은 기능이 여러 곳에 적힌 경우 하나로 정리한다.
 | 피드백·베스트 리뷰 | `FeedbackRequest`→`feedback_requests`(피드백 요청), `FeedbackRequestSection`→`feedback_request_sections`(피드백 요청 섹션), `FeedbackComment`→`feedback_comments`(피드백 댓글), `FeedbackCommentLike`→`feedback_comment_likes`(리뷰 좋아요), `BestReview`→`best_reviews`(베스트 리뷰) |
 | 유료 피드백·크레딧 | `Mentor`→`mentors`(현직자), `PaidFeedbackRequest`→`paid_feedback_requests`(유료 피드백 요청), `PaidFeedbackResponse`→`paid_feedback_responses`(유료 피드백 답변), `CreditTransaction`→`credit_transactions`(크레딧 내역), `CreditPayment`→`credit_payments`(크레딧 결제), `CreditWithdrawal`→`credit_withdrawals`(크레딧 환전) |
 | 기업 인재 검색 | `CompanyOffer`→`company_offers`(채용 제안), `CompanyPlanPeriod`→`company_plan_periods`(기업 Pro 이용 기간) |
+| 알림 | `Notification`→`notifications`(알림) |
 
 ### 읽는 법
 
@@ -115,6 +116,8 @@ erDiagram
     User ||..o{ CreditPayment : "결제"
     CreditWithdrawal |o..o{ CreditTransaction : "환전 근거"
     User ||..o{ CreditWithdrawal : "환전"
+    User ||..o{ Notification : "알림 받음"
+    User |o..o{ Notification : "알림 일으킴"
 
     User ||..o{ CompanyOffer : "제안"
     Job |o..o{ CompanyOffer : "관련 공고"
@@ -510,6 +513,25 @@ erDiagram
     }
 ```
 
+### 알림
+
+```mermaid
+erDiagram
+    User ||..o{ Notification : "알림 받음 (user_id)"
+    User |o..o{ Notification : "알림 일으킴 (actor_id)"
+
+    Notification {
+      bigint id PK "아이디"
+      uuid user_id FK "받는 사람"
+      uuid actor_id FK "알림을 일으킨 사람"
+      varchar type "알림 종류"
+      varchar message "보여 줄 문장"
+      varchar link "이동할 주소"
+      timestamptz read_at "읽은 시각"
+      timestamptz created_at "알림일"
+    }
+```
+
 ## 3. 공통 규칙
 
 ### 이름
@@ -656,7 +678,12 @@ erDiagram
 | 테이블 | 필수 컬럼 | 제약 및 읽기 방식 |
 | --- | --- | --- |
 | `company_offers` | `id`, `company_id`, `user_id`, `message`, `status`, `created_at`; 선택 `job_id` | `status IN ('SENT','ACCEPTED','DECLINED')`. 보내는 쪽은 `role='COMPANY'` 회원이고, 공고를 함께 보내면 그 기업의 공고여야 한다(서비스에서 검사). 받은 제안 조회는 `user_id`로 읽는다. 같은 기업은 같은 회원에게 제안을 한 번만 보낸다(서비스에서 기업 회원 행을 잠그고 `(company_id, user_id)` 중복을 검사, 409). 받은 사람은 `SENT`인 제안에 한 번만 `ACCEPTED` 또는 `DECLINED`로 응답하고, 보낸 기업은 보낸 제안 목록에서 결과를 본다. 제안 응답에는 보낸 기업 회원이 가입할 때 입력한 이메일(`users.email`)을 함께 담는다. |
-| `company_plan_periods` | `id`, `company_id`, `product`, `days`, `amount_krw`, `status`, `created_at`; 선택 `pg_transaction_id`, `starts_at`, `ends_at` | 기업 Pro 이용 기간이다. 체험과 결제한 이용권이 한 줄씩 쌓이고, 지금 요금제는 `status='PAID'`인 줄로 계산한다. `product IN ('TRIAL','PRO_1M','PRO_3M')`(14일 0원, 30일 49,000원, 90일 129,000원), `status IN ('PENDING','PAID','FAILED')`. 줄이 없는 기업은 `FREE`다. 체험은 기업당 한 번이며 체험이나 결제 기록(PAID)이 있으면 다시 시작할 수 없다(409). 결제는 `credit_payments`와 같은 흐름(행 잠금, `pg_transaction_id` 유니크)이고, `PAID`가 될 때 `starts_at`·`ends_at`이 정해진다. 결제한 기간이 남아 있으면 가장 늦은 `ends_at` 뒤로 이어 붙이고, 아니면 지금부터다. 결제 기간이 시작되면 체험은 끝난 것으로 본다. 상세 필터는 지금이 체험 기간이거나 결제 기간 안일 때만 쓸 수 있다. 같은 회사의 체험·결제는 회원 행을 잠가 하나씩 처리한다. 자동 갱신은 없다. |
+
+### 알림
+
+| 테이블 | 필수 컬럼 | 규칙 |
+| --- | --- | --- |
+| `notifications` | `id`, `user_id`, `type`, `message`, `link`, `created_at`; 선택 `actor_id`, `read_at` | 다른 회원이 나에게 한 일을 알린다. `type`은 `POST_COMMENT`, `COMMENT_REPLY`, `FEEDBACK_COMMENT`, `FEEDBACK_ADOPTED`, `PAID_FEEDBACK_REQUESTED`, `PAID_FEEDBACK_ANSWERED`, `OFFER_RECEIVED`, `OFFER_RESPONDED`, `JOB_APPLIED`이다. 각 기능의 서비스가 저장할 때 `NotificationService.notify`로 같은 트랜잭션 안에서 남긴다. 받는 사람과 일으킨 사람이 같으면 남기지 않는다. `message`와 `link`는 만들 때 저장해 목록을 읽을 때 다른 테이블을 찾지 않는다(원래 글이 지워져도 알림은 남는다). `read_at`이 비어 있으면 안 읽은 알림이다. 받는 사람별 최신순으로 읽으므로 `(user_id, id)` 인덱스를 둔다. 알림 목록 API와 안 읽은 수 API를 나눈 이유는 안 읽은 수를 모든 화면의 왼쪽 메뉴가 화면을 옮길 때마다 다시 읽기 때문이다(갱신 주기가 다름). || `company_plan_periods` | `id`, `company_id`, `product`, `days`, `amount_krw`, `status`, `created_at`; 선택 `pg_transaction_id`, `starts_at`, `ends_at` | 기업 Pro 이용 기간이다. 체험과 결제한 이용권이 한 줄씩 쌓이고, 지금 요금제는 `status='PAID'`인 줄로 계산한다. `product IN ('TRIAL','PRO_1M','PRO_3M')`(14일 0원, 30일 49,000원, 90일 129,000원), `status IN ('PENDING','PAID','FAILED')`. 줄이 없는 기업은 `FREE`다. 체험은 기업당 한 번이며 체험이나 결제 기록(PAID)이 있으면 다시 시작할 수 없다(409). 결제는 `credit_payments`와 같은 흐름(행 잠금, `pg_transaction_id` 유니크)이고, `PAID`가 될 때 `starts_at`·`ends_at`이 정해진다. 결제한 기간이 남아 있으면 가장 늦은 `ends_at` 뒤로 이어 붙이고, 아니면 지금부터다. 결제 기간이 시작되면 체험은 끝난 것으로 본다. 상세 필터는 지금이 체험 기간이거나 결제 기간 안일 때만 쓸 수 있다. 같은 회사의 체험·결제는 회원 행을 잠가 하나씩 처리한다. 자동 갱신은 없다. |
 | `github_contribution_stats` | `user_id`, `total_contributions`, `synced_at` | 회원별 GitHub 최근 1년 기여 수다. 회원 FK를 PK로 쓴다. GitHub 연동이 켜진 회원을 매일 04:30에 갱신하며, 실패하면 이전 값을 유지한다. 인재 검색의 기여 수 필터는 이 값만 읽고, 행이 없으면 0으로 본다. |
 
 인재 목록은 공개 공통 이력서(`is_public=true`)가 있는 회원을 대상으로 한다. 상세 필터의 배지는 `user_badges`, 게시글 수는 `posts`, 기여 수는 `github_contribution_stats`, 기술과 경력은 이력서 `content`에서 구한다.

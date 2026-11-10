@@ -10,6 +10,7 @@ import ThemeToggle from '../common/ThemeToggle.jsx';
 import SettingsMenu from './SettingsMenu.jsx';
 import { requestFeedTop } from '../feed/feedTop.js';
 import ComposeModal from '../feed/ComposeModal.jsx';
+import useUnreadNotifications from '../notifications/useUnreadNotifications.js';
 import './LeftNav.css';
 
 // 메뉴 항목. 순서를 바꾸거나 추가하려면 여기만 고치면 된다.
@@ -32,7 +33,7 @@ const COMPANY_CHILDREN = [
   { to: '/company/post', label: '공고 작성' },
 ];
 const ITEMS_BOTTOM = [
-  { to: '/threads/1', icon: 'bell', label: '알림' },
+  { to: '/notifications', icon: 'bell', label: '알림' },
   { to: '/offers', icon: 'msg', label: '받은 제안', roles: ['USER'] },
   { to: '/profile', icon: 'user', label: '프로필' },
   { to: '/credits', icon: 'coin', label: '크레딧', roles: ['USER'] }
@@ -61,7 +62,7 @@ const MOBILE_TABS = [
   ITEMS_BOTTOM.find((item) => item.to === '/profile')
 ];
 
-function NavItem({ item, pathname }) {
+function NavItem({ item, pathname, count = 0 }) {
   const active = isItemActive(item, pathname);
   return (
     <Link href={item.to} aria-current={active ? 'page' : undefined} className={`nav-item${active ? ' is-active' : ''}`}
@@ -70,13 +71,16 @@ function NavItem({ item, pathname }) {
       {item.label}
       {item.tag && <span className="nav-item__tag">{item.tag}</span>}
       {item.pill && <span className="nav-item__pill">{item.pill}</span>}
+      {count > 0 && <span className="nav-item__count" aria-label={`안 읽은 알림 ${count}개`}>{count > 99 ? '99+' : count}</span>}
     </Link>
   );
 }
 
 export default function LeftNav() {
   const pathname = usePathname();
-  const { me } = useAppState();
+  const { me, loggedIn } = useAppState();
+  // 안 읽은 알림 수. 알림 메뉴와 모바일 ☰ 버튼에 표시한다.
+  const unread = useUnreadNotifications(loggedIn, pathname);
   const inResume = RESUME_CHILDREN.some((c) => pathname.startsWith(c.to));
   // 하위 메뉴는 그 주소와 그 아래 상세 화면(/mentors/아이디 등)에서 선택된 것으로 보인다.
   const isSubActive = (to) => pathname === to || pathname.startsWith(`${to}/`);
@@ -112,6 +116,7 @@ export default function LeftNav() {
       <IconButton label="전체 메뉴 열기" className="icon-btn--plain" aria-expanded={drawerOpen} aria-controls="main-nav"
         onClick={() => setDrawerPath(pathname)}>
         <Icon name="menu" size={22} />
+        {unread > 0 && <span className="mobile-bar__dot" aria-hidden="true" />}
       </IconButton>
       <Link href="/" className="mobile-bar__logo" onClick={homeClick(ITEMS_TOP[0], pathname)}>Resuit</Link>
       <ThemeToggle />
@@ -146,7 +151,7 @@ export default function LeftNav() {
         </div>
       )}
 
-      {ITEMS_BOTTOM.filter(visibleFor(me.role)).map((it) => <NavItem key={it.to} item={it} pathname={pathname} />)}
+      {ITEMS_BOTTOM.filter(visibleFor(me.role)).map((it) => <NavItem key={it.to} item={it} pathname={pathname} count={it.to === '/notifications' ? unread : 0} />)}
 
       {isCompanyMember(me.role) && <>
         <button type="button" className={`nav-item nav-item--button nav-item--company${inCompany ? ' is-active' : ''}`}

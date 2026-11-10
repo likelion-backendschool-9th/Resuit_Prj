@@ -15,6 +15,7 @@ import com.newlecture.resuit.dto.PaidFeedbackResponseCommand;
 import com.newlecture.resuit.dto.PaidFeedbackResponseSummary;
 import com.newlecture.resuit.dto.PaidFeedbackSearchCondition;
 import com.newlecture.resuit.dto.PaidFeedbackSummary;
+import com.newlecture.resuit.dto.notification.NotificationCommand;
 import com.newlecture.resuit.dto.resume.ResumePreviewResponse;
 import com.newlecture.resuit.entity.CommonResume;
 import com.newlecture.resuit.entity.Mentor;
@@ -29,6 +30,8 @@ import com.newlecture.resuit.repository.PaidFeedbackResponseRepository;
 import com.newlecture.resuit.repository.TargetResumeRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CreditService;
+import com.newlecture.resuit.service.NotificationService;
+import com.newlecture.resuit.service.NotificationType;
 import com.newlecture.resuit.service.PaidFeedbackService;
 
 @Service
@@ -42,6 +45,7 @@ public class PaidFeedbackServiceImpl implements PaidFeedbackService {
 	private final CommonResumeRepository commonResumeRepository;
 	private final TargetResumeRepository targetResumeRepository;
 	private final CreditService creditService;
+	private final NotificationService notificationService;
 
 	public PaidFeedbackServiceImpl(
 			PaidFeedbackRequestRepository paidFeedbackRequestRepository,
@@ -50,7 +54,8 @@ public class PaidFeedbackServiceImpl implements PaidFeedbackService {
 			MentorRepository mentorRepository,
 			CommonResumeRepository commonResumeRepository,
 			TargetResumeRepository targetResumeRepository,
-			CreditService creditService) {
+			CreditService creditService,
+			NotificationService notificationService) {
 		this.paidFeedbackRequestRepository = paidFeedbackRequestRepository;
 		this.paidFeedbackResponseRepository = paidFeedbackResponseRepository;
 		this.userRepository = userRepository;
@@ -58,6 +63,7 @@ public class PaidFeedbackServiceImpl implements PaidFeedbackService {
 		this.commonResumeRepository = commonResumeRepository;
 		this.targetResumeRepository = targetResumeRepository;
 		this.creditService = creditService;
+		this.notificationService = notificationService;
 	}
 
 	@Override
@@ -87,6 +93,11 @@ public class PaidFeedbackServiceImpl implements PaidFeedbackService {
 				.status("REQUESTED")
 				.build());
 		creditService.use(paidFeedbackRequest);
+		// 현직자에게 요청이 왔다고 알린다.
+		notificationService.notify(new NotificationCommand(
+				mentor.getUserId(), requester.getId(), NotificationType.PAID_FEEDBACK_REQUESTED,
+				NotificationService.nameOf(requester) + " 님이 유료 피드백을 요청했어요.",
+				"/paid-feedback/" + paidFeedbackRequest.getId()));
 
 		return PaidFeedbackSummary.from(paidFeedbackRequest);
 	}
@@ -130,10 +141,17 @@ public class PaidFeedbackServiceImpl implements PaidFeedbackService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "취소된 요청에는 답변할 수 없습니다.");
 		}
 
-		return PaidFeedbackResponseSummary.from(paidFeedbackResponseRepository.save(PaidFeedbackResponse.builder()
+		PaidFeedbackResponse response = paidFeedbackResponseRepository.save(PaidFeedbackResponse.builder()
 				.request(paidFeedbackRequest)
 				.content(command.content())
-				.build()));
+				.build());
+		// 요청자에게 답변이 왔다고 알린다.
+		User mentorUser = paidFeedbackRequest.getMentor().getUser();
+		notificationService.notify(new NotificationCommand(
+				paidFeedbackRequest.getRequester().getId(), mentorUser.getId(), NotificationType.PAID_FEEDBACK_ANSWERED,
+				NotificationService.nameOf(mentorUser) + " 님이 유료 피드백 답변을 남겼어요.",
+				"/paid-feedback/" + id));
+		return PaidFeedbackResponseSummary.from(response);
 	}
 
 	private User findUser(String username) {
