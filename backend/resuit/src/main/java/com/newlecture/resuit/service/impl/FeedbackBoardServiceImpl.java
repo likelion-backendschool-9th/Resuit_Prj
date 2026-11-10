@@ -101,7 +101,9 @@ public class FeedbackBoardServiceImpl implements FeedbackBoardService {
         }
         var resume = targetResumes.findById(id).orElseThrow(ResumeNotFoundException::new);
         checkVisible(resume.getUser(), user, targetResumes.hasActiveFeedbackRequest(id));
-        return ResumePreviewResponse.of(resume, targetResumes.findQuestions(resume.getJob().getId()));
+        var preview = ResumePreviewResponse.of(resume, targetResumes.findQuestions(resume.getJob().getId()));
+        // 특화 이력서는 어느 회사에 지원하는지 남에게 보이지 않게 회사 이름을 가린다
+        return resume.getUser().getId().equals(user.getId()) ? preview : preview.withoutCompany();
     }
 
     // 4.6 댓글 목록. 오래된 순으로 보여 준다.

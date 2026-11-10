@@ -17,6 +17,11 @@ public record JobInfo(Long id, String title, String companyName, String type, Lo
         return new JobInfo(job.getId(), job.getTitle(), companyName(job), job.getType(), job.getDeadline());
     }
 
+    // 피드백 게시판에서 남에게 보여 줄 때 회사 이름만 가린다 (docs/database-design.md feedback_requests)
+    public JobInfo withoutCompany() {
+        return new JobInfo(id, title, null, type, deadline);
+    }
+
     static String companyName(Job job) {
         var company = job.getCompany();
         return company.getNickname() == null || company.getNickname().isBlank() ? company.getUsername() : company.getNickname();
