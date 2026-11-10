@@ -11,6 +11,7 @@ public record CreditTransactionResponse(
 		int balanceAfter,
 		Long paidFeedbackRequestId,
 		Long creditPaymentId,
+		Long creditWithdrawalId,
 		LocalDateTime createdAt) {
 
 	public static CreditTransactionResponse from(CreditTransaction transaction) {
@@ -21,6 +22,7 @@ public record CreditTransactionResponse(
 				transaction.getBalanceAfter(),
 				transaction.getPaidFeedbackRequest() == null ? null : transaction.getPaidFeedbackRequest().getId(),
 				transaction.getCreditPayment() == null ? null : transaction.getCreditPayment().getId(),
+				transaction.getCreditWithdrawal() == null ? null : transaction.getCreditWithdrawal().getId(),
 				transaction.getCreatedAt());
 	}
 }
