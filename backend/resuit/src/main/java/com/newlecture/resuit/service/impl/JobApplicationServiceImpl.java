@@ -16,6 +16,7 @@ import com.newlecture.resuit.dto.resume.SubmittedResumeSummary;
 import com.newlecture.resuit.entity.Job;
 import com.newlecture.resuit.entity.JobApplication;
 import com.newlecture.resuit.entity.SubmittedResume;
+import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommonResumeRepository;
 import com.newlecture.resuit.repository.JobApplicationRepository;
 import com.newlecture.resuit.repository.JobRepository;
@@ -29,6 +30,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import com.newlecture.resuit.dto.notification.NotificationCommand;
+import com.newlecture.resuit.service.NotificationService;
+import com.newlecture.resuit.service.NotificationType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
@@ -48,6 +52,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final UserRepository userRepository;
     private final MediaService media;
     private final JobService jobs;
+    private final NotificationService notifications;
 
     @Override
     public CompanyApplicantsResponse getCompanyApplicants(CompanyApplicationsQuery query) {
@@ -125,7 +130,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .snapshotPhotoKey(media.preserveResumePhoto(commonResume.getPhotoUrl(), user.getId()))
 				.status("APPLIED")
 				.build();
-		return JobApplicationCommonResponse.from(jobApplicationRepository.save(application));
+		var saved = jobApplicationRepository.save(application);
+		notifyCompany(job, user);
+		return JobApplicationCommonResponse.from(saved);
 	}
 
 	@Override
@@ -170,7 +177,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .snapshotPhotoKey(media.preserveResumePhoto(targetResume.getPhotoUrl(), user.getId()))
 				.status("APPLIED")
 				.build();
-		return JobApplicationTargetResponse.from(jobApplicationRepository.save(application));
+		var saved = jobApplicationRepository.save(application);
+		notifyCompany(job, user);
+		return JobApplicationTargetResponse.from(saved);
 	}
 
 	@Override
@@ -264,5 +273,12 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         if (job.getDeadline() != null && job.getDeadline().isBefore(LocalDate.now(ZoneId.of("Asia/Seoul")))) {
             throw new IllegalArgumentException("접수 마감일이 지난 공고입니다.");
         }
+    }
+
+    // 공고를 올린 기업에게 지원이 들어왔다고 알린다.
+    private void notifyCompany(Job job, User applicant) {
+        notifications.notify(new NotificationCommand(job.getCompany().getId(), applicant.getId(), NotificationType.JOB_APPLIED,
+            NotificationService.nameOf(applicant) + " 님이 '" + job.getTitle() + "' 공고에 지원했어요.",
+            "/company/applications/" + job.getId()));
     }
 }
