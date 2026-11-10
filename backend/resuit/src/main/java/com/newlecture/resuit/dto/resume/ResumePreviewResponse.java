@@ -34,4 +34,11 @@ public record ResumePreviewResponse(
             JobInfo.from(resume.getJob()), questions.stream().map(JobInfo.Question::from).toList(),
             resume.getUpdatedAt());
     }
+
+    // 회사 이름을 가린 미리보기. 공통 이력서는 공고 정보가 없어 그대로 돌려준다
+    public ResumePreviewResponse withoutCompany() {
+        if (job == null) return this;
+        return new ResumePreviewResponse(type, id, author, title, field, content, photoUrl,
+            job.withoutCompany(), questions, updatedAt);
+    }
 }
