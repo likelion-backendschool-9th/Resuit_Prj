@@ -373,6 +373,33 @@ COMMENT ON COLUMN "company_offers"."status" IS '제안 상태 (sent, accepted, d
 
 COMMENT ON COLUMN "company_offers"."created_at" IS '제안일';
 
+CREATE TABLE "notifications" (
+	"id"	BIGINT		NOT NULL,
+	"user_id"	UUID		NOT NULL,
+	"actor_id"	UUID		NULL,
+	"type"	VARCHAR(30)		NOT NULL,
+	"message"	VARCHAR(200)		NOT NULL,
+	"link"	VARCHAR(255)		NOT NULL,
+	"read_at"	TIMESTAMP		NULL,
+	"created_at"	TIMESTAMP		NOT NULL
+);
+
+COMMENT ON COLUMN "notifications"."id" IS '아이디';
+
+COMMENT ON COLUMN "notifications"."user_id" IS '받는 사람 아이디';
+
+COMMENT ON COLUMN "notifications"."actor_id" IS '알림을 일으킨 사람 아이디';
+
+COMMENT ON COLUMN "notifications"."type" IS '알림 종류';
+
+COMMENT ON COLUMN "notifications"."message" IS '보여 줄 문장';
+
+COMMENT ON COLUMN "notifications"."link" IS '이동할 주소';
+
+COMMENT ON COLUMN "notifications"."read_at" IS '읽은 시각';
+
+COMMENT ON COLUMN "notifications"."created_at" IS '알림일';
+
 CREATE TABLE "pinned_repos" (
 	"id"	BIGINT		NOT NULL,
 	"user_id"	UUID		NOT NULL,
@@ -1198,3 +1225,20 @@ REFERENCES "feedback_comments" (
 	"comment_id"
 );
 
+ALTER TABLE "notifications" ADD CONSTRAINT "PK_NOTIFICATIONS" PRIMARY KEY (
+	"id"
+);
+
+ALTER TABLE "notifications" ADD CONSTRAINT "FK_users_TO_notifications_1" FOREIGN KEY (
+	"user_id"
+)
+REFERENCES "users" (
+	"id"
+);
+
+ALTER TABLE "notifications" ADD CONSTRAINT "FK_users_TO_notifications_2" FOREIGN KEY (
+	"actor_id"
+)
+REFERENCES "users" (
+	"id"
+);

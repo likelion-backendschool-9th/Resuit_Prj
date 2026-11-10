@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.newlecture.resuit.dto.CompanyOfferCreateRequest;
 import com.newlecture.resuit.dto.CompanyOfferReply;
 import com.newlecture.resuit.dto.CompanyOfferResponse;
+import com.newlecture.resuit.dto.notification.NotificationCommand;
 import com.newlecture.resuit.entity.CompanyOffer;
 import com.newlecture.resuit.entity.Job;
 import com.newlecture.resuit.entity.User;
@@ -19,6 +20,8 @@ import com.newlecture.resuit.repository.JobRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CompanyMemberGuard;
 import com.newlecture.resuit.service.CompanyOfferService;
+import com.newlecture.resuit.service.NotificationService;
+import com.newlecture.resuit.service.NotificationType;
 
 @Service
 public class CompanyOfferServiceImpl implements CompanyOfferService {
@@ -32,14 +35,16 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
     private final JobRepository jobs;
     private final CommonResumeRepository resumes;
     private final CompanyMemberGuard companyGuard;
+    private final NotificationService notifications;
 
     public CompanyOfferServiceImpl(CompanyOfferRepository offers, UserRepository users, JobRepository jobs,
-            CommonResumeRepository resumes, CompanyMemberGuard companyGuard) {
+            CommonResumeRepository resumes, CompanyMemberGuard companyGuard, NotificationService notifications) {
         this.offers = offers;
         this.users = users;
         this.jobs = jobs;
         this.resumes = resumes;
         this.companyGuard = companyGuard;
+        this.notifications = notifications;
     }
 
     @Override
@@ -68,6 +73,9 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
                 .message(request.message().trim())
                 .status(SENT)
                 .build());
+        // 받는 회원에게 제안이 왔다고 알린다.
+        notifications.notify(new NotificationCommand(target.getId(), company.getId(), NotificationType.OFFER_RECEIVED,
+                NotificationService.nameOf(company) + " 님이 채용 제안을 보냈어요.", "/offers"));
         return toResponses(List.of(offer)).get(0);
     }
 
@@ -102,6 +110,10 @@ public class CompanyOfferServiceImpl implements CompanyOfferService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 응답한 제안입니다.");
         }
         offer.respond(reply.status());
+        // 제안을 보낸 기업에게 응답을 알린다.
+        notifications.notify(new NotificationCommand(offer.getCompany().getId(), me.getId(), NotificationType.OFFER_RESPONDED,
+                NotificationService.nameOf(me) + " 님이 채용 제안을 " + ("ACCEPTED".equals(offer.getStatus()) ? "승낙" : "거절") + "했어요.",
+                "/company/offers"));
         return toResponses(List.of(offer)).get(0);
     }
 
