@@ -110,6 +110,12 @@ public class ResumeController {
 			new FeedbackRequestSearchCondition(category, Boolean.TRUE.equals(mine))));
 	}
 
+	@GetMapping("/feedback-requests/{id}")
+	public ResponseEntity<FeedbackRequestSummary> getFeedbackRequest(
+			@PathVariable Long id, Principal principal) {
+		return ResponseEntity.ok(feedbackBoardService.getRequest(id, username(principal)));
+	}
+
 	@PostMapping("/feedback-requests")
 	public ResponseEntity<FeedbackRequestResponse> createFeedbackRequest(
 			@RequestBody(required = false) FeedbackRequestCreateRequest feedbackRequest, Principal principal) {

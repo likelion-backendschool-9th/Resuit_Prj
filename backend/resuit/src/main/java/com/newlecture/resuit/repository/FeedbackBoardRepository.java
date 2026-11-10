@@ -39,7 +39,12 @@ public interface FeedbackBoardRepository extends Repository<FeedbackRequest, Lon
         """)
     List<CommentCountRow> countComments(@Param("requestIds") Collection<Long> requestIds);
 
-    @Query("SELECT r FROM FeedbackRequest r JOIN FETCH r.user WHERE r.id = :id")
+    @Query("""
+        SELECT r FROM FeedbackRequest r JOIN FETCH r.user
+        LEFT JOIN FETCH r.commonResume
+        LEFT JOIN FETCH r.targetResume t LEFT JOIN FETCH t.job j LEFT JOIN FETCH j.company
+        WHERE r.id = :id
+        """)
     Optional<FeedbackRequest> findRequest(@Param("id") Long id);
 
     @Query("""

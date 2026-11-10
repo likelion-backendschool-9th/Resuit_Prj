@@ -24,6 +24,9 @@ export const getFeedbackRequests = ({ category, mine } = {}, signal) => {
   return request(`/feedback-requests${query ? `?${query}` : ''}`, { signal });
 };
 
+// 피드백 게시글 상세
+export const getFeedbackRequest = (id, signal) => request(`/feedback-requests/${id}`, { signal });
+
 // 피드백 댓글 목록 (WBS 4.6)
 export const getFeedbackComments = (id, signal) => request(`/feedback-requests/${id}/comments`, { signal });
 

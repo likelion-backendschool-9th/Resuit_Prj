@@ -12,6 +12,7 @@ import java.util.List;
 // 요청이 없는 오류는 FeedbackRequestService의 예외를 함께 쓴다.
 public interface FeedbackBoardService {
     List<FeedbackRequestSummary> getRequests(String username, FeedbackRequestSearchCondition condition);
+    FeedbackRequestSummary getRequest(Long requestId, String username);
     ResumePreviewResponse getResumePreview(String username, ResumePreviewCondition condition);
     List<FeedbackCommentResponse> getComments(Long requestId, String username);
     FeedbackCommentResponse createComment(FeedbackCommentCreateCommand command);

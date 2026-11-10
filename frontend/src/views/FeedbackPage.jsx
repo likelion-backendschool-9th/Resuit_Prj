@@ -18,7 +18,7 @@ const TABS = [
 // 탭을 목록 API 조건으로 바꾼다 (WBS 4.1 전체, 4.3 분야, 4.4 내 요청)
 const filterOf = (tab) => (tab === 'mine' ? { mine: true } : tab === 'all' ? {} : { category: tab });
 
-// 이력서 › 피드백: 내 이력서에서 "피드백 요청"한 이력서가 올라오는 게시판
+// 이력서 피드백 게시판. 본문을 누르면 상세로 이동한다.
 export default function FeedbackPage() {
   const [tab, setTab] = useState('all');
   const [list, setList] = useState([]);
@@ -44,7 +44,7 @@ export default function FeedbackPage() {
           <h1>이력서 피드백</h1>
           <Link href="/resumes" className="text-link">내 이력서 올리기</Link>
         </div>
-        <p className="page-desc">내 이력서에서 "피드백 요청"을 누른 이력서가 여기에 올라와요. 섹션을 골라 구체적으로 남겨 주세요.</p>
+        <p className="page-desc">내 이력서에서 "피드백 요청"을 누른 이력서가 여기에 올라와요. 본문을 누르면 상세에서 피드백을 남길 수 있어요.</p>
         <Tabs items={TABS} value={tab} onChange={setTab} label="분야" />
         {loading ? <div className="empty" role="status">피드백 요청을 불러오는 중이에요.</div>
           : error ? <div className="empty" role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>다시 시도</Button></div>

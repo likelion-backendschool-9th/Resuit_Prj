@@ -13,6 +13,7 @@ import Tabs from '../components/common/Tabs.jsx';
 import ContributionGraph from '../components/profile/ContributionGraph.jsx';
 import PostCard from '../components/feed/PostCard.jsx';
 import ResumePreview from '../components/feedback/ResumePreview.jsx';
+import { SECTION_LABEL } from '../components/feedback/labels.js';
 import useProfileData from '../components/profile/useProfileData.js';
 import './ProfilePage.css';
 
@@ -241,39 +242,30 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
           <p>{profile?.selfIntroduction || intro}</p>
           {careers.length > 0 && (
             <div className="profile__careers">
-              <div className="profile__career-root">경력/</div>
-              <ul className="profile__career-tree">
-                {visibleCareers.map((item, index) => {
-                  const isLast = index === visibleCareers.length - 1 && hiddenCareerCount === 0;
-                  return (
-                    <li key={item.id} className={`profile__career-node${isLast ? ' is-last' : ''}`}>
+              <div className="profile__career-label">경력</div>
+              <div className="profile__career-list">
+                {visibleCareers.map((item) => (
+                  <article key={item.id} className="profile__career-row">
+                    <div className="profile__career-main">
                       <span className="profile__career-name">{item.companyName} · {item.jobTitle}</span>
-                      <ul className="profile__career-tree">
-                        <li className={`profile__career-node${item.description ? '' : ' is-last'}`}>
-                          <span className="profile__career-meta">{careerPeriod(item)}</span>
-                        </li>
-                        {item.description && (
-                          <li className="profile__career-node is-last">
-                            <p className={`profile__career-desc${careersExpanded ? '' : ' is-clamped'}`}>{item.description}</p>
-                          </li>
-                        )}
-                      </ul>
-                    </li>
-                  );
-                })}
+                      <span className="profile__career-period">{careerPeriod(item)}</span>
+                    </div>
+                    {item.description && (
+                      <p className={`profile__career-desc${careersExpanded ? '' : ' is-clamped'}`}>{item.description}</p>
+                    )}
+                  </article>
+                ))}
                 {hiddenCareerCount > 0 && (
-                  <li className="profile__career-node is-last">
-                    <button
-                      type="button"
-                      className="profile__career-more"
-                      aria-expanded={careersExpanded}
-                      onClick={() => setCareersExpanded((open) => !open)}
-                    >
-                      {careersExpanded ? '경력 접기' : `경력 더 보기 (${hiddenCareerCount})`}
-                    </button>
-                  </li>
+                  <button
+                    type="button"
+                    className="profile__career-more"
+                    aria-expanded={careersExpanded}
+                    onClick={() => setCareersExpanded((open) => !open)}
+                  >
+                    {careersExpanded ? '경력 접기' : `경력 더 보기 (${hiddenCareerCount})`}
+                  </button>
                 )}
-              </ul>
+              </div>
             </div>
           )}
           <div className="profile__stats">
@@ -481,11 +473,19 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
             data.feedbacks.length === 0
               ? <div className="empty">아직 남긴 피드백이 없어요.</div>
               : data.feedbacks.map((item) => (
-                <article key={item.id} className="card profile__activity">
-                  <div className="small muted">요청 #{item.feedbackRequestId} · {item.section || '일반'}</div>
+                <Link
+                  key={item.id}
+                  href={`/feedback/${item.feedbackRequestId}`}
+                  className="card profile__activity profile__activity--link"
+                >
+                  <div className="small muted">
+                    {item.resumeTitle || '피드백 요청'}
+                    {' · '}
+                    {SECTION_LABEL[item.section] || item.section || '일반'}
+                  </div>
                   <p>{item.content}</p>
                   {item.adopted && <span className="xs bold" style={{ color: 'var(--accent-text)' }}>채택됨</span>}
-                </article>
+                </Link>
               ))
           ) : <div className="empty">남긴 피드백은 피드백 게시판과 연결될 예정이에요.</div>
         )}
