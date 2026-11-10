@@ -65,7 +65,7 @@ WHERE schemaname = 'public'
 - 변경 SQL: [배지 갱신 마이그레이션](../migrations/2026-11-04-reviewer-badge-renewal.sql).
 - 프로필 제약: [프로필 제약 마이그레이션](../migrations/2026-11-04-profile-constraints.sql).
 - 프로필 SQL은 `user_badge.status`를 참조하므로 배지 구조 준비 후 검토한다.
-- 두 파일은 자동 실행되지 않으며, 이미 적용한 DB에 그대로 재실행하는 용도가 아니다. 기존 컬럼·중복 값·동등한 제약을 먼저 확인하고 필요한 부분만 해당 환경에 맞게 적용한다. 예를 들어 username 유니크 제약은 이미 리뷰·로그인 SQL로 준비돼 있을 수 있다.
+- 두 파일은 `scripts/migrate-local-db.sh`에 자동 포함된다. 같은 이름의 기존 인덱스·컬럼·제약은 유지하며, 배지 SQL을 프로필 SQL보다 먼저 실행한다. 기존 배지 상태는 덮어쓰지 않는다. 중복 데이터나 이름이 다른 동등한 제약은 적용 전에 확인한다.
 
 ## 4. 리뷰·인증 SQL
 
