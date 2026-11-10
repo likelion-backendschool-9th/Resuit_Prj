@@ -52,6 +52,14 @@ public interface TargetResumeRepository extends JpaRepository<TargetResume, Long
         """)
     boolean hasActiveFeedbackRequest(@Param("resumeId") Long resumeId);
 
+    // 진행 중인(취소하지 않은) 피드백 요청 ID. 요청은 이력서마다 하나만 열려 있다
+    @Query("""
+        SELECT r.id FROM FeedbackRequest r
+        WHERE r.targetResume.id = :resumeId AND r.deletedAt IS NULL
+        ORDER BY r.id DESC
+        """)
+    List<Long> findActiveFeedbackRequestIds(@Param("resumeId") Long resumeId);
+
     interface QuestionCountRow {
         Long getJobId();
         long getCount();

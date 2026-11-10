@@ -13,6 +13,7 @@ import com.newlecture.resuit.entity.SubmittedResume;
 import com.newlecture.resuit.entity.TargetResume;
 import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommonResumeRepository;
+import com.newlecture.resuit.repository.FeedbackCommentRepository;
 import com.newlecture.resuit.repository.JobApplicationRepository;
 import com.newlecture.resuit.repository.TargetResumeRepository;
 import com.newlecture.resuit.repository.UserRepository;
@@ -46,6 +47,7 @@ public class TargetResumeServiceImpl implements TargetResumeService {
     private final JobApplicationRepository applications;
     private final MediaService media;
     private final ResumePhotoResolver photos;
+    private final FeedbackCommentRepository feedbackComments;
 
     @Override
     @Transactional
@@ -121,7 +123,7 @@ public class TargetResumeServiceImpl implements TargetResumeService {
             .title(title.length() > MAX_TITLE ? title.substring(0, MAX_TITLE) : title)
             .content(content)
             .build();
-        return TargetResumeDetailResponse.of(resumes.save(resume), resumes.findQuestions(job.getId()), false);
+        return TargetResumeDetailResponse.of(resumes.save(resume), resumes.findQuestions(job.getId()), false, null, false);
     }
 
     // PATCH라서 보내지 않은(null) 값은 그대로 둔다. 답변은 이 공고의 문항에만, 글자 수 제한 안에서 받는다.
@@ -139,7 +141,7 @@ public class TargetResumeServiceImpl implements TargetResumeService {
             request.content() == null ? resume.getContent() : request.content());
         if (request.photoUrl() != null) resume.updatePhoto(photos.resolve(user.getId(), request.photoUrl()));
         resumes.flush();
-        return TargetResumeDetailResponse.of(resume, questions, isSubmitted(resume, user));
+        return detail(resume, questions, isSubmitted(resume, user));
     }
 
     // 지원·피드백 요청·유료 피드백이 이 이력서를 가리키면 DB의 FK가 삭제를 막는다.
@@ -162,7 +164,14 @@ public class TargetResumeServiceImpl implements TargetResumeService {
     public TargetResumeDetailResponse getMyResume(Long resumeId, String username) {
         var user = currentUser(username);
         var resume = ownedResume(resumeId, user);
-        return TargetResumeDetailResponse.of(resume, resumes.findQuestions(resume.getJob().getId()), isSubmitted(resume, user));
+        return detail(resume, resumes.findQuestions(resume.getJob().getId()), isSubmitted(resume, user));
+    }
+
+    // 작성 화면이 들어올 때부터 피드백 요청 상태(요청 중·댓글 여부)를 알 수 있게 함께 담는다
+    private TargetResumeDetailResponse detail(TargetResume resume, List<JobQuestion> questions, boolean submitted) {
+        var requestId = resumes.findActiveFeedbackRequestIds(resume.getId()).stream().findFirst().orElse(null);
+        var hasComments = requestId != null && feedbackComments.existsByFeedbackRequest_Id(requestId);
+        return TargetResumeDetailResponse.of(resume, questions, submitted, requestId, hasComments);
     }
 
     public static void validateAnswers(Object answers, List<JobQuestion> questions) {
