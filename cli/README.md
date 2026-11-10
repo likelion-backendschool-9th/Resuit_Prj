@@ -95,10 +95,16 @@ node dist/index.js whoami
 
 ## 삭제
 
-전역으로 연결한 CLI 명령을 제거하려면 `cli/` 디렉터리에서 실행합니다.
+전역으로 연결한 CLI 명령을 제거하려면 다음을 실행합니다.
 
 ```bash
-npm unlink
+npm unlink --global @resuit/cli
+```
+
+그래도 제거되지 않으면 같은 효과의 전역 패키지 삭제 명령을 사용합니다.
+
+```bash
+npm uninstall --global @resuit/cli
 ```
 
 프로젝트 의존성과 빌드 결과까지 삭제하려면 다음을 실행합니다.
