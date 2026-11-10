@@ -45,7 +45,8 @@ export function AppStateProvider({ children }) {
         profileImage: member.profileImageUrl || '',
       }
     : GUEST_ME;
-  const [composeRequested, setComposeRequested] = useState(false);
+  // 글 작성 모달에서 방금 올린 글. 홈 피드가 받아 목록에 넣고 비운다.
+  const [composedPost, setComposedPost] = useState(null);
   const [posts, setPosts] = useState([]);
   const [liked, setLiked] = useState({});
   const [following, setFollowing] = useState({});
@@ -73,9 +74,9 @@ export function AppStateProvider({ children }) {
         setSession(await getAuthSession());
       },
 
-      composeRequested,
-      requestCompose: () => setComposeRequested(true),
-      clearComposeRequest: () => setComposeRequested(false),
+      composedPost,
+      announcePost: (post) => setComposedPost(post),
+      clearComposedPost: () => setComposedPost(null),
 
       posts,
       addPost: ({ type, body, tags = [], source = '', code = null }) =>
@@ -218,7 +219,7 @@ export function AppStateProvider({ children }) {
         }),
     };
   }, [
-    session, authError, loggedIn, refreshSession, me, composeRequested, posts, liked, following,
+    session, authError, loggedIn, refreshSession, me, composedPost, posts, liked, following,
     applied, commonResumes, publicResumeIds, feedbackRequests, threads,
   ]);
 

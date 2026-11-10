@@ -1,0 +1,5 @@
+.compose-modal { width: min(600px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); color: var(--text); }
+.compose-modal::backdrop { background: color-mix(in srgb, var(--text) 40%, transparent); }
+.compose-modal__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+.compose-modal__header h2 { font-size: 18px; }
+.compose-modal__body { display: flex; gap: 12px; padding: 16px 20px; }
