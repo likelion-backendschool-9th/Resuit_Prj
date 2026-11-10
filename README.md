@@ -32,8 +32,12 @@ docker compose --env-file .env -f compose.yml -f compose.prod.yml up -d --build 
 ```
 
 `compose.prod.yml`은 소스 코드와 Gradle 캐시를 마운트하지 않고 프론트 운영 빌드
-(`next start`)를 실행합니다. DB·백엔드·프론트 포트는 호스트에 공개하지 않으며
-외부 요청은 nginx만 받습니다. 운영 DB 스키마는 자동 변경하지 않고
+(`next start`)를 실행합니다. DB·백엔드는 호스트에 공개하지 않고, 프론트만
+`127.0.0.1:3003`에 둡니다. 외부 요청은 공용 호스트 nginx가
+`resuit.newlecture.com` → `127.0.0.1:3003`으로 전달합니다.
+사이트 설정 예시는 `nginx/resuit.newlecture.com.conf`를 서버 nginx에 등록합니다.
+운영 `.env`의 `RESUIT_AUTH_PUBLIC_BASE_URL`은 `https://resuit.newlecture.com`
+(또는 실제 접속 URL)로 맞춥니다. 운영 DB 스키마는 자동 변경하지 않고
 `DDL_AUTO=validate`로 검증하므로 마이그레이션은 별도로 적용해야 합니다.
 
 업로드 이미지와 이력서 스냅샷은 서버의 `backend/resuit/src/main/media/`를

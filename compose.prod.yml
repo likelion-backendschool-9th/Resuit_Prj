@@ -34,11 +34,10 @@ services:
       target: production
       args:
         BACKEND_URL: http://backend:8080
-    ports: !reset []
+    # 공용 호스트 nginx가 resuit.newlecture.com → 127.0.0.1:3003 으로 넘긴다.
+    ports: !override
+      - "127.0.0.1:3003:5173"
     environment:
       NODE_ENV: production
       BACKEND_URL: http://backend:8080
-    restart: unless-stopped
-
-  nginx:
     restart: unless-stopped
