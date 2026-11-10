@@ -134,6 +134,7 @@
 }
 .profile__resume-settings legend { padding: 0 6px; font-size: 13px; font-weight: 700; }
 .profile__resume-choice { gap: 8px; font-size: 14px; }
+.profile__resume-toggle { border: 0; background: none; padding: 0; cursor: pointer; }
 .profile__setting-divider { border-top: 1px solid var(--line); margin: 6px 0; }
 .profile__message { margin: 12px 24px; color: var(--text-sub); font-size: 14px; }
 .profile__activity { margin: 12px 24px; gap: 6px; }

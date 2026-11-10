@@ -12,6 +12,7 @@ import Icon from '../components/common/Icon.jsx';
 import Tabs from '../components/common/Tabs.jsx';
 import ContributionGraph from '../components/profile/ContributionGraph.jsx';
 import PostCard from '../components/feed/PostCard.jsx';
+import ResumePreview from '../components/feedback/ResumePreview.jsx';
 import useProfileData from '../components/profile/useProfileData.js';
 import './ProfilePage.css';
 
@@ -91,6 +92,8 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
   const [tab, setTab] = useState('posts');
   const [grassYear, setGrassYear] = useState(CURRENT_YEAR);
   const [resumeSettingsOpen, setResumeSettingsOpen] = useState(false);
+  // 남의 프로필에서 펼쳐 본 대표 이력서 ID. 다른 프로필로 옮기면 ID가 달라 자연히 닫힌다.
+  const [openResumeId, setOpenResumeId] = useState(null);
   const [badgesExpanded, setBadgesExpanded] = useState(false);
   const [careersExpanded, setCareersExpanded] = useState(false);
   const [badgePanels, setBadgePanels] = useState({
@@ -426,14 +429,32 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
             )}
 
             {pinnedResume ? (
-              <div className="profile__resume">
-                <div className="resume-thumb" aria-hidden="true"><span /><span /><span /></div>
-                <div className="grow">
-                  <div className="bold">{pinnedResume.title}</div>
-                  <div className="small muted">{pinnedResume.field}</div>
+              <>
+                <div className="profile__resume">
+                  <div className="resume-thumb" aria-hidden="true"><span /><span /><span /></div>
+                  <div className="grow">
+                    <div className="bold">{pinnedResume.title}</div>
+                    <div className="small muted">{pinnedResume.field}</div>
+                  </div>
+                  {isOwner ? (
+                    <Link href="/resumes" className="text-link">보기</Link>
+                  ) : (
+                    // 남의 이력서는 /resumes(보는 사람 자신의 목록)가 아니라 이 자리에서 펼쳐 본다.
+                    // 공개 이력서는 미리보기 API(GET /resumes/{id}?type=COMMON)로 누구나 볼 수 있다.
+                    <button
+                      type="button"
+                      className="text-link profile__resume-toggle"
+                      aria-expanded={openResumeId === pinnedResume.id}
+                      onClick={() => setOpenResumeId((v) => (v === pinnedResume.id ? null : pinnedResume.id))}
+                    >
+                      {openResumeId === pinnedResume.id ? '접기' : '보기'}
+                    </button>
+                  )}
                 </div>
-                <Link href="/resumes" className="text-link">보기</Link>
-              </div>
+                {!isOwner && openResumeId === pinnedResume.id && (
+                  <ResumePreview type="COMMON" id={pinnedResume.id} />
+                )}
+              </>
             ) : publicResumes.length === 0 ? (
               <div className="profile__no-resume">아직 공개·고정한 이력서가 없어요.</div>
             ) : (
