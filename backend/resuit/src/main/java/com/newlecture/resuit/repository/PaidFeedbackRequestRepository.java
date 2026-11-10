@@ -14,14 +14,14 @@ import org.springframework.data.repository.query.Param;
 import com.newlecture.resuit.entity.PaidFeedbackRequest;
 
 public interface PaidFeedbackRequestRepository extends JpaRepository<PaidFeedbackRequest, Long> {
-    @org.springframework.data.jpa.repository.Query("""
+    @Query("""
         select count(r) > 0 from PaidFeedbackRequest r
         where (r.commonResume.id = :commonId or r.targetResume.id = :targetId)
           and (r.requester.id = :viewerId or r.mentor.userId = :viewerId)
         """)
-    boolean canViewResumePhoto(@org.springframework.data.repository.query.Param("commonId") Long commonId,
-        @org.springframework.data.repository.query.Param("targetId") Long targetId,
-        @org.springframework.data.repository.query.Param("viewerId") java.util.UUID viewerId);
+    boolean canViewResumePhoto(@Param("commonId") Long commonId,
+        @Param("targetId") Long targetId,
+        @Param("viewerId") UUID viewerId);
 
 
 	long countByMentor_UserIdAndStatus(UUID mentorId, String status);
