@@ -22,6 +22,8 @@ import com.newlecture.resuit.dto.CreditPaymentCreateRequest;
 import com.newlecture.resuit.dto.CreditPaymentOrderResponse;
 import com.newlecture.resuit.dto.CreditPaymentResultResponse;
 import com.newlecture.resuit.dto.CreditTransactionResponse;
+import com.newlecture.resuit.dto.CreditWithdrawalCreateRequest;
+import com.newlecture.resuit.dto.CreditWithdrawalResponse;
 import com.newlecture.resuit.dto.MentorDetailResponse;
 import com.newlecture.resuit.dto.MentorProfileRequest;
 import com.newlecture.resuit.dto.MyMentorResponse;
@@ -134,6 +136,14 @@ public class PaidFeedbackController {
 			@RequestParam(defaultValue = "20") int size,
 			Principal principal) {
 		return ResponseEntity.ok(creditService.getTransactions(principal.getName(), PageRequest.of(page, size)));
+	}
+
+	// 적립 크레딧 환전: POST /api/v1/credits/withdrawals
+	@PostMapping("/credits/withdrawals")
+	public ResponseEntity<CreditWithdrawalResponse> withdrawCredits(
+			@Valid @RequestBody CreditWithdrawalCreateRequest request,
+			Principal principal) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(creditService.withdraw(principal.getName(), request));
 	}
 
 	@PostMapping("/credit-payments")

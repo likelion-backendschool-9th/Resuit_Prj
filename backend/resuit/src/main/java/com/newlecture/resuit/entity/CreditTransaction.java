@@ -44,4 +44,8 @@ public class CreditTransaction extends BaseCreatedEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "credit_payment_id")
     private CreditPayment creditPayment;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "credit_withdrawal_id")
+    private CreditWithdrawal creditWithdrawal;
 }

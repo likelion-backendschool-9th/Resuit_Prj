@@ -48,7 +48,7 @@ WBS에서 같은 기능이 여러 곳에 적힌 경우 하나로 정리한다.
 | 게시글 | `Post`→`posts`(게시글), `Comment`→`comments`(댓글), `PostLike`→`post_likes`(게시글 좋아요) |
 | 공고·이력서 | `Job`→`jobs`(공고), `JobQuestion`→`job_questions`(공고 요구 문항), `JobApplication`→`job_applications`(공고 지원), `CommonResume`→`common_resumes`(공통 이력서), `TargetResume`→`target_resumes`(특화 이력서) |
 | 피드백·베스트 리뷰 | `FeedbackRequest`→`feedback_requests`(피드백 요청), `FeedbackRequestSection`→`feedback_request_sections`(피드백 요청 섹션), `FeedbackComment`→`feedback_comments`(피드백 댓글), `FeedbackCommentLike`→`feedback_comment_likes`(리뷰 좋아요), `BestReview`→`best_reviews`(베스트 리뷰) |
-| 유료 피드백·크레딧 | `Mentor`→`mentors`(현직자), `PaidFeedbackRequest`→`paid_feedback_requests`(유료 피드백 요청), `PaidFeedbackResponse`→`paid_feedback_responses`(유료 피드백 답변), `CreditTransaction`→`credit_transactions`(크레딧 내역), `CreditPayment`→`credit_payments`(크레딧 결제) |
+| 유료 피드백·크레딧 | `Mentor`→`mentors`(현직자), `PaidFeedbackRequest`→`paid_feedback_requests`(유료 피드백 요청), `PaidFeedbackResponse`→`paid_feedback_responses`(유료 피드백 답변), `CreditTransaction`→`credit_transactions`(크레딧 내역), `CreditPayment`→`credit_payments`(크레딧 결제), `CreditWithdrawal`→`credit_withdrawals`(크레딧 환전) |
 | 기업 인재 검색 | `CompanyOffer`→`company_offers`(채용 제안), `CompanyPlanPeriod`→`company_plan_periods`(기업 Pro 이용 기간) |
 
 ### 읽는 법
@@ -113,6 +113,8 @@ erDiagram
     PaidFeedbackRequest |o..o{ CreditTransaction : "사용 근거"
     CreditPayment |o..o{ CreditTransaction : "충전 근거"
     User ||..o{ CreditPayment : "결제"
+    CreditWithdrawal |o..o{ CreditTransaction : "환전 근거"
+    User ||..o{ CreditWithdrawal : "환전"
 
     User ||..o{ CompanyOffer : "제안"
     Job |o..o{ CompanyOffer : "관련 공고"
@@ -415,6 +417,8 @@ erDiagram
     PaidFeedbackRequest |o..o{ CreditTransaction : "사용·적립·환불 근거"
     CreditPayment |o..o{ CreditTransaction : "충전 근거"
     User ||..o{ CreditPayment : "결제"
+    CreditWithdrawal |o..o{ CreditTransaction : "환전 근거"
+    User ||..o{ CreditWithdrawal : "환전"
 
     Mentor {
       uuid user_id PK, FK "유저"
@@ -450,6 +454,7 @@ erDiagram
       int balance_after "변동 후 잔액"
       bigint paid_feedback_request_id FK "유료 피드백 요청"
       bigint credit_payment_id FK "결제"
+      bigint credit_withdrawal_id FK "환전"
       timestamptz created_at "발생일"
     }
     CreditPayment {
@@ -460,6 +465,17 @@ erDiagram
       varchar pg_transaction_id "결제사 거래 아이디"
       varchar status "결제 상태"
       timestamptz created_at "결제일"
+    }
+    CreditWithdrawal {
+      bigint id PK "아이디"
+      uuid user_id FK "유저"
+      int credits "환전 크레딧"
+      int amount_krw "받는 금액(원)"
+      int fee_krw "수수료(원)"
+      varchar bank_name "은행"
+      varchar account_number "계좌번호"
+      varchar account_holder "예금주"
+      timestamptz created_at "환전일"
     }
 ```
 
@@ -623,8 +639,9 @@ erDiagram
 | `mentors` | `user_id`, `company_name`, `job_title`, `price_credits`, `verified_at`; 선택 `career_years` | 회사 이메일 인증을 마친 회원이 현직자 정보(직무, 경력 연차, 유료 피드백 가격)를 처음 저장할 때 행을 만든다(`PUT /users/me/mentor`). `company_name`은 인증한 도메인의 회사명이라 직접 고칠 수 없고, 다시 인증해야 바뀐다. `price_credits > 0`. 현직자 목록은 이 테이블과 회원 정보를 함께 읽고, 유효한 인증이 있는 현직자만 보여 준다. |
 | `paid_feedback_requests` | `id`, `requester_id`, `mentor_id`, `credits`, `status`, `created_at`; 선택 `common_resume_id`, `target_resume_id`, `content`, `updated_at` | `status IN ('REQUESTED','IN_PROGRESS','COMPLETED','CANCELED')`. 공통 이력서와 특화 이력서 중 정확히 하나만 값이 있다(CHECK). 자기 자신에게는 요청하지 않는다. `credits`는 요청 시점의 현직자 가격이며, 현직자가 나중에 가격을 바꿔도 그대로 둔다. 요청자와 담당 현직자만 조회할 수 있다. |
 | `paid_feedback_responses` | `id`, `paid_feedback_request_id`, `content`, `created_at` | 담당 현직자만 답변을 등록한다(서비스에서 검사). 요청 하나에 답변이 여러 개 달릴 수 있다. |
-| `credit_transactions` | `id`, `user_id`, `type`, `amount`, `balance_after`, `created_at`; 선택 `paid_feedback_request_id`, `credit_payment_id` | `type IN ('CHARGE','USE','EARN','REFUND')`. `USE`는 음수, 나머지는 양수다. `balance_after >= 0`. `CHARGE`는 `credit_payment_id`가, `USE`·`EARN`·`REFUND`는 `paid_feedback_request_id`가 꼭 있어야 한다(CHECK). 행은 추가만 하고 고치거나 지우지 않는다. 현재 잔액은 회원의 가장 최근 행의 `balance_after`이고, 행이 없으면 0이다. |
+| `credit_transactions` | `id`, `user_id`, `type`, `amount`, `balance_after`, `created_at`; 선택 `paid_feedback_request_id`, `credit_payment_id` | `type IN ('CHARGE','USE','EARN','REFUND','WITHDRAW')`. `USE`·`WITHDRAW`는 음수, 나머지는 양수다. `balance_after >= 0`. `CHARGE`는 `credit_payment_id`가, `USE`·`EARN`·`REFUND`는 `paid_feedback_request_id`가, `WITHDRAW`는 `credit_withdrawal_id`가 꼭 있어야 한다(CHECK). 행은 추가만 하고 고치거나 지우지 않는다. 현재 잔액은 회원의 가장 최근 행의 `balance_after`이고, 행이 없으면 0이다. 환전 가능 크레딧은 `min(잔액, EARN 합계 - WITHDRAW 합계)`다(사용은 충전분부터 빠진 것으로 본다). |
 | `credit_payments` | `id`, `user_id`, `amount_krw`, `credits`, `status`, `created_at`; 선택 `pg_transaction_id` | `status IN ('PENDING','PAID','FAILED','REFUNDED')`. `amount_krw > 0`, `credits > 0`. 결제를 시작하면 `PENDING`으로 만들고, 결제사에서 검증되면 `PAID`로 바꾸며 `pg_transaction_id`를 저장한다. 같은 거래가 두 번 처리되지 않도록 `pg_transaction_id`는 유일하다. |
+| `credit_withdrawals` | `id`, `user_id`, `credits`, `amount_krw`, `fee_krw`, `bank_name`, `account_number`, `account_holder`, `created_at` | 적립 크레딧을 현금으로 바꾼 기록이다. 관리자 승인 없이 신청하면 바로 완료되므로 상태 컬럼이 없다. 수수료 20%를 빼고 1크레딧당 80원이다(`amount_krw = credits × 80`, `fee_krw = credits × 20`). 수수료율이 바뀌어도 당시 값이 남도록 금액을 저장한다. `credits`는 환전 가능 크레딧 이하여야 하며, 환전 1건마다 `credit_transactions`에 `WITHDRAW` 한 줄이 생긴다. 계좌번호는 숫자만 저장하고 응답에서는 뒤 4자리만 보여 준다. 테스트 환경이라 실제 송금은 하지 않는다. |
 
 유료 피드백은 다음 순서로 진행한다. 상태와 크레딧은 항상 한 트랜잭션에서 함께 바꾼다.
 
@@ -666,7 +683,7 @@ PK와 UNIQUE 제약은 인덱스를 함께 만든다. 아래에는 그 밖에 �
 - `feedback_comment_likes`: 기간별 좋아요를 세기 위한 `(created_at)`.
 - `best_reviews`: `(period, period_start, rank_no)`, `(period, period_start, feedback_comment_id)` 유니크. 선정 작업이 두 번 돌아도 기록이 겹치지 않는다.
 - `paid_feedback_requests`: `(requester_id, created_at DESC)`, `(mentor_id, status)`. 상태 변경은 `UPDATE ... WHERE status = '예상 상태'`로 하고, 바뀐 행이 없으면 다른 요청이 먼저 바꾼 것으로 보고 실패시킨다. 취소와 답변 등록이 동시에 와도 하나만 성공하고, 환불은 취소가 성공했을 때만 기록한다.
-- `credit_transactions`: 잔액과 내역 조회용 `(user_id, id DESC)`. 크레딧이 바뀌는 모든 작업(충전 확정, 사용, 적립, 환불)은 해당 회원의 `users` 행을 `SELECT ... FOR UPDATE`로 잠근 뒤 가장 최근 `balance_after`를 읽고 새 행을 넣는다. 같은 회원의 크레딧 변경이 한 줄로 서서 처리되므로 잔액이 꼬이거나 음수가 되지 않는다.
+- `credit_transactions`: 잔액과 내역 조회용 `(user_id, id DESC)`. 크레딧이 바뀌는 모든 작업(충전 확정, 사용, 적립, 환불, 환전)은 해당 회원의 `users` 행을 `SELECT ... FOR UPDATE`로 잠근 뒤 가장 최근 `balance_after`를 읽고 새 행을 넣는다. 같은 회원의 크레딧 변경이 한 줄로 서서 처리되므로 잔액이 꼬이거나 음수가 되지 않는다.
 - `credit_payments`: `pg_transaction_id` 유니크, `(user_id, created_at DESC)`. 결제 확정은 결제 행을 잠그고 `PENDING`일 때만 `PAID`로 바꾼다. 결제사 알림이 두 번 와도 크레딧은 한 번만 충전된다.
 - `verifications`: `(user_id, type, created_at DESC)`.
 - `company_offers`: 받은 제안용 `(user_id, created_at DESC)`, 보낸 제안용 `(company_id, created_at DESC)`.

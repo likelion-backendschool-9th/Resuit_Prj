@@ -43,3 +43,17 @@ export async function confirmCreditPayment({ paymentKey, orderId, amount }) {
   });
   return read(response, '결제를 승인하지 못했어요.');
 }
+
+// 적립 크레딧을 환전한다. 성공하면 환전 결과와 바뀐 잔액(balance, withdrawable)이 온다.
+export async function withdrawCredits({ credits, bankName, accountNumber, accountHolder }) {
+  const response = await authenticatedFetch('/api/v1/credits/withdrawals', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credits, bankName, accountNumber, accountHolder }),
+  });
+  if (response.status === 409) {
+    const data = await response.json().catch(() => null);
+    throw new Error(data?.message || '환전할 수 있는 크레딧이 부족해요.');
+  }
+  return read(response, '환전하지 못했어요.');
+}
