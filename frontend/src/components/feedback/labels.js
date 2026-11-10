@@ -1,5 +1,5 @@
 // 피드백 게시판에서 서버 값을 화면 문구로 바꾼다
-export const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드' };
+export const FIELD_LABEL = { FRONTEND: '프론트엔드', BACKEND: '백엔드', FULLSTACK: '풀스택' };
 
 // 3.2 피드백 요청에서 고르는 이력서 항목
 export const SECTION_LABEL = {
@@ -14,6 +14,9 @@ export function avatarColor(username = '') {
   for (const ch of username) sum += ch.charCodeAt(0);
   return AVATAR_COLORS[sum % AVATAR_COLORS.length];
 }
+
+// 작성자 프로필 주소 (/아이디). 다른 화면과 같은 방식으로 아이디를 인코딩한다
+export const profileHref = (username) => `/${encodeURIComponent(username)}`;
 
 export function timeText(value) {
   const minutes = Math.floor((Date.now() - new Date(value).getTime()) / 60000);

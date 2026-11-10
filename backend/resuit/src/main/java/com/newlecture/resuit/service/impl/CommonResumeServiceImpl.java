@@ -41,7 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CommonResumeServiceImpl implements CommonResumeService {
     private static final int MAX_TITLE = 100;
-    private static final Set<String> FIELDS = Set.of("FRONTEND", "BACKEND");
+    private static final Set<String> FIELDS = Set.of("FRONTEND", "BACKEND", "FULLSTACK");
 
     private final CommonResumeRepository resumes;
     private final FeedbackBoardRepository feedbackBoard;
@@ -103,7 +103,7 @@ public class CommonResumeServiceImpl implements CommonResumeService {
         return CommonResumeDetailResponse.from(resumes.save(resume));
     }
 
-    // PATCH라서 보내지 않은(null) 값은 그대로 둔다. 분야를 빈 문자열로 보내면 분야를 지운다.
+    // PATCH라서 보내지 않은(null) 값은 그대로 둔다. 분야는 필수라 빈 문자열로 지울 수 없다.
     @Override
     @Transactional
     public CommonResumeDetailResponse update(CommonResumeUpdateCommand command) {
@@ -113,7 +113,7 @@ public class CommonResumeServiceImpl implements CommonResumeService {
         if (request == null) throw new InvalidResumeException("이력서 정보가 없어요.");
         resume.update(
             request.title() == null ? resume.getTitle() : validTitle(request.title()),
-            request.field() == null ? resume.getField() : validField(request.field()),
+            request.field() == null ? resume.getField() : requiredField(request.field()),
             request.content() == null ? resume.getContent() : request.content());
         if (request.photoUrl() != null) resume.updatePhoto(photos.resolve(user.getId(), request.photoUrl()));
         resumes.flush();
@@ -181,11 +181,17 @@ public class CommonResumeServiceImpl implements CommonResumeService {
         return trimmed;
     }
 
-    // 직무 분야는 FRONTEND/BACKEND만 받는다. 소문자로 와도 대문자로 저장한다.
+    // 이력서를 저장할 때는 분야를 꼭 골라야 한다. 새 이력서(빈 초안)를 만들 때만 분야 없이 만들 수 있다.
+    private static String requiredField(String field) {
+        if (field.isBlank()) throw new InvalidResumeException("이력서 분야를 골라 주세요.");
+        return validField(field);
+    }
+
+    // 직무 분야는 FRONTEND/BACKEND/FULLSTACK만 받는다. 소문자로 와도 대문자로 저장한다.
     private static String validField(String field) {
         if (field == null || field.isBlank()) return null;
         var normalized = field.trim().toUpperCase(Locale.ROOT);
-        if (!FIELDS.contains(normalized)) throw new InvalidResumeException("직무 분야는 FRONTEND 또는 BACKEND여야 해요.");
+        if (!FIELDS.contains(normalized)) throw new InvalidResumeException("직무 분야는 FRONTEND, BACKEND, FULLSTACK 중 하나여야 해요.");
         return normalized;
     }
 }

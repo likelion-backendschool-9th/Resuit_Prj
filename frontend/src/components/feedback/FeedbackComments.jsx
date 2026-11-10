@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getFeedbackComments, createFeedbackComment, deleteFeedbackComment, adoptFeedback } from '../../services/feedbackRequests.js';
 import Avatar from '../common/Avatar.jsx';
 import Badge from '../common/Badge.jsx';
 import Button from '../common/Button.jsx';
 import Icon from '../common/Icon.jsx';
 import { ChipRadioGroup } from '../common/Chip.jsx';
-import { SECTION_LABEL, avatarColor, timeText } from './labels.js';
+import { SECTION_LABEL, avatarColor, profileHref, timeText } from './labels.js';
 
 const ALL = 'ALL';
 const COMMON_SECTIONS = ['BASIC', 'SKILLS', 'PROJECTS', 'AWARDS', 'INTRODUCTION'];
@@ -111,10 +112,12 @@ export default function FeedbackComments({ request, onAdded, onDeleted, onAdopte
           const name = c.author.nickname || c.author.username;
           return (
             <div key={c.commentId} className={`fb-item${c.parentId ? ' fb-item--reply' : ''}`}>
-              <Avatar initial={name.charAt(0)} color={avatarColor(c.author.username)} size={32} src={c.author.profileImageUrl} />
+              <Link href={profileHref(c.author.username)} className="fb-profile__avatar" aria-label={`${name} 프로필 보기`}>
+                <Avatar initial={name.charAt(0)} color={avatarColor(c.author.username)} size={32} src={c.author.profileImageUrl} />
+              </Link>
               <div className="grow stack" style={{ gap: 4 }}>
                 <div className="row-wrap" style={{ gap: 6, fontSize: 14 }}>
-                  <strong>{name}</strong>
+                  <Link href={profileHref(c.author.username)} className="fb-profile__name">{name}</Link>
                   {c.parentId && <span className="xs muted">답글</span>}
                   {c.reviewerBadge && <Badge tone="verified"><Icon name="check" size={11} />{c.reviewerBadge}</Badge>}
                   <Badge tone="general">{c.section ? SECTION_LABEL[c.section] ?? c.section : '전체'}</Badge>
