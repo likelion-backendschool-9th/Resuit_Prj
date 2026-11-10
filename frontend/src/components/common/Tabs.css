@@ -6,7 +6,8 @@
 }
 .tabs--sticky {
   position: sticky;
-  top: 0;
+  /* 모바일에서는 상단 바 아래에 붙는다. 데스크톱에서는 0이다. */
+  top: var(--mobile-bar-h, 0px);
   z-index: 5;
   box-shadow: 0 1px 0 var(--line);
 }

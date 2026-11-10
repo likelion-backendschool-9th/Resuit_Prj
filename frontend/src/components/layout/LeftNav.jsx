@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppState } from '../../context/AppStateContext.jsx';
 import Icon from '../common/Icon.jsx';
-import Button from '../common/Button.jsx';
+import Button, { IconButton } from '../common/Button.jsx';
 import ThemeToggle from '../common/ThemeToggle.jsx';
 import SettingsMenu from './SettingsMenu.jsx';
 import { requestFeedTop } from '../feed/feedTop.js';
@@ -48,13 +48,24 @@ const COMPANY_ITEMS = [
 const visibleFor = (role) => (item) => !item.roles || role === 'ADMIN' || item.roles.includes(role);
 // 기업 메뉴(공고 관리, 인재 찾기, 보낸 제안)는 기업 회원과 관리자만 본다.
 const isCompanyMember = (role) => role === 'COMPANY' || role === 'ADMIN';
+// 메뉴 항목이 지금 주소와 맞는지 본다.
+const isItemActive = (item, pathname) => (item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`));
+// 홈에서 홈을 다시 누르면 피드를 맨 위로 올리고 새로 불러온다.
+const homeClick = (item, pathname) => (item.to === '/' && pathname === '/' ? requestFeedTop : undefined);
+
+// 모바일 하단 바에 둘 메뉴. 위 메뉴 목록에서 골라 쓰므로 메뉴를 고칠 때 한 곳만 고치면 된다.
+const MOBILE_TABS = [
+  ITEMS_TOP[0],
+  ITEMS_TOP[1],
+  { to: '/resumes', icon: 'file', label: '이력서', children: RESUME_CHILDREN },
+  ITEMS_BOTTOM.find((item) => item.to === '/profile')
+];
 
 function NavItem({ item, pathname }) {
-  const active = item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`);
+  const active = isItemActive(item, pathname);
   return (
-    // 홈에서 홈을 다시 누르면 피드를 맨 위로 올리고 새로 불러온다.
     <Link href={item.to} aria-current={active ? 'page' : undefined} className={`nav-item${active ? ' is-active' : ''}`}
-      onClick={item.to === '/' && pathname === '/' ? requestFeedTop : undefined}>
+      onClick={homeClick(item, pathname)}>
       <Icon name={item.icon} size={22} />
       {item.label}
       {item.tag && <span className="nav-item__tag">{item.tag}</span>}
@@ -78,9 +89,36 @@ export default function LeftNav() {
   // 게시글 작성 모달. 화면 이동 없이 지금 페이지 위에 띄운다.
   const [composeOpen, setComposeOpen] = useState(false);
   const open = resumeOpen === undefined ? inResume : resumeOpen;
+  // 모바일 서랍 메뉴. 연 주소를 기억해 두어 다른 화면으로 이동하면 저절로 닫힌다.
+  const [drawerPath, setDrawerPath] = useState(null);
+  const drawerOpen = drawerPath === pathname;
+  const closeDrawer = () => setDrawerPath(null);
+
+  // 서랍 메뉴가 열려 있으면 Esc로 닫는다.
+  useEffect(() => {
+    if (!drawerOpen) return undefined;
+    const onKey = (event) => { if (event.key === 'Escape') setDrawerPath(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [drawerOpen]);
+
+  // 하단 바의 이력서는 이력서 하위 화면 어디에서든 선택된 것으로 보인다.
+  const tabActive = (item) => (item.children ? item.children.some((c) => isSubActive(c.to)) : isItemActive(item, pathname));
 
   return (
-    <nav className="left-nav" aria-label="주 메뉴">
+    <>
+    {/* 모바일(800px 이하)에서만 보이는 상단 바. 데스크톱에서는 숨는다. */}
+    <header className="mobile-bar">
+      <IconButton label="전체 메뉴 열기" className="icon-btn--plain" aria-expanded={drawerOpen} aria-controls="main-nav"
+        onClick={() => setDrawerPath(pathname)}>
+        <Icon name="menu" size={22} />
+      </IconButton>
+      <Link href="/" className="mobile-bar__logo" onClick={homeClick(ITEMS_TOP[0], pathname)}>Resuit</Link>
+      <ThemeToggle />
+    </header>
+
+    {/* 데스크톱에서는 왼쪽 메뉴, 모바일에서는 ☰로 여는 서랍 메뉴다. */}
+    <nav id="main-nav" className={`left-nav${drawerOpen ? ' is-open' : ''}`} aria-label="주 메뉴">
       <div className="left-nav__top">
         <Link href="/" className="left-nav__logo">Resuit</Link>
         <ThemeToggle />
@@ -133,8 +171,31 @@ export default function LeftNav() {
       </button>
       {settingsOpen && <SettingsMenu onClose={() => setSettingsOpen(false)} />}
 
-      <Button size="lg" block onClick={() => setComposeOpen(true)} aria-haspopup="dialog" className="left-nav__post">게시글 작성</Button>
-      {composeOpen && <ComposeModal onClose={() => setComposeOpen(false)} />}
+      <Button size="lg" block onClick={() => { closeDrawer(); setComposeOpen(true); }} aria-haspopup="dialog" className="left-nav__post">게시글 작성</Button>
     </nav>
+    {drawerOpen && <div className="left-nav__scrim" aria-hidden="true" onClick={closeDrawer} />}
+
+    {/* 모바일(800px 이하)에서만 보이는 하단 바. 자주 쓰는 메뉴와 게시글 작성 버튼을 둔다. */}
+    <nav className="mobile-tabs" aria-label="빠른 메뉴">
+      {MOBILE_TABS.slice(0, 2).map((item) => <MobileTab key={item.to} item={item} active={tabActive(item)} onClick={homeClick(item, pathname)} />)}
+      <button type="button" className="mobile-tabs__item mobile-tabs__post" aria-haspopup="dialog" onClick={() => setComposeOpen(true)}>
+        <span className="mobile-tabs__post-icon"><Icon name="plus" size={22} /></span>
+        작성
+      </button>
+      {/* 기업 회원은 이력서 대신 인재 찾기를 둔다. */}
+      {(isCompanyMember(me.role) && me.role !== 'ADMIN' ? [COMPANY_ITEMS[0], MOBILE_TABS[3]] : MOBILE_TABS.slice(2))
+        .map((item) => <MobileTab key={item.to} item={item} active={tabActive(item)} />)}
+    </nav>
+    {composeOpen && <ComposeModal onClose={() => setComposeOpen(false)} />}
+    </>
+  );
+}
+
+function MobileTab({ item, active, onClick }) {
+  return (
+    <Link href={item.to} aria-current={active ? 'page' : undefined} className={`mobile-tabs__item${active ? ' is-active' : ''}`} onClick={onClick}>
+      <Icon name={item.icon} size={22} />
+      {item.label}
+    </Link>
   );
 }

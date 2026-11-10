@@ -1,7 +1,8 @@
 /* 피드 칸 끝에 높이 0으로 두고 화면 아래에 붙여, 오른쪽 보조 영역을 가리지 않고 피드 칸 안에서만 뜬다. */
 .feed-top {
   position: sticky;
-  bottom: 24px;
+  /* 모바일에서는 하단 바 위에 뜬다. */
+  bottom: calc(24px + var(--mobile-tabs-h, 0px));
   height: 0;
   display: flex;
   justify-content: flex-end;

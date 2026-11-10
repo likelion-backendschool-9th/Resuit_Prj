@@ -1,4 +1,7 @@
 .app-layout {
+  /* 모바일 상단 바·하단 바 높이. 데스크톱에서는 0이라 다른 요소의 위치에 영향이 없다. */
+  --mobile-bar-h: 0px;
+  --mobile-tabs-h: 0px;
   max-width: 1280px;
   margin: 0 auto;
   display: flex;
@@ -35,6 +38,13 @@
 }
 
 @media (max-width: 800px) {
-  .left-nav, .right-aside { position: static; max-height: none; min-height: 0; }
-  .main-column { border: 0; min-height: auto; }
+  .app-layout {
+    --mobile-bar-h: 52px;
+    --mobile-tabs-h: calc(60px + env(safe-area-inset-bottom));
+    /* 하단 바가 마지막 내용을 가리지 않게 그만큼 띄운다. */
+    padding-bottom: var(--mobile-tabs-h);
+  }
+  .main-column { flex-basis: 100%; border: 0; min-height: auto; }
+  /* 오른쪽 보조 영역은 본문 아래로 내려와 화면 폭을 채운다. */
+  .right-aside { position: static; flex-basis: 100%; max-height: none; min-height: 0; padding: 16px; border-top: 1px solid var(--line); }
 }
