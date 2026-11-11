@@ -1,0 +1,16 @@
+.jobs-content { display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; }
+.jobs-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 12px; }
+.jobs-description { display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.jobs-description h3 { font-size: 16px; }
+.jobs-description p { color: var(--text-2); }
+.jobs-questions { padding-left: 22px; display: flex; flex-direction: column; gap: 16px; }
+.job-editor { padding: 24px; display: flex; flex-direction: column; gap: 22px; }
+.job-editor > fieldset { min-width: 0; padding: 0; margin: 0; border: 0; display: flex; flex-direction: column; gap: 22px; }
+.job-editor__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+.job-editor__message { color: var(--accent-text); }
+.job-editor__error { color: var(--danger); }
+.job-drafts { padding: 20px 24px; border-bottom: 1px solid var(--line); }
+.job-drafts summary { cursor: pointer; font-weight: 700; }
+.job-drafts__list { padding: 16px 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.job-drafts__list a { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .jobs-content, .job-editor, .job-drafts { padding: 16px; } }

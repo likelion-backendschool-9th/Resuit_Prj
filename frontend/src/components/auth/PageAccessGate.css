@@ -1,0 +1,23 @@
+.page-access {
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-access h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.page-access p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.page-access__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}

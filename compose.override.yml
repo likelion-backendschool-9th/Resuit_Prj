@@ -1,0 +1,32 @@
+# 개발 모드. docker compose가 compose.yml과 자동으로 병합한다.
+#
+# 운영 이미지(빌드 결과물)를 띄우는 대신, 소스 폴더를 컨테이너에 마운트하고
+# 그 안에서 bootRun / Next.js dev server를 실행한다. 코드를 고치면 이미지를 다시 만들지 않아도 된다.
+#  - frontend: 저장하면 바로 반영된다 (Next.js의 핫 리로드)
+#  - backend : 저장 후 `docker compose restart backend` (bootRun 이 다시 컴파일한다)
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+      target: deps          # 개발 모드는 next build 단계가 필요 없다
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules   # 이미지 안의 node_modules 를 유지 (호스트 것과 섞이지 않게)
+      - /app/.next          # 빌드 캐시도 호스트와 섞이지 않게
+    environment:
+      NODE_ENV: development
+      BACKEND_URL: http://backend:8080
+    command: ["npm", "run", "dev"]
+
+  backend:
+    build:
+      context: ./backend/resuit
+      target: development
+    volumes:
+      - ./backend/resuit:/app
+      - gradle_cache:/root/.gradle   # 받은 Gradle 과 라이브러리를 재사용
+    command: ["./gradlew", "bootRun", "--no-daemon"]
+
+volumes:
+  gradle_cache:

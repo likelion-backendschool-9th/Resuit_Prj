@@ -1,4 +1,86 @@
+# frontend
+
 node_modules
+.next
+next-env.d.ts
 dist
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.log
+coverage/
+*.lcov
+
+
+
+# backend
+
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+*.mv.db
+*.trace.db
+*.h2.db
+backend/resuit/src/main/media/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+
+# 절대!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 포함하지마!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# 실제 키·비밀번호는 .env / .env.* 에만 둔다. 예시는 .env.example 만 올린다.
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# 개인용 Spring/로컬 오버라이드 (시크릿이 들어갈 수 있음)
+**/application-private.yml
+**/application-secret.yml
+**/application-*.local.yml
+
+# 절대!!!!!!!!!!!!!!!!!!!!!! NGINX관련 파일 포함하지마!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+*.key
+*.pem
+!**/src/main/**/*.pem
+nginx/*.key
+nginx/*.pem
+nginx/*-key.pem
+nginx/*privkey*
+nginx/certs/
+nginx/logs/
+
+# 에디터·에이전트 로컬
+.cursor/
+.claude/

@@ -1,0 +1,23 @@
+/* 피드 칸 끝에 높이 0으로 두고 화면 아래에 붙여, 오른쪽 보조 영역을 가리지 않고 피드 칸 안에서만 뜬다. */
+.feed-top {
+  position: sticky;
+  /* 모바일에서는 하단 바 위에 뜬다. */
+  bottom: calc(24px + var(--mobile-tabs-h, 0px));
+  height: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 20px;
+  pointer-events: none;
+}
+.feed-top__btn {
+  flex-basis: 48px;
+  width: 48px;
+  height: 48px;
+  transform: translateY(-100%);
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+.feed-top__btn.is-on { opacity: 1; visibility: visible; pointer-events: auto; }

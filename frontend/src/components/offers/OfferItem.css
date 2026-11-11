@@ -1,0 +1,9 @@
+.offer-item { display: flex; gap: 14px; padding: 18px 24px; border-bottom: 1px solid var(--line); }
+.offer-item__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.offer-item__company { font-size: 16px; font-weight: 800; color: var(--text); }
+.offer-item__date { margin-left: auto; }
+.offer-item__job { color: var(--accent-text); font-weight: 700; }
+.offer-item__message { font-size: 14px; line-height: 1.7; color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+.offer-item__email { color: var(--text-sub); overflow-wrap: anywhere; }
+.offer-item__actions { gap: 8px; }
+.offer-item__error { color: var(--danger); }

@@ -6,8 +6,34 @@
   border-radius: 999px;
   background: var(--tech-bg);
   color: var(--tech);
+  text-decoration: none;
 }
+a.hashtag:hover { text-decoration: underline; }
 .tech-tags__source { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; font-size: 12px; color: var(--text-sub); }
+
+.post-media {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-sub);
+}
+.post-media--video { max-width: none; object-fit: contain; background: var(--media-bg); }
+.post-video { position: relative; width: 100%; max-width: 560px; }
+.post-video__label {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--media-label-bg);
+  color: var(--on-accent);
+}
 
 .embed {
   display: flex;

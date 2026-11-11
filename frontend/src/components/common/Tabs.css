@@ -6,19 +6,23 @@
 }
 .tabs--sticky {
   position: sticky;
-  top: 0;
+  /* 모바일에서는 상단 바 아래에 붙는다. 데스크톱에서는 0이다. */
+  top: var(--mobile-bar-h, 0px);
   z-index: 5;
+  box-shadow: 0 1px 0 var(--line);
 }
 .tabs__tab {
-  flex: 1 0 auto;
-  min-height: 53px;
+  flex: 1;
+  min-height: 50px;
   padding: 0 14px;
   border: 0;
   border-bottom: 3px solid transparent;
   background: none;
   color: var(--text-sub);
   font-size: 15px;
+  white-space: nowrap;
 }
+.tabs--sticky .tabs__tab { flex: 1 0 auto; min-height: 53px; }
 .tabs__tab:hover { background: var(--bg-sub); }
 .tabs__tab.is-active {
   color: var(--text);

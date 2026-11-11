@@ -2,10 +2,10 @@ import { StarIcon } from './Icon.jsx';
 import './Badge.css';
 
 // tone: company | question | tech | blog | repo | special | general | accent | sharer | accepted
-export default function Badge({ tone = 'general', size = 'sm', children }) {
+export default function Badge({ tone = 'general', size = 'sm', title, showIcon = true, children }) {
   return (
-    <span className={`badge badge--${tone} badge--${size}`}>
-      {tone === 'sharer' && <StarIcon />}
+    <span className={`badge badge--${tone} badge--${size}`} title={title}>
+      {tone === 'sharer' && showIcon && <StarIcon />}
       {children}
     </span>
   );

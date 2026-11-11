@@ -1,0 +1,79 @@
+.code-block {
+  border: 1px solid var(--code-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--code-bg);
+}
+.code-block__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: var(--code-head);
+  border-bottom: 1px solid var(--code-line);
+}
+.code-block__file { font-family: var(--font-mono); font-size: 13px; }
+.code-block__lang {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--code-line);
+  color: var(--text-sub);
+}
+.code-block__copy {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--code-line);
+  border-radius: 6px;
+  background: var(--code-bg);
+  color: var(--text-2);
+  font-size: 12px;
+}
+.code-block__view { position: relative; }
+.code-block__lines {
+  overflow-x: auto;
+  padding: 8px 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+}
+.code-block__line { display: flex; min-height: 20px; white-space: pre; width: max-content; min-width: 100%; }
+.code-block__no { flex: 0 0 44px; padding-right: 12px; text-align: right; color: var(--code-no); user-select: none; }
+.code-block__text { padding-right: 16px; color: var(--code-text); }
+.code-block__fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 56px;
+  background: linear-gradient(transparent, var(--code-bg));
+  pointer-events: none;
+}
+.code-block__toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  border: 0;
+  border-top: 1px solid var(--code-line);
+  background: var(--code-head);
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+.code-block__chevron { transition: transform 0.15s; }
+.code-block__chevron.is-open { transform: rotate(180deg); }
+
+.tk-comment { color: var(--code-comment); font-style: italic; }
+.tk-string { color: var(--code-string); }
+.tk-keyword { color: var(--code-keyword); }
+.tk-annotation { color: var(--code-annotation); }
+.tk-type { color: var(--code-type); }

@@ -1,0 +1,110 @@
+.job-detail__title { font-size: 26px; font-weight: 900; line-height: 1.35; }
+.job-detail__follow { min-height: 36px; padding: 0 16px; font-size: 14px; margin-left: auto; }
+.job-detail__box { padding: 16px; border-radius: var(--radius); background: var(--bg-sub); display: flex; flex-direction: column; gap: 8px; }
+.job-detail__box h3 { font-size: 15px; font-weight: 700; }
+.job-detail__box ul { padding-left: 18px; font-size: 14px; line-height: 1.8; color: var(--text-2); }
+
+.req-item {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--special-line);
+  border-radius: var(--radius);
+  background: var(--special-soft);
+}
+.req-item__num {
+  flex: 0 0 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--special);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 일반 공고: 공통 이력서 선택 */
+.resume-pick { border-radius: var(--radius-lg); border: 2px solid var(--line); background: var(--bg); }
+.resume-pick.is-on { border-color: var(--accent); background: var(--accent-bg); }
+.resume-pick__main {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 16px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+.resume-pick__radio {
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.resume-pick__radio span { width: 10px; height: 10px; border-radius: 50%; }
+.resume-pick.is-on .resume-pick__radio { border-color: var(--accent); }
+.resume-pick.is-on .resume-pick__radio span { background: var(--accent); }
+.resume-pick .resume-thumb { flex-basis: 44px; height: 56px; padding: 8px 7px; }
+.resume-pick__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.resume-pick__foot { display: flex; justify-content: flex-end; padding: 0 16px 12px; }
+.resume-pick__preview {
+  margin: 0 16px 16px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--bg-sub);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+}
+.skill-chip { font-size: 13px; padding: 3px 10px; border-radius: 6px; background: var(--bg-muted); }
+
+.job-apply__submit { flex: 1 1 260px; min-height: 52px; white-space: normal; }
+.job-apply__feedback { flex: 0 1 auto; min-height: 52px; padding: 0 20px; font-size: 15px; }
+
+.job-applied {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-line);
+}
+.job-applied__icon {
+  flex: 0 0 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.job-applied__rows { display: grid; grid-template-columns: 120px 1fr; gap: 10px 16px; font-size: 14px; padding: 0 4px; }
+.job-applied__action { flex: 1 1 180px; min-height: 48px; font-size: 15px; }
+.job-applied__cancel { flex: 0 0 auto; min-height: 48px; padding: 0 18px; border: 0; border-radius: 999px; background: none; color: var(--danger); font-size: 14px; font-weight: 700; }
+
+.apply-step { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+.apply-step__no {
+  flex: 0 0 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.apply-step--done .apply-step__no { background: var(--accent); color: var(--on-accent); }
+.apply-step--now { font-weight: 700; }
+.apply-step--now .apply-step__no { background: var(--invert-bg); color: var(--invert-text); }
+.apply-step--todo { color: var(--text-sub); }
+.apply-step--todo .apply-step__no { background: var(--bg-muted); color: var(--text-sub); }

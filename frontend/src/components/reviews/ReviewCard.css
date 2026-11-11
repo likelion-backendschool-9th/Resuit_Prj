@@ -1,0 +1,5 @@
+.review-card { padding: 20px; border-bottom: 1px solid var(--line); }
+.review-card__head, .review-card__actions { display: flex; align-items: center; gap: 12px; }
+.review-card__rank { margin-left: auto; color: var(--accent-text); font-weight: 700; }
+.review-card__meta { color: var(--text-sub); font-size: 13px; }
+.review-card__content { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; margin: 16px 0; }

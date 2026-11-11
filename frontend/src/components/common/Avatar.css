@@ -8,3 +8,5 @@
   font-weight: 700;
 }
 .avatar--company { border-radius: 22%; }
+.avatar { overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }

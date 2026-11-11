@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import Icon from '../common/Icon.jsx';
 import './PostEmbeds.css';
 
-// 기술 정보 글: 태그 + 출처
+// 기술 정보 글: 기술 태그 + 출처
 export function TechTags({ tags = [], source }) {
   return (
     <div className="tech-tags">
@@ -12,10 +12,37 @@ export function TechTags({ tags = [], source }) {
   );
 }
 
+// 자유 해시태그. 누르면 해당 태그 검색으로 이동한다.
+export function PostHashtags({ tags = [] }) {
+  if (!tags.length) return null;
+  return (
+    <div className="tech-tags" aria-label="해시태그">
+      {tags.map((t) => (
+        <Link key={t} href={`/search?hashtag=${encodeURIComponent(t)}`} className="hashtag">#{t}</Link>
+      ))}
+    </div>
+  );
+}
+
+// 글에 첨부한 사진
+export function PostImage({ src, alt }) {
+  return <img className="post-media" src={src} alt={alt} loading="lazy" />;
+}
+
+// 글에 첨부한 영상 (소리 없이 자동 재생)
+export function PostVideo({ src, poster, alt, duration }) {
+  return (
+    <div className="post-video">
+      <video className="post-media post-media--video" src={src} poster={poster} aria-label={alt} controls muted loop playsInline autoPlay preload="metadata" />
+      <span className="post-video__label">영상{duration ? ` · ${duration}` : ''}</span>
+    </div>
+  );
+}
+
 // RSS로 자동 공유된 블로그 글
 export function BlogEmbed({ blog }) {
   return (
-    <Link to="/profile" className="embed">
+    <Link href="/profile" className="embed">
       <span className="embed__kicker"><Icon name="rss" size={14} />{blog.source} · RSS로 자동 공유</span>
       <span className="embed__title">{blog.title}</span>
       <span className="small muted">{blog.desc}</span>
@@ -26,7 +53,7 @@ export function BlogEmbed({ blog }) {
 // GitHub 레포 공유
 export function RepoEmbed({ repo }) {
   return (
-    <Link to="/profile" className="embed">
+    <Link href="/profile" className="embed">
       <span className="row"><Icon name="repo" size={18} /><strong>{repo.name}</strong><span className="embed__pill">Public</span></span>
       <span className="text-2" style={{ fontSize: 14 }}>{repo.desc}</span>
       <span className="embed__meta">

@@ -1,0 +1,5 @@
+.company-applications__person { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.company-applications__applicant, .company-applications__detail-header, .company-applications__aside { display: flex; flex-direction: column; gap: 12px; overflow-wrap: anywhere; }
+.company-applications__resume { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.company-applications__applicant > .btn { align-self: flex-end; }
+.company-applications__breadcrumb { padding: 16px 24px 0; }

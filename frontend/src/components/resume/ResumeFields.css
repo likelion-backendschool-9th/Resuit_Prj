@@ -1,0 +1,27 @@
+.resume-field { gap: 6px; }
+.resume-field > label { font-size: 14px; }
+.resume-field__foot { display: flex; justify-content: space-between; gap: 12px; }
+
+.resume-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+
+.resume-skill--edit { display: inline-flex; align-items: center; gap: 2px; padding-right: 4px; }
+.resume-skill__remove { width: 24px; height: 24px; min-height: 0; border: 0; background: none; color: var(--text-sub); }
+.resume-skill__remove:hover { background: var(--bg); color: var(--text); }
+.resume-skill-add { display: flex; gap: 8px; }
+.resume-skill-add .input { flex: 1; min-width: 0; }
+
+.resume-item { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); }
+.resume-item .check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.resume-item__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.resume-item__head .icon-btn:disabled { opacity: 0.35; cursor: default; }
+.resume-item__head .icon-btn:disabled:hover { background: none; }
+
+.resume-photo { display: flex; gap: 16px; align-items: center; margin-bottom: 14px; }
+.resume-photo__frame { flex: 0 0 96px; width: 96px; height: 120px; border-radius: var(--radius-sm); border: 1px dashed var(--line-strong); background: var(--bg-sub); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.resume-photo__frame img { width: 100%; height: 100%; object-fit: cover; }
+.resume-photo__body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.resume-photo__label { font-size: 14px; font-weight: 700; }
+.resume-photo__pick { position: relative; cursor: pointer; }
+.resume-photo__pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.resume-photo__pick.is-disabled { opacity: 0.5; pointer-events: none; }
+.resume-photo__error { color: var(--danger); }

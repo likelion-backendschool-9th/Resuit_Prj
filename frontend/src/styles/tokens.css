@@ -5,6 +5,15 @@
    ========================================================= */
 
 :root {
+  --award-other-end: var(--bg-sub);
+  --award-other-ink: var(--text);
+  --award-second-end: #E3F0FB;
+  --award-second-ink: #244C6C;
+  --award-third-end: #EFE8F8;
+  --award-third-ink: #55406F;
+  /* 명예의 전당 1위 카드 */
+  --award-first-start: #C8EC78;
+  --award-first-ink: #283617;
   --bg: #FFFFFF;
   --bg-sub: #F7F9F9;
   --bg-muted: #EEF1F4;
@@ -47,6 +56,32 @@
   --repo: #5B2A9E;
   --repo-bg: #F1EAFB;
 
+  --question-line: #A9CCF3;
+  --tech-badge-bg: #E0F2F1;
+  --thumb-line: #B9D9CB;
+  --banner: #14664A;
+
+  /* 기업 Pro 안내 */
+  --notice-bg: #FFF8E6;
+  --notice-line: #F0D9A0;
+  --notice-text: #5C4300;
+
+  /* 코드 블록 (GitHub 라이트 팔레트) */
+  --code-bg: #FFFFFF;
+  --code-head: #F6F8FA;
+  --code-line: #D0D7DE;
+  --code-no: #8C959F;
+  --code-text: #1F2328;
+  --code-comment: #6E7781;
+  --code-string: #0A3069;
+  --code-keyword: #CF222E;
+  --code-annotation: #8250DF;
+  --code-type: #953800;
+
+  /* 사진 · 영상 */
+  --media-bg: #0F1419;
+  --media-label-bg: rgba(15, 20, 25, 0.75);
+
   --grass-0: #EBEDF0;
   --grass-1: #9BE9A8;
   --grass-2: #40C463;
@@ -60,6 +95,10 @@
   --av4-bg: #E6F4EA; --av4-fg: #14664A;
   --av5-bg: #DCEBFA; --av5-fg: #1D4E89;
   --av6-bg: #E0F2F1; --av6-fg: #0B5D57;
+  --av7-bg: #FFF4D6; --av7-fg: #7A5400;
+  --av8-bg: #E8F0FB; --av8-fg: #1D4E89;
+  --av9-bg: #EAF2E3; --av9-fg: #3D5A1E;
+  --av10-bg: #E3EEF2; --av10-fg: #1F5566;
   --co1-bg: #0F1419; --co1-fg: #FFFFFF;
   --co2-bg: #1D4E89; --co2-fg: #FFFFFF;
   --co3-bg: #3A4651; --co3-fg: #FFFFFF;
@@ -69,10 +108,19 @@
   --radius: 12px;
   --radius-lg: 16px;
   --font: 'Noto Sans KR', system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif;
+  --font-mono: 'DejaVu Sans Mono', Consolas, monospace;
   color-scheme: light;
 }
 
 [data-theme='dark'] {
+  --award-other-end: #344557;
+  --award-other-ink: #DCE7F2;
+  --award-second-end: #C4E5FC;
+  --award-second-ink: #153F63;
+  --award-third-end: #E3D3F8;
+  --award-third-ink: #422563;
+  --award-first-start: #C8EC78;
+  --award-first-ink: #283617;
   --bg: #15202B;
   --bg-sub: #0E1621;
   --bg-muted: #22303C;
@@ -115,6 +163,29 @@
   --repo: #C3A3F5;
   --repo-bg: #2A1F3D;
 
+  --question-line: #2F5A8F;
+  --tech-badge-bg: #10302E;
+  --thumb-line: #2F6B55;
+  --banner: #14664A;
+
+  --notice-bg: #33290F;
+  --notice-line: #5C4A1A;
+  --notice-text: #F0D58A;
+
+  --code-bg: #0D1117;
+  --code-head: #161B22;
+  --code-line: #30363D;
+  --code-no: #6E7681;
+  --code-text: #E6EDF3;
+  --code-comment: #8B949E;
+  --code-string: #A5D6FF;
+  --code-keyword: #FF7B72;
+  --code-annotation: #D2A8FF;
+  --code-type: #FFA657;
+
+  --media-bg: #0F1419;
+  --media-label-bg: rgba(15, 20, 25, 0.75);
+
   --grass-0: #2D333B;
   --grass-1: #0E4429;
   --grass-2: #006D32;
@@ -127,6 +198,10 @@
   --av4-bg: #173A27; --av4-fg: #6FD3A8;
   --av5-bg: #1B3352; --av5-fg: #8DB8F0;
   --av6-bg: #0F3633; --av6-fg: #6FD1C7;
+  --av7-bg: #3A2E10; --av7-fg: #F0C35A;
+  --av8-bg: #17283E; --av8-fg: #8DB8F0;
+  --av9-bg: #26361A; --av9-fg: #B4D68F;
+  --av10-bg: #17323B; --av10-fg: #8CC8DB;
   --co1-bg: #E7E9EA; --co1-fg: #0F1419;
   --co2-bg: #3A6FB0; --co2-fg: #FFFFFF;
   --co3-bg: #5B6B7A; --co3-fg: #FFFFFF;

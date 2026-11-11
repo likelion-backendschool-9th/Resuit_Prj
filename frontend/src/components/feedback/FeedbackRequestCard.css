@@ -4,7 +4,19 @@
   padding: 18px 24px;
   border-bottom: 1px solid var(--line);
 }
+.fb-card--linked { cursor: pointer; }
+.fb-card--linked:hover { background: var(--bg-sub); }
+.fb-card--detail { border-bottom: none; }
 .fb-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.fb-card__detail-link {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+.fb-card__detail-link:hover { color: inherit; }
+.fb-card__detail-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .fb-card__resume {
   display: flex;
   gap: 14px;
@@ -12,7 +24,26 @@
   padding: 14px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-lg);
+  width: 100%;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
+.fb-card__resume--static { cursor: inherit; }
+.fb-card__resume:hover { border-color: var(--accent-line); }
+.fb-card__resume--static:hover { border-color: var(--line-strong); }
+.fb-card__preview-label { display: inline-flex; align-items: center; gap: 4px; color: var(--accent-text); font-weight: 700; white-space: nowrap; }
+.fb-card__snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  white-space: pre-wrap;
+}
+.fb-card__meta { display: inline-flex; align-items: center; gap: 4px; }
 .fb-card__toggle { align-self: flex-start; }
 .fb-card__panel {
   display: flex;
@@ -22,6 +53,8 @@
   border-radius: var(--radius-lg);
   background: var(--bg-sub);
 }
+.fb-card__input { padding: 12px; font-size: 14px; line-height: 1.6; }
+.fb-item__adopt { margin-left: auto; }
 .fb-item {
   display: flex;
   gap: 10px;
@@ -30,3 +63,10 @@
   background: var(--bg);
   border: 1px solid var(--line);
 }
+.fb-item--reply { margin-left: 28px; }
+
+/* 작성자 프로필 링크 (요청 카드·피드백 댓글 공통). 인재 찾기 카드와 같은 모양 */
+.fb-profile__avatar { flex: 0 0 auto; align-self: flex-start; border-radius: 50%; }
+.fb-profile__name { font-weight: 700; color: var(--text); }
+.fb-profile__handle { color: inherit; }
+.fb-profile__name:hover, .fb-profile__handle:hover { text-decoration: underline; }

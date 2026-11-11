@@ -1,0 +1,19 @@
+.integrations__content { padding: 16px 24px; display: flex; flex-direction: column; gap: 16px; }
+.integrations__card { gap: 12px; }
+.integrations__card h2 { font-size: 17px; }
+.integrations__field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.integrations__field input,
+.integrations__field select {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  padding: 9px 10px;
+  font: inherit;
+}
+.integrations__repos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

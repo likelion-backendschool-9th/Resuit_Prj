@@ -1,0 +1,78 @@
+.resume-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px dashed var(--accent);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.common-resume {
+  padding: 16px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-lg);
+  background: var(--accent-bg);
+}
+.common-resume.is-public { border-color: var(--accent); }
+.common-resume__row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.common-resume__thumb { flex-basis: 52px; height: 66px; background: var(--bg); padding: 10px 8px; }
+.common-resume__info { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.common-resume__name-input {
+  flex: 1 1 200px;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 16px;
+  font-weight: 700;
+}
+.common-resume__rename { flex-basis: 32px; width: 32px; height: 32px; color: var(--text-sub); }
+.common-resume__remove { flex-basis: 38px; width: 38px; height: 38px; color: var(--text-sub); }
+
+.request-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--accent-line);
+  color: var(--accent-text);
+}
+.request-notice__text { flex: 1 1 220px; font-size: 13px; font-weight: 500; }
+
+.resume-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--bg-sub);
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.resume-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+}
+.resume-row:hover { background: var(--bg-sub); color: var(--text); }
+
+.stat { padding: 12px 4px; border-radius: var(--radius); background: var(--bg-sub); text-align: center; }
+.stat b { display: block; font-size: 22px; font-weight: 900; }
