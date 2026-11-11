@@ -14,18 +14,19 @@
 ## 목차
 
 1. [기획 배경](#기획-배경)
-2. [주요 기능](#주요-기능)
-3. [사용자 유형과 권한](#사용자-유형과-권한)
-4. [기술 스택](#기술-스택)
-5. [시스템 아키텍처](#시스템-아키텍처)
-6. [팀 구성과 역할](#팀-구성과-역할)
-7. [폴더 구조](#폴더-구조)
-8. [로컬 실행](#로컬-실행)
-9. [DB 마이그레이션](#db-마이그레이션)
-10. [배포](#배포)
-11. [Resuit CLI](#resuit-cli)
-12. [협업 방식](#협업-방식)
-13. [문서](#문서)
+2. [화면 미리보기](#화면-미리보기)
+3. [주요 기능](#주요-기능)
+4. [사용자 유형과 권한](#사용자-유형과-권한)
+5. [기술 스택](#기술-스택)
+6. [시스템 아키텍처](#시스템-아키텍처)
+7. [팀 구성과 역할](#팀-구성과-역할)
+8. [폴더 구조](#폴더-구조)
+9. [로컬 실행](#로컬-실행)
+10. [DB 마이그레이션](#db-마이그레이션)
+11. [배포](#배포)
+12. [Resuit CLI](#resuit-cli)
+13. [협업 방식](#협업-방식)
+14. [문서](#문서)
 
 <br>
 
@@ -41,6 +42,44 @@
 3. GitHub API 연동
 4. 배지, 인재 탐색, 채용 지원 기능 구현
 5. 자동 배포 및 검증 환경 마련
+
+<br>
+
+## 화면 미리보기
+
+> 시연용 데이터(`database/demo/demo-seed.sql`)를 넣은 로컬 환경에서 캡처한 화면입니다. 회사와 사람은 모두 가상입니다.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/screens/feed.png" alt="홈 피드"></td>
+    <td width="50%"><img src="docs/images/screens/feedback-detail.png" alt="이력서 피드백 상세"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>홈 피드</b><br>코드 블록·해시태그·레포 링크, 명예의 전당과 베스트 리뷰</td>
+    <td align="center"><b>이력서 피드백</b><br>섹션별 피드백과 답글, 채택</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/screens/target-resume-edit.png" alt="특화 이력서 작성"></td>
+    <td><img src="docs/images/screens/job-detail.png" alt="채용 공고 상세"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>특화 이력서 작성</b><br>공통 이력서를 불러와 회사 문항에 답하고, 제출 전에 피드백 요청</td>
+    <td align="center"><b>채용 공고 상세</b><br>특화 공고의 상세 내용과 요구 문항</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/screens/company-applicants.png" alt="기업 지원자 목록"></td>
+    <td><img src="docs/images/screens/talent-search.png" alt="기업 인재 탐색"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>기업 · 지원자 목록</b><br>공고별 지원자와 제출 이력서 (지원 후 3개월 열람)</td>
+    <td align="center"><b>기업 · 인재 탐색</b><br>공개 이력서를 분야별로 보고 채용 제안, Pro 상세 필터</td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/images/screens/mobile-feed.png" alt="모바일 홈 피드" width="280"><br>
+  <b>모바일</b> · 상단 바와 하단 바로가기 메뉴
+</p>
 
 <br>
 
