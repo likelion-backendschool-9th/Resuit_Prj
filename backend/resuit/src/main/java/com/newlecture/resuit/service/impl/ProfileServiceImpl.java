@@ -99,10 +99,12 @@ public class ProfileServiceImpl implements ProfileService {
         Set<Long> likedIds = postIds.isEmpty() || auth == null || !auth.isAuthenticated()
                 || auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken
                 ? Set.of() : postLikes.findLikedPostIds(auth.getName(), postIds);
+        var displayed = user.getDisplayedBadge();
+        String displayedBadgeName = displayed == null ? null : displayed.getName();
         return PageResponse.from(postPage.map(post -> new ProfilePostResponse(post.getId(), post.getType(),
                 post.getContent(), post.getImageUrl(), post.getVideoUrl(), post.getCreatedAt(),
                 commentCounts.getOrDefault(post.getId(), 0L), likeCounts.getOrDefault(post.getId(), 0L),
-                likedIds.contains(post.getId()))));
+                likedIds.contains(post.getId()), displayedBadgeName)));
     }
 
     @Override

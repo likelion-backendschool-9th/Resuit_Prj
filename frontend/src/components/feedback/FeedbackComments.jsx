@@ -119,7 +119,9 @@ export default function FeedbackComments({ request, onAdded, onDeleted, onAdopte
                 <div className="row-wrap" style={{ gap: 6, fontSize: 14 }}>
                   <Link href={profileHref(c.author.username)} className="fb-profile__name">{name}</Link>
                   {c.parentId && <span className="xs muted">답글</span>}
-                  {c.reviewerBadge && <Badge tone="verified"><Icon name="check" size={11} />{c.reviewerBadge}</Badge>}
+                  {(c.author.displayedBadgeName || c.reviewerBadge) && (
+                    <Badge tone="verified"><Icon name="check" size={11} />{c.author.displayedBadgeName || c.reviewerBadge}</Badge>
+                  )}
                   <Badge tone="general">{c.section ? SECTION_LABEL[c.section] ?? c.section : '전체'}</Badge>
                   <span className="xs muted">{timeText(c.createdAt)}</span>
                   {c.adopted && <span className="fb-item__adopt"><Badge tone="accepted" size="md">채택됨</Badge></span>}

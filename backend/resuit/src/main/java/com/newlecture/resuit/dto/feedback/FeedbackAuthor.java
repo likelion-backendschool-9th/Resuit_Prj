@@ -6,9 +6,15 @@ import com.newlecture.resuit.entity.User;
 public record FeedbackAuthor(
     String username,
     String nickname,
-    String profileImageUrl
+    String profileImageUrl,
+    String displayedBadgeName
 ) {
     public static FeedbackAuthor of(User user) {
-        return new FeedbackAuthor(user.getUsername(), user.getNickname(), user.getProfileImageUrl());
+        var badge = user.getDisplayedBadge();
+        return new FeedbackAuthor(
+            user.getUsername(),
+            user.getNickname(),
+            user.getProfileImageUrl(),
+            badge == null ? null : badge.getName());
     }
 }

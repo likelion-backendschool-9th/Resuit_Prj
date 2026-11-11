@@ -5,6 +5,7 @@ import { getComments, createComment, updateComment, deleteComment } from '../../
 import { useAppState } from '../../context/AppStateContext.jsx';
 import Icon from '../common/Icon.jsx';
 import Avatar from '../common/Avatar.jsx';
+import Badge from '../common/Badge.jsx';
 import Button from '../common/Button.jsx';
 import CommentForm from './CommentForm.jsx';
 import './Comments.css';
@@ -36,6 +37,9 @@ function CommentItem({ comment, postId, parentHandle, onReplied, onUpdated, onDe
       <Avatar initial={author.slice(0, 1)} src={comment.author.profileImageUrl} size={40} />
       <div className="comment-form__body">
         <header className="comment-item__header"><strong>{author}</strong>
+          {comment.author.displayedBadgeName && (
+            <Badge tone="sharer" size="sm">{comment.author.displayedBadgeName}</Badge>
+          )}
           <span className="small muted">@{comment.author.username} · {comment.createdAt?.replace('T', ' ').slice(0, 16)}</span>
         </header>
         {parentHandle && <span className="comment-item__reply-target">@{parentHandle} 님에게 보내는 답글</span>}

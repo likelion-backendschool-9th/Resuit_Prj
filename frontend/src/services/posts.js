@@ -8,6 +8,7 @@ function toPost(post) {
     handle: post.author.username,
     initial: author?.slice(0, 1) || '?',
     profileImage: post.author.profileImageUrl,
+    sharerBadge: post.author.displayedBadgeName || null,
     type: post.type?.toLowerCase(),
     body: post.content,
     techTags: post.techTags || [],
