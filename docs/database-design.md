@@ -426,7 +426,7 @@ erDiagram
     Mentor {
       uuid user_id PK, FK "유저"
       varchar company_name "회사 이름"
-      varchar job_title "직무"
+      varchar job_title "직무 BACKEND/FRONTEND/FULLSTACK"
       int price_credits "피드백 가격(크레딧)"
       timestamptz verified_at "인증일"
     }
@@ -657,7 +657,7 @@ erDiagram
 
 | 테이블 | 필수 컬럼 | 제약 및 읽기 방식 |
 | --- | --- | --- |
-| `mentors` | `user_id`, `company_name`, `job_title`, `price_credits`, `verified_at` | 회사 이메일 인증을 마친 회원이 현직자 정보(직무, 유료 피드백 가격)를 처음 저장할 때 행을 만든다(`PUT /users/me/mentor`). `company_name`은 인증한 도메인의 회사명이라 직접 고칠 수 없고, 다시 인증해야 바뀐다. `price_credits > 0`. 현직자 목록은 이 테이블과 회원 정보를 함께 읽고, 유효한 인증이 있는 현직자만 보여 준다. 경력은 따로 입력받지 않고 프로필 경력(`user_careers`)으로 계산한다. |
+| `mentors` | `user_id`, `company_name`, `job_title`, `price_credits`, `verified_at` | 회사 이메일 인증을 마친 회원이 현직자 정보(직무, 유료 피드백 가격)를 처음 저장할 때 행을 만든다(`PUT /users/me/mentor`). `company_name`은 인증한 도메인의 회사명이라 직접 고칠 수 없고, 다시 인증해야 바뀐다. `price_credits > 0`. `job_title`은 직무로 `BACKEND`, `FRONTEND`, `FULLSTACK` 중 하나를 고른다(이력서 분야와 같은 값, 서비스에서 검사). 직접 입력하던 때의 값은 `012_mentor_job_field.sql`이 단어를 보고 바꾸고, 알 수 없는 값은 남겨 두어 전체 목록에만 보인다. 현직자 목록은 `jobTitle` 조건으로 직무별로 볼 수 있다. 현직자 목록은 이 테이블과 회원 정보를 함께 읽고, 유효한 인증이 있는 현직자만 보여 준다. 경력은 따로 입력받지 않고 프로필 경력(`user_careers`)으로 계산한다. |
 | `paid_feedback_requests` | `id`, `requester_id`, `mentor_id`, `credits`, `status`, `created_at`; 선택 `common_resume_id`, `target_resume_id`, `content`, `updated_at` | `status IN ('REQUESTED','IN_PROGRESS','COMPLETED','CANCELED')`. 공통 이력서와 특화 이력서 중 정확히 하나만 값이 있다(CHECK). 자기 자신에게는 요청하지 않는다. `credits`는 요청 시점의 현직자 가격이며, 현직자가 나중에 가격을 바꿔도 그대로 둔다. 요청자와 담당 현직자만 조회할 수 있다. |
 | `paid_feedback_responses` | `id`, `paid_feedback_request_id`, `content`, `created_at` | 담당 현직자만 답변을 등록한다(서비스에서 검사). 요청 하나에 답변이 여러 개 달릴 수 있다. |
 | `credit_transactions` | `id`, `user_id`, `type`, `amount`, `balance_after`, `created_at`; 선택 `paid_feedback_request_id`, `credit_payment_id` | `type IN ('CHARGE','USE','EARN','REFUND','WITHDRAW')`. `USE`·`WITHDRAW`는 음수, 나머지는 양수다. `balance_after >= 0`. `CHARGE`는 `credit_payment_id`가, `USE`·`EARN`·`REFUND`는 `paid_feedback_request_id`가, `WITHDRAW`는 `credit_withdrawal_id`가 꼭 있어야 한다(CHECK). 행은 추가만 하고 고치거나 지우지 않는다. 현재 잔액은 회원의 가장 최근 행의 `balance_after`이고, 행이 없으면 0이다. 환전 가능 크레딧은 `min(잔액, EARN 합계 - WITHDRAW 합계)`다(사용은 충전분부터 빠진 것으로 본다). |

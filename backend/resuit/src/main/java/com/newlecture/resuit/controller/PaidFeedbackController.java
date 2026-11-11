@@ -63,11 +63,13 @@ public class PaidFeedbackController {
 		this.creditPaymentService = creditPaymentService;
 	}
 
+	// 현직자 목록: GET /api/v1/mentors?jobTitle=BACKEND  직무를 빼면 전체를 돌려준다.
 	@GetMapping("/mentors")
 	public ResponseEntity<Page<MentorSummary>> getMentors(
 			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size) {
-		return ResponseEntity.ok(mentorService.getMentors(PageRequest.of(page, size)));
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(required = false) String jobTitle) {
+		return ResponseEntity.ok(mentorService.getMentors(PageRequest.of(page, size), jobTitle));
 	}
 
 	// 내 현직자 정보: GET /api/v1/users/me/mentor. 현직자 인증 상태와 직무·경력·가격을 돌려준다.
@@ -76,7 +78,7 @@ public class PaidFeedbackController {
 		return ResponseEntity.ok(mentorService.getMyMentor(principal.getName()));
 	}
 
-	// 현직자 정보 저장: PUT /api/v1/users/me/mentor  {"jobTitle":"백엔드 개발자","priceCredits":50}
+	// 현직자 정보 저장: PUT /api/v1/users/me/mentor  {"jobTitle":"BACKEND","priceCredits":50}
 	@PutMapping("/users/me/mentor")
 	public ResponseEntity<MyMentorResponse> saveMyMentor(
 			@Valid @RequestBody MentorProfileRequest request, Principal principal) {

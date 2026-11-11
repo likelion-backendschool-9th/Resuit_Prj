@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MainColumn, RightAside } from '@/components/layout/AppLayout.jsx';
 import Button from '@/components/common/Button.jsx';
+import { ChipRadioGroup } from '@/components/common/Chip.jsx';
+import { JOB_OPTIONS, jobLabel } from '@/components/paidFeedback/labels.js';
 import { cancelCompanyEmailVerification, verifyCompanyEmail } from '@/services/verifications.js';
 import { getMyMentor, saveMyMentor } from '@/services/mentor.js';
 import './CompanyVerificationPage.css';
@@ -88,16 +90,10 @@ function MentorForm({ form, setForm, busy, registered, onSubmit, idPrefix = 'men
     <form onSubmit={onSubmit} className="verify-setup-form" aria-label="현직자 정보">
       <div className="verify-setup-form__grid">
         <div>
-          <label htmlFor={`${idPrefix}-job`}>직무</label>
-          <input
-            id={`${idPrefix}-job`}
-            required
-            maxLength={100}
-            placeholder="예: 백엔드 개발자"
-            disabled={busy}
-            value={form.jobTitle}
-            onChange={(event) => setForm((f) => ({ ...f, jobTitle: event.target.value }))}
-          />
+          <span id={`${idPrefix}-job`} className="verify-setup-form__label">직무 (필수)</span>
+          <fieldset disabled={busy} aria-labelledby={`${idPrefix}-job`} className="verify-setup-form__jobs">
+            <ChipRadioGroup options={JOB_OPTIONS} value={form.jobTitle} onChange={(value) => setForm((f) => ({ ...f, jobTitle: value }))} label="직무" />
+          </fieldset>
         </div>
         <div>
           <label htmlFor={`${idPrefix}-price`}>피드백 가격 (🪙)</label>
@@ -141,7 +137,8 @@ export default function CompanyVerificationPage() {
   function apply(data, nextPhase) {
     setMentor(data);
     setForm({
-      jobTitle: data.jobTitle || '',
+      // 직접 입력하던 때의 값이면 비워 두어 다시 고르게 한다.
+      jobTitle: JOB_OPTIONS.some((o) => o.id === data.jobTitle) ? data.jobTitle : '',
       priceCredits: data.priceCredits ?? '',
     });
     if (nextPhase) setPhase(nextPhase);
@@ -182,11 +179,15 @@ export default function CompanyVerificationPage() {
 
   async function save(event) {
     event.preventDefault();
+    if (!form.jobTitle) {
+      setError('직무를 골라 주세요.');
+      return;
+    }
     setBusy(true); setError('');
     const wasRegistered = !!mentor?.registered;
     try {
       const data = await saveMyMentor({
-        jobTitle: form.jobTitle.trim(),
+        jobTitle: form.jobTitle,
         priceCredits: Number(form.priceCredits),
       });
       apply(data, wasRegistered ? 'live' : 'success-live');
@@ -293,7 +294,7 @@ export default function CompanyVerificationPage() {
                 <p className="verify-kicker">현직자 등록 완료</p>
                 <h1>이제 현직자 목록에<br />공개됐어요</h1>
                 <p className="verify-lead">
-                  {company} · {form.jobTitle || mentor?.jobTitle || '직무'} ·{' '}
+                  {company} · {jobLabel(form.jobTitle || mentor?.jobTitle) || '직무'} ·{' '}
                   {Number(form.priceCredits || mentor?.priceCredits || 0).toLocaleString('ko-KR')} 🪙
                 </p>
                 <div className="verify-actions">
@@ -317,7 +318,7 @@ export default function CompanyVerificationPage() {
                   <div className="verify-live__stats">
                     <div>
                       <span>직무</span>
-                      <strong>{mentor?.jobTitle || '-'}</strong>
+                      <strong>{jobLabel(mentor?.jobTitle) || '-'}</strong>
                     </div>
                     <div>
                       <span>가격</span>

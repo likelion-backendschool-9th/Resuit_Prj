@@ -23,6 +23,12 @@ public interface MentorRepository extends JpaRepository<Mentor, UUID> {
 			countQuery = "select count(m) from Mentor m where " + ACTIVE)
 	Page<Mentor> findActive(Pageable pageable);
 
+	// 직무(BACKEND, FRONTEND, FULLSTACK)가 같은 유효한 현직자를 인증일 최신순으로 페이지 조회한다.
+	@EntityGraph(attributePaths = "user")
+	@Query(value = "select m from Mentor m where m.jobTitle = :jobTitle and " + ACTIVE + " order by m.verifiedAt desc, m.userId desc",
+			countQuery = "select count(m) from Mentor m where m.jobTitle = :jobTitle and " + ACTIVE)
+	Page<Mentor> findActiveByJobTitle(@Param("jobTitle") String jobTitle, Pageable pageable);
+
 	// 유효한 현직자 한 명
 	@EntityGraph(attributePaths = "user")
 	@Query("select m from Mentor m where m.userId = :id and " + ACTIVE)

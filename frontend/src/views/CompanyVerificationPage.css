@@ -346,7 +346,8 @@
   gap: 12px;
 }
 
-.verify-setup-form label {
+.verify-setup-form label,
+.verify-setup-form__label {
   display: block;
   margin-bottom: 6px;
   font-size: 13px;
@@ -370,6 +371,14 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   background: var(--bg);
+}
+
+/* 직무 선택 칩. fieldset 기본 테두리와 여백을 없앤다. */
+.verify-setup-form__jobs {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 /* ---------- LIVE dashboard ---------- */
