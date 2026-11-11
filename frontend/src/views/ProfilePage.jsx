@@ -478,6 +478,12 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
                   href={`/feedback/${item.feedbackRequestId}`}
                   className="card profile__activity profile__activity--link"
                 >
+                  <div className="row-wrap" style={{ gap: 6, marginBottom: 4 }}>
+                    <strong style={{ fontSize: 14 }}>{displayName}</strong>
+                    {profile?.displayedBadge?.name && (
+                      <Badge tone="sharer">{profile.displayedBadge.name}</Badge>
+                    )}
+                  </div>
                   <div className="small muted">
                     {item.resumeTitle || '피드백 요청'}
                     {' · '}
@@ -501,6 +507,7 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
               initial: (displayName || '?').slice(0, 1),
               av: me.av,
               profileImage: profile?.profileImageUrl,
+              sharerBadge: p.displayedBadgeName || profile?.displayedBadge?.name || null,
               type: p.type?.toLowerCase(),
               body: p.content,
               image: p.imageUrl,

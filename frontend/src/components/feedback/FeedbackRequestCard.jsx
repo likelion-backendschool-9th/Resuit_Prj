@@ -38,6 +38,7 @@ export default function FeedbackRequestCard({ request }) {
       <div className="fb-card__body">
         <header className="row-wrap" style={{ gap: 6 }}>
           <Link href={profileHref(author.username)} className="fb-profile__name">{name}</Link>
+          {author.displayedBadgeName && <Badge tone="sharer">{author.displayedBadgeName}</Badge>}
           <span className="muted">
             <Link href={profileHref(author.username)} className="fb-profile__handle">@{author.username}</Link>
             {time ? ` · ${time}` : ''}

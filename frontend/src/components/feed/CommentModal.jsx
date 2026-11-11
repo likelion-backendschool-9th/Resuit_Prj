@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createComment } from '../../services/comments.js';
 import { useAppState } from '../../context/AppStateContext.jsx';
 import Avatar from '../common/Avatar.jsx';
+import Badge from '../common/Badge.jsx';
 import Button from '../common/Button.jsx';
 import PostContent from './PostContent.jsx';
 import CommentForm from './CommentForm.jsx';
@@ -36,7 +37,11 @@ export default function CommentModal({ post, onClose }) {
     <div className="comment-modal__post">
       <Avatar initial={post.initial} src={avatarSrc} size={40} />
       <div className="comment-form__body">
-        <div><strong>{post.author}</strong> <span className="small muted">@{post.handle}</span></div>
+        <div className="row-wrap" style={{ gap: 6 }}>
+          <strong>{post.author}</strong>
+          {post.sharerBadge && <Badge tone="sharer">{post.sharerBadge}</Badge>}
+          <span className="small muted">@{post.handle}</span>
+        </div>
         <div className="comment-modal__text"><PostContent content={post.body || '첨부 게시글'} /></div>
       </div>
     </div>

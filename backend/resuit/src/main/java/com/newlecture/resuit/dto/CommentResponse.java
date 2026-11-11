@@ -13,12 +13,15 @@ public record CommentResponse(
 		List<CommentResponse> replies) {
 
 	public static CommentResponse from(Comment comment, List<CommentResponse> replies) {
+		var user = comment.getUser();
+		var badge = user.getDisplayedBadge();
 		return new CommentResponse(
 				comment.getId(),
 				new Author(
-						comment.getUser().getUsername(),
-						comment.getUser().getNickname(),
-						comment.getUser().getProfileImageUrl()),
+						user.getUsername(),
+						user.getNickname(),
+						user.getProfileImageUrl(),
+						badge == null ? null : badge.getName()),
 				comment.getContent(),
 				comment.getCreatedAt(),
 				replies);
@@ -27,6 +30,7 @@ public record CommentResponse(
 	public record Author(
 			String username,
 			String nickname,
-			String profileImageUrl) {
+			String profileImageUrl,
+			String displayedBadgeName) {
 	}
 }

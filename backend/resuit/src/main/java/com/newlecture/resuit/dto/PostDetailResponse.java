@@ -27,12 +27,15 @@ public record PostDetailResponse(
 	public static PostDetailResponse from(Post post, long commentCount, long likeCount, boolean liked) {
 		var tech = post.getTechTags();
 		var hash = post.hashtagValues();
+		var user = post.getUser();
+		var badge = user.getDisplayedBadge();
 		return new PostDetailResponse(
 				post.getId(),
 				new Author(
-						post.getUser().getUsername(),
-						post.getUser().getNickname(),
-						post.getUser().getProfileImageUrl()),
+						user.getUsername(),
+						user.getNickname(),
+						user.getProfileImageUrl(),
+						badge == null ? null : badge.getName()),
 				post.getType(),
 				post.getContent(),
 				post.getImageUrl(),
@@ -47,6 +50,7 @@ public record PostDetailResponse(
 	public record Author(
 			String username,
 			String nickname,
-			String profileImageUrl) {
+			String profileImageUrl,
+			String displayedBadgeName) {
 	}
 }

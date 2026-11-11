@@ -42,7 +42,14 @@ export default function ThreadPage({ initialPost, error }) {
           <header className="thread-post__header">
             <Avatar initial={post.initial} src={avatarSrc} size={48} />
             <div className="thread-post__author">
-              <Link href={`/${encodeURIComponent(post.handle)}`}><strong>{post.author}</strong></Link>
+              <div className="thread-post__name-row">
+                <Link href={`/${encodeURIComponent(post.handle)}`} className="thread-post__name">
+                  <strong>{post.author}</strong>
+                </Link>
+                {post.sharerBadge && (
+                  <Badge tone="sharer" size="sm">{post.sharerBadge}</Badge>
+                )}
+              </div>
               <span className="small muted">@{post.handle}</span>
             </div>
             {badge && <Badge tone={badge.tone}>{badge.label}</Badge>}

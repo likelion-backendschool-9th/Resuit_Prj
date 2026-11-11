@@ -82,6 +82,7 @@ export default function FeedbackDetailPage({ id }) {
           <div className="fb-card__body">
             <header className="row-wrap" style={{ gap: 6 }}>
               <strong>{name}</strong>
+              {author.displayedBadgeName && <Badge tone="sharer">{author.displayedBadgeName}</Badge>}
               <span className="muted">@{author.username} · {timeText(request.createdAt)}</span>
               {request.category && <Badge tone="general">{FIELD_LABEL[request.category] ?? request.category}</Badge>}
               {request.mine && <Badge tone="accent">내 요청</Badge>}
