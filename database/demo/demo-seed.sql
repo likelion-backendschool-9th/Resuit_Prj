@@ -96,10 +96,11 @@ DELETE FROM follows WHERE follower_id IN (SELECT id FROM old_users) OR following
 DELETE FROM users WHERE id IN (SELECT id FROM old_users);
 
 -- 3. 회원
-INSERT INTO users (id, username, email, password, role, nickname, self_introduction, region, subscription, created_at, updated_at)
+-- 프로필 이미지는 프론트 정적 파일(frontend/public/demo/avatars)이라 배포에 함께 올라간다.
+INSERT INTO users (id, username, email, password, role, nickname, self_introduction, region, subscription, profile_image_url, created_at, updated_at)
 SELECT gen_random_uuid(), d.username, d.username || '@demo.resuit.kr',
        '{bcrypt}$2a$10$3PleSKCU/Eh1LWMpAH.KWuBiQfcnTseogpduGtaJw10tH.3Q5u1TS',
-       d.role, d.nickname, d.intro, d.region, false,
+       d.role, d.nickname, d.intro, d.region, false, '/demo/avatars/' || d.username || '.png',
        LOCALTIMESTAMP - make_interval(days => d.joined_days),
        LOCALTIMESTAMP - make_interval(days => d.joined_days)
 FROM demo_users d;
@@ -521,7 +522,8 @@ CREATE TEMP TABLE demo_posts (
     tech    text[] NOT NULL,
     tags    text[] NOT NULL,
     content text NOT NULL,
-    repo    varchar(200)
+    repo    varchar(200),
+    image   varchar(500)
 ) ON COMMIT DROP;
 
 INSERT INTO demo_posts VALUES
@@ -608,8 +610,19 @@ E'모달 열릴 때 포커스 가두는 훅\n\n```tsx filename=useFocusTrap.tsx\
 (109, 'jihoon-han', 'TECH', 64, 8, '{Spring,Docker}', '{테스트,Testcontainers}',
  'H2 대신 Testcontainers로 통합 테스트를 돌렸더니 운영 DB에서만 나던 버그가 테스트에서 잡히기 시작했습니다', NULL);
 
-INSERT INTO posts (user_id, type, content, repo_full_name, created_at, updated_at)
-SELECT u.id, p.type, p.content, p.repo,
+-- 사진을 첨부한 글. 이미지는 프론트 정적 파일(frontend/public/demo/feed)이다.
+UPDATE demo_posts SET image = '/demo/feed/' || v.file || '.png'
+FROM (VALUES (17, 'seat-lock-benchmark'), (5, 'offset-vs-cursor'), (10, 'batch-before-after'),
+             (8, 'a11y-score'), (7, 'camp-alert-dashboard'), (11, 'pebble-components')) AS v(k, file)
+WHERE demo_posts.k = v.k;
+
+INSERT INTO demo_posts (k, author, type, hours, likes, tech, tags, content, image) VALUES
+(27, 'yerin-song', 'GENERAL', 4, 13, '{}', '{성능,Lighthouse,웹뷰}',
+E'웹뷰 에디터 Lighthouse 52 → 91 찍었습니다 🎉\n\n에디터 번들을 지연 로딩으로 분리하고, 폰트를 쓰는 글자만 남겨 1.2MB에서 180KB로 줄인 게 제일 컸어요. 두 달 걸렸네요.',
+ '/demo/feed/lighthouse-webview.png');
+
+INSERT INTO posts (user_id, type, content, repo_full_name, image_url, created_at, updated_at)
+SELECT u.id, p.type, p.content, p.repo, p.image,
        LOCALTIMESTAMP - make_interval(hours => p.hours), LOCALTIMESTAMP - make_interval(hours => p.hours)
 FROM demo_posts p JOIN u ON u.name = p.author
 ORDER BY p.hours DESC;
@@ -685,6 +698,9 @@ INSERT INTO demo_comments VALUES
 (24, 'yerin-song', NULL, 60, '수료 축하해요! 디자인 전공은 프론트엔드에서 정말 큰 무기예요.'),
 (24, 'harin-lee', NULL, 90, '축하해요 소아님! 같이 취업해요.'),
 (26, 'taeyang-lim', NULL, 40, '"왜?"를 한 번 더 묻는 습관 공감합니다. 어떤 도구 쓰셨어요?'),
+(27, 'jihoon-han', NULL, 30, '두 달 동안 고생 많으셨어요. 폰트 subset은 저희 팀에도 바로 공유하겠습니다.'),
+(27, 'harin-lee', NULL, 55, '폰트 subset 어떤 도구로 하셨는지 궁금해요!'),
+(27, 'yerin-song', 'harin-lee', 90, 'glyphhanger로 쓰는 글자만 뽑았어요. 한글은 2,350자 기준으로 잡았습니다.'),
 (101, 'jihoon-han', NULL, 20, 'isHeldByCurrentThread 확인까지 넣으신 거 좋네요. 락 대기 시간 3초는 부하 테스트로 정하신 건가요?'),
 (101, 'jiwon-kim', 'jihoon-han', 45, '네, 1초·3초·5초로 돌려 보고 실패율과 응답 시간이 가장 균형 잡힌 3초로 정했어요!'),
 (101, 'seungwoo-oh', NULL, 70, '코드로 보니까 이해가 훨씬 잘 돼요. 저장소 구경하러 갑니다.'),
