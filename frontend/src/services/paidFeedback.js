@@ -18,8 +18,9 @@ const COMMON = { 401: '로그인이 필요해요.', 403: '이 요청을 볼 수 
 const json = (method, body) => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 const query = (params) => new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '')).toString();
 
-export async function getMentors({ page = 0, size = 20 } = {}) {
-  return read(await authenticatedFetch(`${ROOT}/mentors?${query({ page, size })}`), { ...COMMON, default: '현직자 목록을 불러오지 못했어요.' });
+// jobTitle(BACKEND, FRONTEND, FULLSTACK)을 주면 그 직무의 현직자만 받는다.
+export async function getMentors({ page = 0, size = 20, jobTitle } = {}) {
+  return read(await authenticatedFetch(`${ROOT}/mentors?${query({ page, size, jobTitle })}`), { ...COMMON, default: '현직자 목록을 불러오지 못했어요.' });
 }
 
 export async function getMentor(id) {

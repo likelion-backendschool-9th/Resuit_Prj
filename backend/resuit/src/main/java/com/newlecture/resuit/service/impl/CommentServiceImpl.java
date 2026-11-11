@@ -12,11 +12,16 @@ import org.springframework.transaction.annotation.Transactional;
 import com.newlecture.resuit.dto.CommentResponse;
 import com.newlecture.resuit.dto.CreateCommentRequest;
 import com.newlecture.resuit.dto.UpdateCommentRequest;
+import com.newlecture.resuit.dto.notification.NotificationCommand;
 import com.newlecture.resuit.entity.Comment;
+import com.newlecture.resuit.entity.Post;
+import com.newlecture.resuit.entity.User;
 import com.newlecture.resuit.repository.CommentRepository;
 import com.newlecture.resuit.repository.PostRepository;
 import com.newlecture.resuit.repository.UserRepository;
 import com.newlecture.resuit.service.CommentService;
+import com.newlecture.resuit.service.NotificationService;
+import com.newlecture.resuit.service.NotificationType;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,14 +30,17 @@ public class CommentServiceImpl implements CommentService {
 	private final CommentRepository commentRepository;
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
+	private final NotificationService notificationService;
 
 	public CommentServiceImpl(
 			CommentRepository commentRepository,
 			PostRepository postRepository,
-			UserRepository userRepository) {
+			UserRepository userRepository,
+			NotificationService notificationService) {
 		this.commentRepository = commentRepository;
 		this.postRepository = postRepository;
 		this.userRepository = userRepository;
+		this.notificationService = notificationService;
 	}
 
 	@Override
@@ -82,7 +90,23 @@ public class CommentServiceImpl implements CommentService {
 				.content(request.content())
 				.build();
 
-		return CommentResponse.from(commentRepository.save(comment), List.of());
+		var saved = commentRepository.save(comment);
+		notifyComment(post, parent, user);
+		return CommentResponse.from(saved, List.of());
+	}
+
+	// 답글이면 원래 댓글 작성자에게, 그리고 게시글 작성자에게 알린다. 같은 사람에게 두 번 알리지 않는다.
+	private void notifyComment(Post post, Comment parent, User writer) {
+		String link = "/threads/" + post.getId();
+		String name = NotificationService.nameOf(writer);
+		if (parent != null) {
+			notificationService.notify(new NotificationCommand(parent.getUser().getId(), writer.getId(),
+					NotificationType.COMMENT_REPLY, name + " 님이 내 댓글에 답글을 남겼어요.", link));
+		}
+		if (parent == null || !parent.getUser().getId().equals(post.getUser().getId())) {
+			notificationService.notify(new NotificationCommand(post.getUser().getId(), writer.getId(),
+					NotificationType.POST_COMMENT, name + " 님이 내 글에 댓글을 남겼어요.", link));
+		}
 	}
 
 	@Override
