@@ -1,5 +1,7 @@
 -- 로컬 시연 전용. 운영/공용 DB에 실행하지 마세요.
--- 격리된 빈 PostgreSQL 또는 local H2 프로필에만 한 번 적용합니다.
+-- 로컬 PostgreSQL에 적용합니다. 중복 데이터는 건너뛰므로 재실행할 수 있습니다.
+-- 기존 월간 순위와 충돌하면 베스트 리뷰 시연 행은 추가하지 않습니다.
+-- 이 경우 이서연의 베스트 1회 조건은 이 SQL만으로 충족되지 않을 수 있습니다.
 -- 이름과 피드백 내용은 가상 인물의 시연 데이터입니다.
 -- 김민준: 채택 5건/요청자 3명 → 리뷰어, 이서연: 15건/8명/베스트 1회 → 우수 리뷰어, 박지훈: 4건/2명 → 미달.
 -- 채택 시각은 현재보다 4개월 전이므로 직전 두 분기 평가 범위에 들어갑니다.
@@ -16,7 +18,8 @@ INSERT INTO users (id, username, role, nickname, created_at) VALUES
 ('00000000-0000-4000-8000-000000910105', 'jimin_yoon', 'USER', '윤지민', CURRENT_TIMESTAMP - INTERVAL '8' MONTH),
 ('00000000-0000-4000-8000-000000910106', 'junseo_oh', 'USER', '오준서', CURRENT_TIMESTAMP - INTERVAL '8' MONTH),
 ('00000000-0000-4000-8000-000000910107', 'harin_song', 'USER', '송하린', CURRENT_TIMESTAMP - INTERVAL '8' MONTH),
-('00000000-0000-4000-8000-000000910108', 'taeyang_lim', 'USER', '임태양', CURRENT_TIMESTAMP - INTERVAL '8' MONTH);
+('00000000-0000-4000-8000-000000910108', 'taeyang_lim', 'USER', '임태양', CURRENT_TIMESTAMP - INTERVAL '8' MONTH)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO common_resumes (id, user_id, title, field, content, is_public, created_at) VALUES
 (914101, '00000000-0000-4000-8000-000000910101', '프론트엔드 개발자 이력서', 'FRONTEND', CAST(JSON '{}' AS JSONB), true, CURRENT_TIMESTAMP - INTERVAL '6' MONTH),
@@ -26,7 +29,8 @@ INSERT INTO common_resumes (id, user_id, title, field, content, is_public, creat
 (914105, '00000000-0000-4000-8000-000000910105', 'Java 서버 개발 이력서', 'BACKEND', CAST(JSON '{}' AS JSONB), true, CURRENT_TIMESTAMP - INTERVAL '6' MONTH),
 (914106, '00000000-0000-4000-8000-000000910106', '서비스 개발 이력서', 'FULLSTACK', CAST(JSON '{}' AS JSONB), true, CURRENT_TIMESTAMP - INTERVAL '6' MONTH),
 (914107, '00000000-0000-4000-8000-000000910107', '웹 접근성 프로젝트 이력서', 'FRONTEND', CAST(JSON '{}' AS JSONB), true, CURRENT_TIMESTAMP - INTERVAL '6' MONTH),
-(914108, '00000000-0000-4000-8000-000000910108', '데이터 플랫폼 개발 이력서', 'BACKEND', CAST(JSON '{}' AS JSONB), true, CURRENT_TIMESTAMP - INTERVAL '6' MONTH);
+(914108, '00000000-0000-4000-8000-000000910108', '데이터 플랫폼 개발 이력서', 'BACKEND', CAST(JSON '{}' AS JSONB), true, CURRENT_TIMESTAMP - INTERVAL '6' MONTH)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO feedback_requests (id, user_id, common_resume_id, category, content, created_at) VALUES
 (911001, '00000000-0000-4000-8000-000000910101', 914101, 'FRONTEND', '프로젝트 성과를 더 구체적으로 설명하고 싶어요. 사용자 증가 수치를 어떻게 표현하면 좋을까요? 특히 첫 번째 프로젝트를 중심으로 보고 싶습니다.', CURRENT_TIMESTAMP - INTERVAL '5' MONTH),
@@ -55,7 +59,8 @@ INSERT INTO feedback_requests (id, user_id, common_resume_id, category, content,
 (911024, '00000000-0000-4000-8000-000000910102', 914102, 'BACKEND', '자기소개 문단이 지원 동기를 충분히 보여주는지 확인 부탁드립니다. 지원하려는 공고에 맞춰 다듬고 있습니다.', CURRENT_TIMESTAMP - INTERVAL '5' MONTH),
 (911101, '00000000-0000-4000-8000-000000910101', 914101, 'FRONTEND', '포트폴리오 소개 문장이 너무 길지 않은지 봐주세요. 특히 첫 번째 프로젝트를 중심으로 보고 싶습니다.', CURRENT_TIMESTAMP - INTERVAL '5' MONTH),
 (911102, '00000000-0000-4000-8000-000000910101', 914101, 'FRONTEND', '기술 스택을 나열하는 방식이 적절한지 의견 부탁드립니다. 특히 첫 번째 프로젝트를 중심으로 보고 싶습니다.', CURRENT_TIMESTAMP - INTERVAL '5' MONTH),
-(911103, '00000000-0000-4000-8000-000000910101', 914101, 'FRONTEND', '장애 대응 경험을 지원 직무와 연결하고 싶습니다. 특히 첫 번째 프로젝트를 중심으로 보고 싶습니다.', CURRENT_TIMESTAMP - INTERVAL '5' MONTH);
+(911103, '00000000-0000-4000-8000-000000910101', 914101, 'FRONTEND', '장애 대응 경험을 지원 직무와 연결하고 싶습니다. 특히 첫 번째 프로젝트를 중심으로 보고 싶습니다.', CURRENT_TIMESTAMP - INTERVAL '5' MONTH)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO feedback_request_sections (section_id, request_id, section_type) VALUES
 (915001, 911001, 'PROJECTS'),
@@ -84,7 +89,8 @@ INSERT INTO feedback_request_sections (section_id, request_id, section_type) VAL
 (915024, 911024, 'INTRODUCTION'),
 (915025, 911101, 'PROJECTS'),
 (915026, 911102, 'SKILLS'),
-(915027, 911103, 'INTRODUCTION');
+(915027, 911103, 'INTRODUCTION')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO feedback_comments (comment_id, feedback_id, user_id, section, content, is_adopted, adopted_at, created_at) VALUES
 (912001, 911001, '00000000-0000-4000-8000-000000910001', 'PROJECTS', '증가율과 함께 비교 기간과 측정 지표를 적으면 성과가 더 명확해집니다.', true, CURRENT_TIMESTAMP - INTERVAL '4' MONTH, CURRENT_TIMESTAMP - INTERVAL '5' MONTH),
@@ -113,10 +119,12 @@ INSERT INTO feedback_comments (comment_id, feedback_id, user_id, section, conten
 (912024, 911024, '00000000-0000-4000-8000-000000910003', 'INTRODUCTION', '입사 후 기여할 수 있는 경험을 먼저 제시하면 지원 동기가 더 설득력 있게 읽힙니다.', true, CURRENT_TIMESTAMP - INTERVAL '4' MONTH, CURRENT_TIMESTAMP - INTERVAL '5' MONTH),
 (912101, 911101, '00000000-0000-4000-8000-000000910001', 'PROJECTS', '첫 문장에 해결한 문제를 두고 구현 기술은 다음 문장으로 나누면 읽기 편합니다.', false, NULL, CURRENT_TIMESTAMP - INTERVAL '1' DAY),
 (912102, 911102, '00000000-0000-4000-8000-000000910002', 'PROJECTS', '단순 목록보다 각 기술을 어디에 적용했는지 프로젝트 경험과 연결해 주세요.', false, NULL, CURRENT_TIMESTAMP - INTERVAL '1' DAY),
-(912103, 911103, '00000000-0000-4000-8000-000000910003', 'PROJECTS', '장애 원인, 조치, 재발 방지 순서로 정리하면 문제 해결 과정이 잘 보입니다.', false, NULL, CURRENT_TIMESTAMP - INTERVAL '1' DAY);
+(912103, 911103, '00000000-0000-4000-8000-000000910003', 'PROJECTS', '장애 원인, 조치, 재발 방지 순서로 정리하면 문제 해결 과정이 잘 보입니다.', false, NULL, CURRENT_TIMESTAMP - INTERVAL '1' DAY)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO best_reviews (id, comment_id, period, period_start, rank_no, created_at) VALUES
-(913001, 912006, 'monthly', CAST(DATE_TRUNC('month', CURRENT_DATE - INTERVAL '4' MONTH) AS DATE), 1, CURRENT_TIMESTAMP - INTERVAL '3' MONTH);
+(913001, 912006, 'monthly', CAST(DATE_TRUNC('month', CURRENT_DATE - INTERVAL '4' MONTH) AS DATE), 1, CURRENT_TIMESTAMP - INTERVAL '3' MONTH)
+ON CONFLICT DO NOTHING;
 
 -- 진행률 API: GET /api/v1/badges/me/reviewer-progress (X-Username: minjun_kim / seoyeon_lee / jihoon_park)
 -- 배지 지급 트리거: 아래 요청을 각각 보낸 뒤 진행률과 프로필을 다시 조회합니다.
