@@ -12,7 +12,7 @@ import com.newlecture.resuit.dto.MentorSummary;
 
 public interface MentorService {
 
-	Page<MentorSummary> getMentors(Pageable pageable);
+	Page<MentorSummary> getMentors(Pageable pageable, String jobTitle);
 
 	MentorDetailResponse getMentor(UUID id);
 	// 내 현직자 인증 상태와 현직자 정보

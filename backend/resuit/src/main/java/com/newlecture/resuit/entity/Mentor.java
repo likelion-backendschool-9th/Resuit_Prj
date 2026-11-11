@@ -31,6 +31,7 @@ public class Mentor {
     @Column(name = "company_name", nullable = false, length = 100)
     private String companyName;
 
+    // 직무: BACKEND, FRONTEND, FULLSTACK. 직접 입력하던 때의 값이 남아 있을 수 있다.
     @Column(name = "job_title", nullable = false, length = 100)
     private String jobTitle;
 

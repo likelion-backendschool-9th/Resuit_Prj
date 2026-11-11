@@ -2,7 +2,9 @@ package com.newlecture.resuit.service.impl;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -35,6 +37,8 @@ public class MentorServiceImpl implements MentorService {
 
 	private static final String COMPLETED = "COMPLETED";
 	private static final int YEAR_DAYS = 365;
+	// 현직자 직무. 이력서 분야와 같은 값을 쓴다.
+	private static final Set<String> JOB_TITLES = Set.of("BACKEND", "FRONTEND", "FULLSTACK");
 
 	private final MentorRepository mentorRepository;
 	private final PaidFeedbackRequestRepository paidFeedbackRequestRepository;
@@ -65,9 +69,12 @@ public class MentorServiceImpl implements MentorService {
 	}
 
 	@Override
-	public Page<MentorSummary> getMentors(Pageable pageable) {
-		// 인증이 유효한 현직자를 인증일 최신순으로 읽고, 한 페이지의 경력을 한 번에 계산한다.
-		Page<Mentor> page = mentorRepository.findActive(pageable);
+	public Page<MentorSummary> getMentors(Pageable pageable, String jobTitle) {
+		// 인증이 유효한 현직자를 인증일 최신순으로 읽는다. 직무를 주면 그 직무만 고른다.
+		Page<Mentor> page = jobTitle == null || jobTitle.isBlank()
+				? mentorRepository.findActive(pageable)
+				: mentorRepository.findActiveByJobTitle(jobTitle(jobTitle), pageable);
+		// 한 페이지의 경력을 한 번에 계산한다.
 		Map<UUID, Long> careerDays = talentSearchRepository.careerDays(
 				page.getContent().stream().map(Mentor::getUserId).toList(), LocalDate.now());
 		return page.map(mentor -> MentorSummary.of(mentor, careerYears(careerDays.get(mentor.getUserId()))));
@@ -108,7 +115,7 @@ public class MentorServiceImpl implements MentorService {
 		// 회사 이메일 인증이 유효해야 현직자가 될 수 있다.
 		Verification verification = activeVerification(me)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "회사 이메일로 현직자 인증을 먼저 해 주세요."));
-		String jobTitle = request.jobTitle().trim();
+		String jobTitle = jobTitle(request.jobTitle());
 		Mentor mentor = mentorRepository.findById(me.getId()).orElse(null);
 		if (mentor == null) {
 			mentor = mentorRepository.save(Mentor.builder()
@@ -122,6 +129,15 @@ public class MentorServiceImpl implements MentorService {
 			mentor.updateProfile(jobTitle, request.priceCredits());
 		}
 		return toMyResponse(verification, mentor);
+	}
+
+	// 직무를 BACKEND, FRONTEND, FULLSTACK 중 하나로 맞춘다. 그 밖의 값이면 400이다.
+	private static String jobTitle(String value) {
+		String code = value.trim().toUpperCase(Locale.ROOT);
+		if (!JOB_TITLES.contains(code)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "직무는 백엔드, 프론트엔드, 풀스택 중에서 골라 주세요.");
+		}
+		return code;
 	}
 
 	// 경력 일수를 만 연수로 바꾼다. 프로필 경력이 없으면(0일) null이라 화면에 연차를 표시하지 않는다.

@@ -430,7 +430,7 @@ COMMENT ON COLUMN "mentors"."user_id" IS '유저 아이디';
 
 COMMENT ON COLUMN "mentors"."company_name" IS '회사 이름';
 
-COMMENT ON COLUMN "mentors"."job_title" IS '직무';
+COMMENT ON COLUMN "mentors"."job_title" IS '직무 BACKEND/FRONTEND/FULLSTACK';
 
 COMMENT ON COLUMN "mentors"."price_credits" IS '피드백 가격(크레딧)';
 
