@@ -122,12 +122,49 @@ INSERT INTO feedback_comments (comment_id, feedback_id, user_id, section, conten
 (912103, 911103, '00000000-0000-4000-8000-000000910003', 'PROJECTS', '장애 원인, 조치, 재발 방지 순서로 정리하면 문제 해결 과정이 잘 보입니다.', false, NULL, CURRENT_TIMESTAMP - INTERVAL '1' DAY)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO best_reviews (id, comment_id, period, period_start, rank_no, created_at) VALUES
-(913001, 912006, 'monthly', CAST(DATE_TRUNC('month', CURRENT_DATE - INTERVAL '4' MONTH) AS DATE), 1, CURRENT_TIMESTAMP - INTERVAL '3' MONTH)
+-- 기존 monthly 시연 행과 period_start·rank 가 겹치지 않게, 평가 창(직전 6개월) 안의 빈 달을 쓴다.
+INSERT INTO best_reviews (id, comment_id, period, period_start, rank_no, created_at)
+SELECT 913001, 912006, 'monthly', DATE '2026-05-01', 1, CURRENT_TIMESTAMP - INTERVAL '3' MONTH
+WHERE EXISTS (SELECT 1 FROM feedback_comments WHERE comment_id = 912006)
+  AND NOT EXISTS (
+    SELECT 1 FROM best_reviews
+    WHERE comment_id = 912006
+       OR (LOWER(period) = 'monthly' AND period_start = DATE '2026-05-01' AND rank_no = 1)
+  );
+
+-- 채택 수치만 넣으면 진행률은 보이지만 user_badge 는 비어 있다.
+-- 시연에서 보유 배지·프로필 표시를 바로 확인하도록 지급 행을 함께 넣는다.
+INSERT INTO user_badge (user_id, badge_id, acquired_at, is_eligible, status, continuous_since)
+SELECT u.id, b.id, CURRENT_TIMESTAMP - INTERVAL '4' MONTH, true, 'ACTIVE', CURRENT_TIMESTAMP - INTERVAL '4' MONTH
+FROM users u
+CROSS JOIN badge b
+WHERE u.username = 'minjun_kim' AND b.code = 'REVIEWER'
 ON CONFLICT DO NOTHING;
 
+INSERT INTO user_badge (user_id, badge_id, acquired_at, is_eligible, status, continuous_since)
+SELECT u.id, b.id, CURRENT_TIMESTAMP - INTERVAL '4' MONTH, true, 'ACTIVE', CURRENT_TIMESTAMP - INTERVAL '4' MONTH
+FROM users u
+CROSS JOIN badge b
+WHERE u.username = 'seoyeon_lee' AND b.code IN ('REVIEWER', 'EXCELLENT_REVIEWER')
+ON CONFLICT DO NOTHING;
+
+-- 대표 배지 초기값. 이미 다른 배지를 달고 있으면 덮어쓰지 않는다.
+UPDATE users u
+SET displayed_badge_id = b.id
+FROM badge b
+WHERE u.username = 'minjun_kim'
+  AND b.code = 'REVIEWER'
+  AND u.displayed_badge_id IS NULL;
+
+UPDATE users u
+SET displayed_badge_id = b.id
+FROM badge b
+WHERE u.username = 'seoyeon_lee'
+  AND b.code = 'EXCELLENT_REVIEWER'
+  AND u.displayed_badge_id IS NULL;
+
 -- 진행률 API: GET /api/v1/badges/me/reviewer-progress (X-Username: minjun_kim / seoyeon_lee / jihoon_park)
--- 배지 지급 트리거: 아래 요청을 각각 보낸 뒤 진행률과 프로필을 다시 조회합니다.
+-- 재평가 트리거(선택): 미채택 댓글을 채택하면 refreshAfterActivity 가 돌아간다.
 -- POST /api/v1/reviews/912101/accept (X-Username: yujin_choi)
 -- POST /api/v1/reviews/912102/accept (X-Username: yujin_choi)
 -- POST /api/v1/reviews/912103/accept (X-Username: yujin_choi)

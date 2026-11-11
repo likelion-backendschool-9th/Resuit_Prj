@@ -616,16 +616,28 @@ export default function ProfilePage({ username, initialProfile = null, startEdit
                               <span className="profile__owned-name">{badge.name}</span>
                               <Badge tone="general">{statusLabel(badge.status)}</Badge>
                             </div>
-                            {isOwner && badge.status === 'ACTIVE' && (
+                            {isOwner && String(badge.status).toUpperCase() === 'ACTIVE' && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => data.displayBadge(
-                                  profile?.displayedBadge?.id === badge.id ? null : badge.id,
-                                )}
+                                onClick={async () => {
+                                  try {
+                                    await data.displayBadge(
+                                      profile?.displayedBadge?.id === badge.id ? null : badge.id,
+                                    );
+                                    data.setError('');
+                                  } catch (err) {
+                                    data.setError(err.message || '대표 배지를 바꾸지 못했습니다.');
+                                  }
+                                }}
                               >
                                 {profile?.displayedBadge?.id === badge.id ? '표시 해제' : '프로필에 표시'}
                               </Button>
+                            )}
+                            {isOwner && String(badge.status).toUpperCase() !== 'ACTIVE' && (
+                              <p className="small muted" style={{ margin: 0 }}>
+                                활성 배지만 프로필에 표시할 수 있어요.
+                              </p>
                             )}
                           </div>
                         ))}
