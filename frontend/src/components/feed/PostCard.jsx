@@ -29,6 +29,7 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
   const threadLink = post.threadId ? `/threads/${post.threadId}` : null;
   // 내 글은 세션 이미지를 우선해, 피드 캐시에 옛 URL이 남아 있어도 프로필 변경이 바로 보이게 한다.
   const avatarSrc = (loggedIn && post.handle === me.handle && me.profileImage) || post.profileImage || undefined;
+  const profileLink = post.handle ? `/${encodeURIComponent(post.handle)}` : null;
 
   return (
     <article className={`post-card${detailLink ? ' post-card--linked' : ''}${post.source === 'api' && loggedIn && post.handle === me.handle && onUpdated && onDeleted ? ' post-card--owned' : ''}`} onClick={(event) => {
@@ -36,10 +37,16 @@ export default function PostCard({ post, onUpdated, onDeleted }) {
       if (window.getSelection()?.toString()) return;
       router.push(detailLink);
     }}>
-      <Avatar initial={post.initial} color={post.av} company={post.company} src={avatarSrc} />
+      {profileLink
+        ? <Link href={profileLink} className="post-card__avatar-link" aria-label={`${post.author} 프로필 보기`}>
+            <Avatar initial={post.initial} color={post.av} company={post.company} src={avatarSrc} />
+          </Link>
+        : <Avatar initial={post.initial} color={post.av} company={post.company} src={avatarSrc} />}
       <div className="post-card__body">
         <header className="post-card__head">
-          <strong>{post.author}</strong>
+          {profileLink
+            ? <Link href={profileLink} className="post-card__author">{post.author}</Link>
+            : <strong>{post.author}</strong>}
           {post.company && <Badge tone="company">기업</Badge>}
           {post.sharerBadge && <Badge tone="sharer">{post.sharerBadge}</Badge>}
           <span className="muted">@{post.handle} · {post.time}</span>
