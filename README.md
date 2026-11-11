@@ -1,173 +1,327 @@
-# Resuit Proejct
+# Resuit (레쥬잇)
 
-## 로컬 PostgreSQL 데이터베이스 준비
+> 개발자 특화 SNS 및 채용 연계 웹 플랫폼
 
-루트 `.env.example`을 `.env`로 복사하고 개인 DB 값을 입력한 후 다음 명령어를 실행합니다. 기존 DB 볼륨이 있으면 처음 설정한 계정·비밀번호가 유지됩니다.
+개발자가 짧은 생각과 기술 지식을 공유하고, GitHub 활동을 소개하며, 이력서 피드백을 주고받는 서비스입니다.
+기업은 같은 서비스 안에서 채용 공고를 올리고, 지원서를 받고, 활동 기록을 바탕으로 인재를 찾습니다.
 
-```bash
-docker compose up db
+- **서비스 주소**: https://resuit.newlecture.com
+- **개발 기간**: 2026.10.28 ~ 2026.11.11
+- **팀**: 임재혁, 이상호, 이동준, 백승주, 김종수
+
+<br>
+
+## 목차
+
+1. [기획 배경](#기획-배경)
+2. [주요 기능](#주요-기능)
+3. [사용자 유형과 권한](#사용자-유형과-권한)
+4. [기술 스택](#기술-스택)
+5. [시스템 아키텍처](#시스템-아키텍처)
+6. [팀 구성과 역할](#팀-구성과-역할)
+7. [폴더 구조](#폴더-구조)
+8. [로컬 실행](#로컬-실행)
+9. [DB 마이그레이션](#db-마이그레이션)
+10. [배포](#배포)
+11. [Resuit CLI](#resuit-cli)
+12. [협업 방식](#협업-방식)
+13. [문서](#문서)
+
+<br>
+
+## 기획 배경
+
+개발자의 일상적인 생각, 기술 지식, GitHub 활동, 이력서 피드백이 여러 서비스에 흩어져 있다는 문제에서 출발했습니다.
+이를 하나의 서비스에 기록하고 공유할 수 있게 하고, 기업 사용자에게는 인재 탐색과 채용 공고·지원서 접수 기능을 제공해 **개발 활동과 채용을 연결**하는 것이 목표입니다.
+
+개발 목표
+
+1. 사용자 권한(일반·기업)에 따른 웹 서비스 구현
+2. 피드·기술 글·이력서 피드백 기능 구축
+3. GitHub API 연동
+4. 배지, 인재 탐색, 채용 지원 기능 구현
+5. 자동 배포 및 검증 환경 마련
+
+<br>
+
+## 주요 기능
+
+### 피드 · SNS
+- 추천 / 팔로잉 / 기술 정보 / 질문 탭으로 나뉜 피드
+- 게시글·댓글·답글 작성, 좋아요, 팔로우
+- 사진·영상 첨부, 줄 번호와 구문 강조가 있는 코드 블록
+- 기술 정보 글의 기술 태그(최대 3개), 모든 글의 해시태그(최대 10개)와 해시태그 검색
+- 어느 화면에서나 여는 게시글 작성 모달, 맨 위로 이동하며 새 글을 불러오는 버튼
+
+### 프로필 · 외부 연동
+- 공개 프로필, 활동 탭(게시글·남긴 피드백·기술 정보), 대표 이력서 고정, 대표 배지 선택
+- GitHub 연동: 기여 잔디, 공개 저장소 목록, 대표 레포 선택 (매일 기여 통계 갱신)
+- 블로그 RSS 연동: 검증 코드로 소유권을 확인하고 새 글을 주기적으로 수집
+- Google · GitHub · 네이버 소셜 로그인과 아이디·비밀번호 로그인
+
+### 이력서 · 피드백 · 배지
+- **공통 이력서**: 기본 양식의 이력서. 분야(프론트엔드·백엔드·풀스택)를 고르고 프로필에 공개할 수 있습니다.
+- **특화 이력서**: 공고별 추가 문항에 답하는 지원용 이력서. 공통 이력서를 복사하거나 빈 상태로 시작합니다.
+- **피드백 게시판**: 이력서를 올려 섹션별 피드백을 받고, 가장 도움 된 피드백을 채택합니다.
+- **베스트 리뷰 · 명예의 전당**: 좋아요를 많이 받은 리뷰를 주간·월간으로 선정합니다.
+- **리뷰어 배지**: 채택 수, 서로 다른 요청자 수, 베스트 리뷰 선정을 분기마다 평가해 리뷰어·우수 리뷰어 배지를 줍니다.
+
+### 유료 피드백 · 크레딧
+- 회사 이메일로 인증한 **현직자**에게 크레딧을 내고 이력서 피드백을 받습니다. 현직자 목록은 직무(백엔드·프론트엔드·풀스택)별로 나눠 볼 수 있습니다.
+- 크레딧 충전(토스페이 테스트 결제, 1크레딧 = 100원)과 사용·적립 내역
+- 피드백으로 적립한 크레딧의 현금 환전(수수료 20%, 1크레딧 = 80원)
+
+### 채용 공고 · 지원
+- 기업 회원의 공고 작성·임시저장·수정·마감, 지원자 목록과 제출 이력서 열람
+- **일반 공고**는 공통 이력서로, **특화 공고**는 그 공고의 특화 이력서로 지원
+- 지원 시 이력서 본문과 사진을 스냅샷으로 보존하고, 3개월이 지나면 열람을 막고 정리합니다.
+
+### 기업 인재 탐색
+- 공개 이력서를 분야별로 조회하고 채용 제안을 보냅니다. 받은 회원은 승낙·거절로 응답합니다.
+- **기업 Pro**(14일 체험, 1개월·3개월 이용권): 인증 배지, 연속 인증, 기술 스택, 경력, GitHub 기여, 기술 글 수, 지역 필터
+
+### 알림
+- 내 글의 댓글·답글, 이력서 피드백·채택, 유료 피드백 요청·답변, 채용 제안·응답, 공고 지원을 알려 줍니다.
+- 왼쪽 메뉴에 안 읽은 알림 수를 표시하고, 누르면 해당 화면으로 이동합니다.
+
+### 그 밖에
+- **모바일 화면**: 상단 바, 서랍 메뉴, 하단 바로가기 메뉴
+- **Resuit CLI**: 터미널에서 로그인하고 게시글·질문·기술 글·코드 글을 올리는 명령줄 도구 ([아래](#resuit-cli) 참고)
+
+<br>
+
+## 사용자 유형과 권한
+
+| 유형 | 할 수 있는 일 |
+| --- | --- |
+| 비로그인 방문자 | 공개 피드·공고·프로필·베스트 리뷰·명예의 전당 조회 |
+| 일반 회원 (`USER`) | 피드·댓글·좋아요·팔로우, 이력서, 피드백, 채용 지원, 유료 피드백, 배지 |
+| 기업 회원 (`COMPANY`) | 공고 관리, 지원자 조회, 기본 인재 탐색, 채용 제안 |
+| 기업 Pro | 기업 회원 기능 + 인재 탐색 상세 필터 |
+
+- 권한은 `users.role` 문자열(`USER`, `COMPANY`)로 관리합니다. 기업 Pro는 별도 역할이 아니라 `company_plan_periods`의 유효한 체험·이용 기간으로 판정합니다.
+- 모든 권한은 화면의 버튼 노출이 아니라 **백엔드 API에서** 검사합니다. 작성자 본인, 공고 소유 기업, 공개 범위, 요청 상태 같은 조건도 서비스 계층에서 확인합니다.
+
+<br>
+
+## 기술 스택
+
+| 영역 | 기술 |
+| --- | --- |
+| Frontend | Next.js 16 (App Router), React 19, JavaScript, CSS 디자인 토큰 |
+| Backend | Java 21, Spring Boot 4.1, Spring MVC, Spring Security, Spring Data JPA (Hibernate) |
+| Database | PostgreSQL 17 |
+| 인증 | 서버 세션(`JSESSIONID`) + CSRF, OAuth2 소셜 로그인 (Google · GitHub · 네이버) |
+| 외부 연동 | GitHub REST · GraphQL API, 블로그 RSS, 토스페이먼츠(테스트 결제) |
+| Infra | Docker, Docker Compose, Nginx |
+| CI/CD | GitHub Actions (SSH · rsync 배포) |
+| CLI | Node.js 20+, TypeScript |
+| 협업 | GitHub Issues · Projects(칸반) · Pull Request |
+
+<br>
+
+## 시스템 아키텍처
+
+```mermaid
+flowchart LR
+    U[브라우저] -->|HTTPS| N[서버 Nginx<br>resuit.newlecture.com]
+    CLI[Resuit CLI] -->|HTTPS| N
+    N --> F[Next.js<br>frontend:5173]
+    F -->|/api/*, /media/*<br>rewrite · SSR| B[Spring Boot API<br>backend:8080]
+    B -->|JPA| D[(PostgreSQL 17)]
+    B --> M[(미디어 파일<br>로컬 영속 경로)]
+    B -.-> G[GitHub API]
+    B -.-> T[토스페이먼츠]
+    GA[GitHub Actions] -->|SSH · rsync<br>docker compose up --build| S[운영 서버]
 ```
 
-단순 docker compose up만 쓰면 프론트 백도 다 올라갑니다.
+- 첫 화면은 Next.js 서버에서 HTML로 렌더링하고, 이후 페이지 이동은 전체 새로고침 없이 처리합니다.
+- 브라우저의 `/api/*`, `/media/*` 요청은 Next.js rewrite로 백엔드에 전달되어, 프론트와 API가 같은 출처를 씁니다.
+- 운영 환경은 프론트만 `127.0.0.1:3003`으로 열고, 백엔드와 DB는 Compose 내부 네트워크에만 둡니다.
+- 백엔드는 `controller → service(인터페이스) → service.impl → repository → entity` 계층을 따르며, 컨트롤러는 엔티티 대신 DTO(`record`)를 반환합니다.
 
-기존 로컬 DB에 마이그레이션을 적용하려면 다음 명령어를 사용합니다.
-`database/migrations/`와 `docs/migrations/`의 SQL을 실행하며, 빈 DB의 테이블을
-처음 생성하는 용도는 아닙니다. 실제 적용은 `.env`의 `POSTGRES_HOST`가
-`localhost` 또는 `127.0.0.1`일 때만 가능합니다.
+<br>
 
-```bash
-# 실행 목록만 확인
-bash scripts/migrate-local-db.sh --list
+## 팀 구성과 역할
 
-# 실제 적용
-bash scripts/migrate-local-db.sh
-```
+| 이름 | GitHub | 담당 기능 |
+| --- | --- | --- |
+| 임재혁 | [@ChungGyeon](https://github.com/ChungGyeon) | 게시글·피드(타임라인, 댓글, 좋아요, 탭별 피드, 미디어, 코드 블록), 채용 공고(목록·상세, 지원·취소, 등록·초안 저장, 문항 관리), 회원가입·로그인 화면, 비로그인 접근 제한, 기술 태그·해시태그, 최상단 게시글 작성 영역, Resuit CLI, 운영 배포 |
+| 김종수 | [@ggwg1121](https://github.com/ggwg1121) | 공통·특화 이력서, 이력서 피드백(게시판, 요청·취소, 미리보기, 댓글, 채택), 특화 이력서 제출 전 피드백 요청 |
+| 이상호 | [@DavidLee534](https://github.com/DavidLee534) | 프로필(조회·수정, 위젯, 경력, 활동 탭, 대표 이력서), GitHub 동기화, 블로그 RSS 연동, 현직자 인증 상태·배지 표시, 기업 이메일 인증 취소, 피드백 게시판 상세 화면 |
+| 이동준 | [@dongjun1580](https://github.com/dongjun1580) | 기업 이메일 인증, 베스트 리뷰·명예의 전당, 소셜 로그인, 비로그인 접근 제한 |
+| 백승주 | [@backsjj-bit](https://github.com/backsjj-bit) | 유료 피드백(현직자, 크레딧 충전·환전, 현직자 직무), 기업 인재 탐색(Pro 필터, 이용권 결제, 채용 제안), 기업 회원 가입 분리, 이력서 사진 업로드, 알림, 반응형 화면, 게시글 작성 모달·맨 위로 버튼, 프론트엔드 Next.js 전환 |
 
-운영 서버에서는 개발용 `compose.override.yml`을 사용하지 않도록 운영 파일을
-명시합니다. 운영 `.env`에는 `RESUIT_AUTH_PUBLIC_BASE_URL`,
-`INTEGRATION_TOKEN_SECRET`을 반드시 설정합니다.
-
-```bash
-docker compose --env-file .env -f compose.yml -f compose.prod.yml up -d --build --remove-orphans
-```
-
-`compose.prod.yml`은 소스 코드와 Gradle 캐시를 마운트하지 않고 프론트 운영 빌드
-(`next start`)를 실행합니다. DB·백엔드는 호스트에 공개하지 않고, 프론트만
-`127.0.0.1:3003`에 둡니다. 외부 요청은 공용 호스트 nginx가
-`resuit.newlecture.com` → `127.0.0.1:3003`으로 전달합니다.
-사이트 설정 예시는 `nginx/resuit.newlecture.com.conf`를 서버 nginx에 등록합니다.
-운영 `.env`의 `RESUIT_AUTH_PUBLIC_BASE_URL`은 `https://resuit.newlecture.com`
-(또는 실제 접속 URL)로 맞춥니다. 운영 DB 스키마는 자동 변경하지 않고
-`DDL_AUTO=validate`로 검증하므로 마이그레이션은 별도로 적용해야 합니다.
-
-업로드 이미지와 이력서 스냅샷은 서버의 `backend/resuit/src/main/media/`를
-운영 컨테이너의 `/var/lib/resuit/media`에 마운트해 유지합니다. 기존 개발 서버의
-파일도 같은 폴더에서 읽으므로 별도 복사 없이 사용할 수 있습니다. 이 경로는
-배포 rsync의 전송·삭제 대상과 Docker 이미지 빌드에서 제외합니다.
-운영 설정은 `.env`의 `DDL_AUTO=update`와 관계없이 `validate`를 사용하므로,
-첫 전환 전에 필요한 DB 마이그레이션을 적용해야 합니다.
-
-# Resuit 웹 (Next.js 프로토타입)
-
-이력서 피드백 SNS **Resuit**의 프론트엔드 프로토타입입니다.
-Next.js 16(App Router) + React 19로 만들었고, Tailwind는 쓰지 않았습니다. 스타일은 일반 CSS 파일과 CSS 변수(디자인 토큰)로 작성했습니다.
-기존 피드·이력서 등은 `frontend/src/data/mock.js`의 예시 데이터로 동작합니다. 베스트 리뷰·명예의 전당은 백엔드 API와 PostgreSQL을 사용하며, 좋아요·채택·기업 이메일 인증도 서버 API에 연결되어 있습니다. 소셜 로그인 코드는 구현되어 있으며 실제 제공자 앱 키와 메일 발송 설정이 필요합니다.
-
-## 실행
-
-```bash
-cd frontend
-npm install
-npm run dev        # http://localhost:5173
-npm run build      # 운영용 빌드 (.next/)
-npm start          # 빌드 결과 실행 (port 5173)
-```
-
-Node.js 20.9 이상이 필요합니다.
-
-Docker로 실행 중이라면 의존성이 바뀌었을 때 옛 `node_modules` 볼륨을 새로 만들어야 합니다.
-
-```bash
-docker compose up -d --build -V
-```
-
-프론트엔드 소스, Next.js 설정, 의존성 및 패키지 스크립트는 모두 `frontend/`에 있습니다. 백엔드가 추가되면 백엔드 설정과 의존성도 별도의 `backend/`에 둡니다.
+<br>
 
 ## 폴더 구조
 
 ```
-frontend/
-├─ package.json
-├─ package-lock.json
-├─ next.config.mjs
-├─ jsconfig.json                  `@/` 경로 별칭
-├─ public/feed/                   피드 예시 사진 · 영상
-└─ src/
-   ├─ app/                        라우트 정의 (layout · page · metadata)
-   │  └─ (service)/               왼쪽 메뉴가 있는 3단 레이아웃 페이지 묶음
-   ├─ views/                      화면 단위 컴포넌트 (아래 표)
-   ├─ styles/
-   │  ├─ tokens.css               색 · 반경 · 폰트 토큰 (라이트/다크)
-   │  └─ global.css               기본 스타일 + 공통 유틸 클래스
-   ├─ data/mock.js                예시 데이터 (게시글 · 공고 · 이력서 · 피드백 · 스레드)
-   ├─ context/
-   │  ├─ ThemeContext.jsx         다크 모드 상태
-   │  └─ AppStateContext.jsx      화면 간 공유 상태 (로그인 · 피드 · 팔로우 · 지원 · 피드백 요청 · 답변)
-   └─ components/
-   │  ├─ layout/                  AppLayout(3단) · LeftNav · SettingsMenu
-   │  ├─ common/                  Icon · Avatar · Badge · Button · Tabs · Chip · FollowButton · SearchBox · ThemeToggle
-   │  ├─ feed/                    Composer(글쓰기) · PostCard · PostEmbeds(태그/블로그/레포/근거)
-   │  ├─ jobs/                    JobCard
-   │  ├─ feedback/                FeedbackRequestCard
-   │  └─ profile/                 ContributionGraph(GitHub 잔디)
+Resuit_Prj/
+├─ frontend/                 Next.js 앱
+│  └─ src/
+│     ├─ app/                라우트와 metadata만 둔다. (service)/ 는 3단 레이아웃 페이지 묶음
+│     ├─ views/              화면 컴포넌트 ('use client')
+│     ├─ components/         layout · common · 도메인별 컴포넌트
+│     ├─ services/           API 호출 함수 (authenticatedFetch로 세션·CSRF 처리)
+│     ├─ context/            로그인·테마 등 공유 상태
+│     └─ styles/             tokens.css(디자인 토큰), global.css
+├─ backend/resuit/           Spring Boot 앱
+│  └─ src/main/java/com/newlecture/resuit/
+│     ├─ controller/  service/  service/impl/  repository/  entity/  dto/
+│     ├─ config/             보안, OAuth, 세션, 미디어 설정
+│     └─ scheduler/          베스트 리뷰 선정, GitHub 통계, 제출 이력서 정리 등 정기 작업
+├─ cli/                      Resuit CLI (TypeScript)
+├─ database/
+│  ├─ migrations/            번호순 마이그레이션 SQL (001_ ~)
+│  ├─ local/  demo/          로컬·시연용 데이터 SQL
+├─ docs/                     설계 문서, API 문서, 수동 마이그레이션 SQL, ERD
+├─ nginx/                    Nginx 설정 (개발용, 운영 서버용)
+├─ scripts/                  로컬 DB 마이그레이션, 개별 실행 스크립트
+├─ compose.yml               공통 Compose 구성
+├─ compose.override.yml      개발 모드 (소스 마운트, 핫 리로드) — 자동 병합
+├─ compose.prod.yml          운영 모드 — 배포 시 명시적으로 지정
+└─ AGENTS.md                 레이아웃·디자인·API·DTO 개발 규칙
 ```
 
-컴포넌트마다 같은 이름의 `.css` 파일이 옆에 있습니다. 클래스 이름은 `컴포넌트__요소`, 상태는 `is-active`/`is-on` 형태로 씁니다.
+<br>
 
-## 화면 (라우트)
+## 로컬 실행
 
-| 경로 | 페이지 | 주요 동작 |
-|---|---|---|
-| `/onboarding` | OnboardingPage | GitHub 로그인 → 대표 레포 선택 → 블로그 RSS 연결. 로그아웃하면 이 화면으로 옴 |
-| `/` | FeedPage | 상단 탭 고정(추천 · 팔로잉 · 기술 정보 · 질문), 글쓰기(일반 · 기술 정보 · 질문 + 코드 첨부), 사진 · 영상 · 코드 블록 글, 좋아요, 팔로우, 오른쪽은 검색만 |
-| `/jobs` | JobsPage | 전체 · 일반 · 특화 공고. 카드에서 공고 상세로 이동 |
-| `/jobs/[id]` | JobDetailPage | 특화: 요구 문항 확인, 작성 방식(공통 이력서 기반 / 처음부터) 선택. 일반: 공통 이력서를 골라 지원 · 지원 취소 |
-| `/resumes/edit` | ResumeEditPage | 특화 이력서 작성. `?job=1&mode=base` 또는 `mode=blank` |
-| `/resumes` | ResumesPage | 이력서 › 내 이력서. 공통 이력서 여러 개 추가 · 이름 변경 · 삭제. "피드백 요청" 시 피드백 게시판에 실제로 올라감 |
-| `/feedback` | FeedbackPage | 이력서 › 피드백. 섹션을 골라 피드백 작성, 내 요청의 피드백 채택 |
-| `/threads/[id]` | ThreadPage | 질문 스레드, 답변 작성, 도움돼요 |
-| `/profile`, `/{username}` | ProfilePage | 공개 프로필, 대표 이력서 고정, 배지·활동 현황, 기업 이메일 인증 진입 |
-| `/setting/profile` | ProfilePage | 내 프로필 설정 |
-| `/setting/integrations` | IntegrationsPage | GitHub·블로그 연결, 대표 레포 설정 |
-| `/company/post` | CompanyPostPage | 일반 · 특화 공고 작성, 요구 문항 추가 · 수정 · 삭제 |
-| `/talent` | TalentSearchPage | 기업 회원 전용 인재 찾기. 분야별 조회는 무료, 배지 · 기술 · 경력 · 활동 근거 · 지역 필터는 기업 Pro(체험) |
+### 준비
 
-공통 동작:
-- **왼쪽 메뉴**: "이력서"를 누르면 하위 메뉴(내 이력서 · 피드백)가 펼쳐져요.
-- **설정 메뉴**: 프로필 편집, 연동 관리, 로그아웃이 있어요.
-- **다크 모드 토글**: 로고 옆에 있어요.
-- **사이드바 고정**: 왼쪽·오른쪽 사이드바는 스크롤해도 따라와요.
+- Docker, Docker Compose
+- (개별 실행 시) Node.js 22, JDK 21
 
-## 수정 가이드
-
-- **색**: `frontend/src/styles/tokens.css`의 변수만 고칩니다. 화면 코드에는 색상값을 직접 쓰지 않아요. 다크 모드는 `[data-theme='dark']` 블록에서 같은 이름을 덮어써요.
-- **메뉴**: `frontend/src/components/layout/LeftNav.jsx` 위쪽의 `ITEMS_TOP`, `RESUME_CHILDREN`, `ITEMS_BOTTOM` 배열을 고칩니다.
-- **예시 데이터**: `frontend/src/data/mock.js`
-- **공유 상태와 이후 API 연동**: `frontend/src/context/AppStateContext.jsx`. 각 함수(`addPost`, `toggleFollow`, `applyJob`, `toggleResumeRequest`, `addFeedback` 등)를 API 호출로 바꾸면 됩니다.
-- **라우트 추가**: `src/views/`에 화면을 만들고(`'use client'`), `src/app/(service)/주소/page.jsx`에서 불러옵니다. 검색 결과와 링크 미리보기에 나올 제목은 이 파일의 `metadata`로 정합니다.
-- **렌더링**: 첫 화면은 서버에서 HTML로 만들어집니다. 렌더링 중에 `window`, `localStorage` 등을 읽으면 오류가 나니 `useEffect`에서 읽으세요.
-
-## 백엔드(3계층) 연동 시 참고
-
-- **게시글**: 하나의 테이블에 `type`(general · tech · question · blog · repo · job)으로 구분해요.
-- **댓글**: 답변, 피드백, 댓글은 댓글 테이블 하나로 통일해요. 피드백은 `section` 컬럼을 추가로 둬요.
-- **이력서**: 공통 이력서 1개와 특화 이력서 N개(공고별)로 나눠요. 특화 이력서는 `base_resume_id`(공통 기반이면 값 있음)를 가져요.
-- **팔로우**: `follow(follower_id, following_id)` 테이블로 처리해요.
-- **피드백 요청**: `resume_feedback_request(resume_id, message, focus_sections, field)` 테이블로 처리해요.
-- **GitHub**: OAuth 토큰으로 GraphQL `contributionsCollection`(잔디)과 REST 레포 목록을 가져와요.
-- **블로그**: `data/mock.js`의 `RSS_RULES` 주소 규칙대로 스케줄러가 주기적으로 수집해요.
-
-
-## 기업 인증·베스트 리뷰 연동
-
-구현 범위, 로그인·피드백·메일 담당자와의 계약, 개인 DB 실행 주소와 남은 작업은 [담당 기능 연동 현황](docs/api/implementation-status.md)을 참고하세요. 상세 API는 [리뷰](docs/api/review-likes.md)와 [기업 이메일 인증](docs/api/company-verification.md)에 있습니다.
-
-
-## 개인 DB와 프론트·백엔드 개별 실행
-
-기존 테이블이 준비된 개인 DB에서 다음 명령을 사용합니다. 스크립트는 루트 `.env`를 읽고 비밀값을 출력하지 않습니다.
+### 1. 환경 변수
 
 ```bash
-# 프로젝트 루트: DB만 실행 (다른 프로젝트의 80 포트와 충돌 방지)
-docker compose up -d --build db
-# 기존 테이블에 담당 기능 migration 적용
-bash scripts/migrate-local-db.sh
-# 터미널 1: 스키마 검증 후 백엔드 실행
-bash scripts/dev-backend.sh
-# 터미널 2: 실제 API 프록시를 사용하는 프론트 실행
-bash scripts/dev-frontend.sh
+cp .env.example .env
 ```
 
-기본 주소는 프론트 http://localhost:5174, 백엔드 http://localhost:8081입니다. DB가 완전히 비어 있으면 먼저 [개인 DB 초기화 안내](docs/api/local-development.md)를 따르세요. 공용 DB에 초기화 절차를 실행하지 않습니다.
+`.env`에 DB 접속 정보와 필요한 키를 입력합니다. 실제 비밀번호와 키는 `.env`에만 두고 Git에 올리지 않습니다.
 
-Google·GitHub·네이버 로그인 앱 등록은 [소셜 로그인 안내](docs/api/social-login.md)를 참고하세요.
+| 변수 | 용도 |
+| --- | --- |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT` | DB 접속 정보, 호스트에 여는 DB 포트 |
+| `RESUIT_AUTH_PUBLIC_BASE_URL` | 브라우저로 여는 주소. OAuth 콜백 주소의 기준 |
+| `GOOGLE_*`, `GITHUB_*`, `NAVER_*` `_CLIENT_ID` / `_CLIENT_SECRET` | 소셜 로그인 (설정한 제공자만 활성화) |
+| `INTEGRATION_TOKEN_SECRET` | GitHub 연동 토큰 암호화 키 (32자 이상) |
+| `TOSS_CLIENT_KEY`, `TOSS_SECRET_KEY` | 크레딧·기업 Pro 테스트 결제 |
+| `SPRING_MAIL_*`, `VERIFICATION_MAIL_FROM` | 메일 발송 (선택) |
+
+### 2. 전체 실행 (Docker Compose 개발 모드)
+
+```bash
+docker compose up -d --build
+```
+
+`compose.override.yml`이 자동으로 병합되어 소스 폴더를 컨테이너에 마운트합니다.
+
+| 서비스 | 주소 |
+| --- | --- |
+| Nginx | http://localhost |
+| 프론트엔드 | http://localhost:3003 |
+| 백엔드 API | http://localhost:8080 |
+| PostgreSQL | `127.0.0.1:${POSTGRES_PORT}` |
+
+- 프론트엔드는 저장하면 바로 반영됩니다(핫 리로드).
+- 백엔드는 저장 후 `docker compose restart backend`로 다시 컴파일합니다.
+- 다른 프로그램이 80번 포트를 쓰고 있으면 프론트엔드 주소(3003)로 접속합니다.
+- 의존성이 바뀌었으면 `docker compose up -d --build -V`로 `node_modules` 볼륨을 새로 만듭니다.
+
+### 3. DB만 띄우고 프론트·백엔드를 따로 실행
+
+```bash
+docker compose up -d --build db
+bash scripts/migrate-local-db.sh   # 기존 DB에 마이그레이션 적용
+bash scripts/dev-backend.sh        # 터미널 1
+bash scripts/dev-frontend.sh       # 터미널 2
+```
+
+기본 주소는 프론트엔드 http://localhost:5174, 백엔드 http://localhost:8081이며, `.env`의 `RESUIT_FRONTEND_PORT`, `RESUIT_BACKEND_PORT`로 바꿀 수 있습니다.
+DB가 완전히 비어 있다면 먼저 [개인 DB 초기화 안내](docs/api/local-development.md)를 따릅니다. 공용 DB에는 초기화 절차를 실행하지 않습니다.
+
+<br>
+
+## DB 마이그레이션
+
+Flyway·Liquibase 없이 SQL 파일로 스키마 변경을 관리합니다.
+
+- 변경 SQL은 `database/migrations/`에 번호순(`001_` ~)으로 추가합니다. 다시 실행해도 안전하게(`IF NOT EXISTS` 등) 작성합니다.
+- 로컬 DB 적용:
+
+  ```bash
+  bash scripts/migrate-local-db.sh --list   # 실행 목록만 확인
+  bash scripts/migrate-local-db.sh          # 실제 적용 (.env의 POSTGRES_HOST가 localhost일 때만)
+  ```
+
+- 운영 DB는 스키마를 자동 변경하지 않고 `validate`로 검증만 합니다. 새 SQL은 배포 전에 운영 DB에 먼저 적용해야 합니다.
+- 테이블과 관계는 [데이터베이스 설계](docs/database-design.md)에서 관리합니다.
+
+<br>
+
+## 배포
+
+```
+dev 브랜치 push → GitHub Actions → SSH 접속 → rsync로 소스 전송(.env 제외)
+→ 운영 서버에서 docker compose 빌드·기동 → 컨테이너 상태 확인
+```
+
+- 워크플로: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (`dev` push 또는 수동 실행)
+- 운영 실행 명령 (`compose.override.yml`을 읽지 않도록 파일을 명시합니다):
+
+  ```bash
+  docker compose --env-file .env -f compose.yml -f compose.prod.yml up -d --build --remove-orphans
+  ```
+
+- 운영 서버의 Nginx가 `resuit.newlecture.com`을 `127.0.0.1:3003`(프론트엔드)으로 전달합니다. 사이트 설정 예시는 [`nginx/resuit.newlecture.com.conf`](nginx/resuit.newlecture.com.conf)에 있습니다.
+- 운영 `.env`에는 `RESUIT_AUTH_PUBLIC_BASE_URL`(실제 접속 주소)과 `INTEGRATION_TOKEN_SECRET`을 반드시 설정합니다.
+- 업로드 이미지와 제출 이력서 스냅샷은 `backend/resuit/src/main/media/`를 컨테이너의 `/var/lib/resuit/media`에 마운트해 유지합니다. 이 경로는 rsync 전송·삭제 대상과 이미지 빌드에서 제외됩니다.
+
+<br>
+
+## Resuit CLI
+
+터미널에서 Resuit에 로그인하고 글을 올리는 명령줄 도구입니다.
+
+```bash
+cd cli
+npm install && npm run build && npm link
+export RESUIT_API_URL=https://resuit.newlecture.com   # 미설정 시 http://localhost:8080
+
+resuit login
+resuit post "Next.js에서 배운 점"
+resuit ask "Spring Security 세션이 궁금해요" --hashtag Java,Spring
+resuit tech "React 상태 관리 비교" --tech React,TypeScript
+resuit code "Redis 캐싱 적용기" --repo owner/project --file cache.ts --language typescript --code "const value = await cache.get(key);"
+```
+
+자세한 사용법은 [cli/README.md](cli/README.md)를 참고합니다.
+
+<br>
+
+## 협업 방식
+
+- **Git Flow**: `main` · `dev`를 두고, 기능은 `feature/*`, 버그 수정은 `bugfix/*`, 긴급 수정은 `hotfix/*` 브랜치에서 작업합니다.
+- **칸반**: GitHub Projects 카드 기준으로 브랜치를 만들고, `Todo → In Progress → Done`으로 진행합니다.
+- **PR**: 작업은 `dev`로 PR을 올리고, 팀원 확인 후 머지합니다. PR 설명에 작업 내용, 변경 파일, 확인 결과를 남깁니다.
+- **개발 규칙**: 화면 레이아웃(3단 구조 유지), 디자인 토큰, API 설계, DTO 규칙은 [AGENTS.md](AGENTS.md)를 따릅니다.
+
+<br>
+
+## 문서
+
+| 문서 | 내용 |
+| --- | --- |
+| [docs/database-design.md](docs/database-design.md) | ERD, 테이블 명세, 인덱스와 동시성 규칙 |
+| [docs/erdcloud/](docs/erdcloud/) | ERDCloud 가져오기용 SQL |
+| [docs/api/local-development.md](docs/api/local-development.md) | 개인 DB 초기화와 개별 실행 |
+| [docs/api/social-login.md](docs/api/social-login.md) | 소셜 로그인 앱 등록 |
+| [docs/api/login-access-policy.md](docs/api/login-access-policy.md) | 비로그인 접근 범위 |
+| [docs/api/company-verification.md](docs/api/company-verification.md) | 기업 이메일 인증 API |
+| [docs/api/review-likes.md](docs/api/review-likes.md) | 베스트 리뷰·리뷰 좋아요 API |
+| [docs/api/job-drafts.md](docs/api/job-drafts.md) | 공고 임시저장 API |
+| [docs/profile-api.md](docs/profile-api.md) | 프로필 API |
+| [docs/badge-renewal.md](docs/badge-renewal.md) | 리뷰어 배지 분기 갱신 규칙 |
+| [cli/README.md](cli/README.md) | Resuit CLI 사용법 |
