@@ -6,6 +6,9 @@
   border-bottom: 1px solid var(--line);
 }
 .post-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.post-card__avatar-link { display: inline-flex; flex-shrink: 0; color: inherit; text-decoration: none; }
+.post-card__author { color: inherit; text-decoration: none; font-weight: 700; }
+.post-card__author:hover { text-decoration: underline; }
 .post-card__head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 15px; }
 .post-card__follow { margin-left: auto; }
 .post-card__text { font-size: 15px; line-height: 1.6; white-space: pre-line; }
