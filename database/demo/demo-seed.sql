@@ -1,4 +1,4 @@
--- 시연용 데이터: 지원자·기업 회원, 공고, 공통·특화 이력서, 지원, 피드백 게시판
+-- 시연용 데이터: 지원자·기업 회원, 공고, 공통·특화 이력서, 지원, 피드백 게시판, 피드 글·댓글·좋아요
 --
 -- 실행 (서버의 배포 폴더에서):
 --   docker compose --env-file .env -f compose.yml -f compose.prod.yml exec -T db \
@@ -67,6 +67,15 @@ CREATE TEMP TABLE old_jobs ON COMMIT DROP AS
     SELECT id FROM job WHERE company_id IN (SELECT id FROM old_users);
 
 DELETE FROM notifications WHERE user_id IN (SELECT id FROM old_users) OR actor_id IN (SELECT id FROM old_users);
+CREATE TEMP TABLE old_posts ON COMMIT DROP AS
+    SELECT id FROM posts WHERE user_id IN (SELECT id FROM old_users);
+DELETE FROM post_like WHERE user_id IN (SELECT id FROM old_users) OR post_id IN (SELECT id FROM old_posts);
+DELETE FROM comments WHERE parent_id IS NOT NULL
+  AND (post_id IN (SELECT id FROM old_posts) OR user_id IN (SELECT id FROM old_users));
+DELETE FROM comments WHERE post_id IN (SELECT id FROM old_posts) OR user_id IN (SELECT id FROM old_users);
+DELETE FROM post_hashtags WHERE post_id IN (SELECT id FROM old_posts);
+DELETE FROM post_tech_tags WHERE post_id IN (SELECT id FROM old_posts);
+DELETE FROM posts WHERE id IN (SELECT id FROM old_posts);
 DELETE FROM feedback_comment_likes
 WHERE user_id IN (SELECT id FROM old_users)
    OR comment_id IN (SELECT comment_id FROM feedback_comments WHERE feedback_id IN (SELECT id FROM old_requests));
@@ -502,13 +511,175 @@ JOIN u a ON a.name = l.author
 JOIN u liker ON liker.name = l.liker
 JOIN feedback_comments c ON c.feedback_id = fr.id AND c.user_id = a.id AND c.parent_id IS NULL;
 
--- 10. 결과 확인
+-- 10. 피드 글 (일반·기술 정보·질문). 최근 2주에 걸쳐 흩어 놓는다
+CREATE TEMP TABLE demo_posts (
+    k       int PRIMARY KEY,
+    author  varchar(50) NOT NULL,
+    type    varchar(20) NOT NULL,
+    hours   int NOT NULL,
+    likes   int NOT NULL,
+    tech    text[] NOT NULL,
+    tags    text[] NOT NULL,
+    content text NOT NULL
+) ON COMMIT DROP;
+
+INSERT INTO demo_posts VALUES
+(1, 'jihoon-han', 'TECH', 5, 11, '{Spring,Java}', '{JPA,성능개선}',
+E'주문 조회 API가 1.2초 걸리던 원인, 결국 N+1이 아니라 OSIV였습니다.\n\n컨트롤러에서 DTO로 바꾸는 동안 지연 로딩이 계속 터지고 있었는데, 로그에는 쿼리가 몇 개 안 보여서 한참 헤맸어요. spring.jpa.open-in-view=false로 끄고 서비스 안에서 fetch join으로 필요한 것만 읽게 바꿨더니 180ms까지 내려갔습니다.\n\n신입분들 프로젝트 리뷰하다 보면 OSIV 켜진 채로 두는 경우가 정말 많아요. 한 번씩 확인해 보세요.'),
+(2, 'jiwon-kim', 'GENERAL', 9, 8, '{}', '{취업준비,회고}',
+E'이력서 피드백 게시판에 처음 올려 봤는데 반나절 만에 현직자분 리뷰가 달렸다. "결과로 첫 문장을 시작하라"는 한 줄이 제일 크게 와닿았다.\n\n프로젝트 설명을 전부 다시 쓰는 중. 숫자는 있었는데 문장 맨 끝에 숨어 있었네.'),
+(3, 'yerin-song', 'TECH', 20, 14, '{React,TypeScript}', '{프론트엔드,성능}',
+E'React 리스트 렌더링이 느릴 때 제가 순서대로 확인하는 것들\n\n1. key가 index는 아닌지\n2. 부모 상태가 바뀔 때 리스트 전체가 다시 그려지는지 (React DevTools Profiler)\n3. 아이템이 200개가 넘으면 가상 스크롤\n4. 이미지 lazy loading과 width/height 지정\n\n대부분 1, 2에서 끝납니다. memo부터 붙이지 마세요!'),
+(4, 'soah-yoon', 'QUESTION', 26, 3, '{}', '{신입,포트폴리오}',
+E'부트캠프 팀 프로젝트를 포트폴리오에 넣을 때, 제가 안 맡은 기능도 소개해야 할까요?\n\n지도·채팅 화면만 맡았는데 서비스 전체를 설명하자니 제 기여가 묻히는 것 같고, 제 부분만 쓰자니 서비스가 뭔지 안 보일 것 같아서 고민이에요.'),
+(5, 'minjae-kang', 'TECH', 31, 9, '{Java,Spring}', '{MySQL,인덱스}',
+E'OFFSET 페이지네이션이 뒤로 갈수록 느려지는 이유를 직접 재 봤습니다.\n\n게시글 50만 건 기준\n- 1페이지: 12ms\n- 1,000페이지: 480ms\n- 10,000페이지: 6.1초\n\nOFFSET은 앞의 행을 다 읽고 버리기 때문이에요. 마지막으로 본 id를 기준으로 읽는 커서 방식으로 바꾸니 어느 페이지든 15ms 안쪽이었습니다. 무한 스크롤이라면 커서 방식을 추천해요.'),
+(6, 'finroad', 'GENERAL', 40, 12, '{}', '{채용,핀테크,신입개발자}',
+E'핀로드에서 백엔드 신입 개발자를 모십니다.\n\n하루 80만 건의 이체를 처리하는 송금 서비스를 함께 만들 분을 찾고 있어요. 입사 후 3개월 동안 시니어 개발자와 1:1 온보딩을 진행합니다.\n\n동시성 문제를 직접 고민해 본 경험이 있다면 꼭 특화 이력서에 적어 주세요. 채용 공고 탭에서 확인하실 수 있습니다.'),
+(7, 'taeyang-lim', 'GENERAL', 46, 10, '{}', '{사이드프로젝트,회고}',
+E'캠핑장 빈자리 알림 서비스 월 사용자 2,000명 넘었습니다.\n\n시작은 제가 예약에 계속 실패해서 만든 크롤러였는데, 친구들한테 공유하다 보니 여기까지 왔네요. 이번 달 알림톡 비용이 서버비보다 많이 나오는 게 새로운 고민입니다.'),
+(8, 'seojun.park', 'TECH', 52, 7, '{React}', '{접근성,a11y}',
+E'스크린리더 사용자 인터뷰를 다섯 번 하고 배운 것\n\n- 아이콘 버튼에 aria-label이 없으면 그냥 "버튼"이라고만 읽힌다\n- 모달이 열려도 포커스가 뒤에 남아 있으면 사용자는 모달이 열린 줄 모른다\n- "여기를 클릭하세요" 링크는 목록으로 들으면 전부 같은 말이다\n\n접근성 점수 68 → 94. 체크리스트보다 실제 사용자 한 명의 이야기가 훨씬 강했어요.'),
+(9, 'gaeun-baek', 'QUESTION', 60, 4, '{}', '{비전공,취업준비}',
+E'비전공자분들, 면접에서 전공 질문 받으면 어떻게 답하셨나요?\n\n경영학과 나왔는데 "왜 개발로 왔냐"는 질문에 매번 답이 길어져요. 짧고 설득력 있게 말하는 방법이 궁금합니다.'),
+(10, 'yunho-choi', 'TECH', 70, 9, '{Spring,Java}', '{SpringBatch,정산}',
+E'Spring Batch 정산 배치 40분 → 7분으로 줄인 과정 정리\n\n1. 청크 크기 100 → 1,000 (커밋 횟수가 병목이었음)\n2. 가맹점 id 범위로 파티셔닝해서 8개 스레드로 병렬 처리\n3. ItemReader를 JPA에서 JdbcCursorItemReader로 교체\n\n가장 효과가 컸던 건 3번이었어요. 읽기만 하는 배치에서 영속성 컨텍스트는 생각보다 비쌉니다.'),
+(11, 'harin-lee', 'GENERAL', 76, 6, '{}', '{디자인시스템,오픈소스}',
+E'동아리 디자인 시스템 Pebble을 npm에 배포했어요!\n\n버튼, 입력, 모달 등 24개 컴포넌트를 Storybook으로 문서화했습니다. 벌써 동아리 프로젝트 세 팀이 쓰고 있어요. 피드백 언제든 환영합니다.'),
+(12, 'daeun-jeong', 'QUESTION', 84, 5, '{}', '{배포,CI}',
+E'개인 프로젝트 배포할 때 Vercel + 별도 백엔드 서버 조합 쓰시는 분들, CORS랑 쿠키 문제 어떻게 해결하셨나요?\n\n프론트는 Vercel, 백엔드는 EC2에 올렸더니 세션 쿠키가 안 붙어서 하루를 날렸어요.'),
+(13, 'jihoon-han', 'GENERAL', 95, 15, '{}', '{이력서,신입}',
+E'이번 주에 신입 이력서 10개 정도 리뷰하면서 공통으로 드린 말\n\n- 기술 스택 나열보다 "그 기술로 무슨 문제를 풀었는지"\n- 성과는 숫자로, 그리고 문장 맨 앞에\n- 팀 프로젝트는 내가 한 일과 그래서 바뀐 것을 분리해서\n\n다들 경험은 충분한데 쓰는 방식에서 손해를 보고 계세요.'),
+(14, 'seungwoo-oh', 'QUESTION', 100, 2, '{}', '{Java,테스트}',
+E'JUnit 테스트에서 @Transactional 붙이면 테스트 끝나고 롤백된다고 배웠는데, 실제 서비스 코드의 트랜잭션 동작이랑 달라질 수 있다는 글을 봤어요. 실무에서는 테스트에 @Transactional 쓰시나요?'),
+(15, 'moakitchen', 'GENERAL', 110, 9, '{}', '{채용,프론트엔드}',
+E'모아키친 프론트엔드 신입 채용을 시작했습니다.\n\n동네 반찬가게와 고객을 잇는 주문 앱을 디자이너 2명, 프론트엔드 4명이 한 팀으로 만들고 있어요. 사용자 인터뷰를 화면 개선으로 연결해 본 경험이 있다면 환영합니다.'),
+(16, 'yerin-song', 'TECH', 125, 10, '{TypeScript}', '{타입스크립트}',
+E'TypeScript에서 API 응답 타입을 믿으면 안 되는 이유\n\n서버가 null을 보낼 수 있는 필드를 string으로 선언해 두면 컴파일은 통과하고 런타임에 터집니다. 저희 팀은 응답 경계에서만 zod로 한 번 검증하고, 안쪽 코드는 타입을 믿도록 정했어요.'),
+(17, 'jiwon-kim', 'TECH', 140, 6, '{Spring,Docker}', '{Redis,동시성}',
+E'좌석 예매 동시성 처리, 락 세 가지를 같은 조건에서 비교해 봤습니다 (1분 3,000건)\n\n- 비관적 락: 정확하지만 커넥션 부족으로 응답 5초 이상\n- 낙관적 락: 충돌이 많아 재시도 폭주\n- Redis 분산 락 + 대기열: 중복 0건, 평균 210ms\n\n정답은 상황마다 다르지만, 직접 재 보기 전에는 몰랐던 숫자들이에요.'),
+(18, 'bridgelabs', 'GENERAL', 150, 6, '{}', '{채용,B2B,SaaS}',
+E'브릿지랩스는 중소 제조사의 주문·재고 관리를 돕는 SaaS를 만듭니다. 하루 수십만 건의 재고 변동을 다루는 백엔드 개발자와, 화면부터 API까지 함께 만들 풀스택 개발자를 찾고 있어요.'),
+(19, 'minjae-kang', 'QUESTION', 165, 3, '{}', '{Elasticsearch}',
+E'Elasticsearch로 한국어 검색할 때 nori 분석기 쓰시나요? 사용자 사전은 어떻게 관리하시는지 궁금합니다. 강의명에 들어간 약어가 자꾸 쪼개져서 검색이 안 돼요.'),
+(20, 'taeyang-lim', 'TECH', 180, 7, '{Docker}', '{배포,인프라}',
+E'월 1만 원짜리 서버 하나로 사이드 프로젝트 운영하는 구성\n\n- Docker Compose로 앱, DB, 리버스 프록시\n- 매일 새벽 DB 덤프를 오브젝트 스토리지에\n- 헬스체크 실패하면 디스코드 웹훅\n\n사용자 2,000명까지는 이걸로 충분했어요.'),
+(21, 'harin-lee', 'QUESTION', 200, 2, '{}', '{CSS}',
+E'디자인 토큰을 CSS 변수로 관리할 때 다크 모드는 변수 값을 통째로 바꾸시나요, 아니면 토큰을 따로 두시나요?'),
+(22, 'yerin-song', 'GENERAL', 215, 12, '{}', '{회고,멘토링}',
+E'신입 때 받은 이력서 리뷰 한 번이 커리어를 바꿨다고 생각해요. 그래서 요즘은 일주일에 두 개씩 피드백 게시판 글에 리뷰를 남기고 있습니다. 같이 하실 현직자분들 환영해요.'),
+(23, 'yunho-choi', 'GENERAL', 240, 5, '{}', '{이직,회고}',
+E'첫 회사 1년 2개월 회고\n\n정산 배치를 다시 만든 게 가장 큰 일이었고, 장애 대응하면서 멱등키의 중요성을 몸으로 배웠다. 다음 회사에서는 결제 앞단까지 다뤄 보고 싶다.'),
+(24, 'soah-yoon', 'GENERAL', 260, 6, '{}', '{부트캠프,수료}',
+E'6개월 부트캠프 수료했습니다. 디자인 전공하다 개발을 시작해서 처음엔 useEffect가 왜 두 번 도는지도 몰랐는데, 이제 팀 프로젝트 화면 하나를 맡아 끝까지 만들 수 있게 됐어요. 이제 진짜 취업 준비 시작!'),
+(25, 'seungwoo-oh', 'TECH', 280, 4, '{Java}', '{자바,기본기}',
+E'equals를 재정의하면 hashCode도 재정의해야 하는 이유를 HashSet으로 직접 확인해 봤습니다. equals만 재정의한 객체 두 개를 넣으면 같은 값인데도 두 개가 들어가요. 책으로 읽을 때보다 코드로 돌려 보니 확실히 기억에 남네요.'),
+(26, 'daeun-jeong', 'TECH', 300, 6, '{React,AI}', '{Nextjs,개발생산성}',
+E'Next.js 프로젝트에 AI 코드 리뷰를 붙여 봤어요. PR마다 자동으로 리뷰가 달리게 했더니 혼자 개발할 때 놓치던 에러 처리 누락을 꽤 잡아 줍니다. 다만 제안을 그대로 받기보다 "왜?"를 한 번 더 묻는 습관이 중요하더라고요.')
+;
+
+INSERT INTO posts (user_id, type, content, created_at, updated_at)
+SELECT u.id, p.type, p.content,
+       LOCALTIMESTAMP - make_interval(hours => p.hours), LOCALTIMESTAMP - make_interval(hours => p.hours)
+FROM demo_posts p JOIN u ON u.name = p.author
+ORDER BY p.hours DESC;
+
+CREATE TEMP TABLE pst ON COMMIT DROP AS
+    SELECT p.k, ps.id, ps.created_at, p.likes, p.tech, p.tags
+    FROM demo_posts p JOIN u ON u.name = p.author
+    JOIN posts ps ON ps.user_id = u.id AND ps.content = p.content;
+
+INSERT INTO post_tech_tags (post_id, tag) SELECT pst.id, unnest(pst.tech) FROM pst;
+INSERT INTO post_hashtags (post_id, tag) SELECT pst.id, unnest(pst.tags) FROM pst;
+
+-- 좋아요: 글마다 정한 개수만큼, 작성자를 뺀 회원 중에서 고정된 순서로 고른다
+INSERT INTO post_like (post_id, user_id, created_at)
+SELECT x.id, x.user_id, x.created_at + make_interval(mins => 20 * x.rn::int)
+FROM (
+    SELECT pst.id, pst.likes, pst.created_at, u.id AS user_id,
+           row_number() OVER (PARTITION BY pst.id ORDER BY md5(pst.k::text || u.name)) AS rn
+    FROM pst JOIN posts ps ON ps.id = pst.id
+    JOIN u ON u.id <> ps.user_id
+) x
+WHERE x.rn <= x.likes;
+
+-- 댓글
+CREATE TEMP TABLE demo_comments (
+    post_k  int NOT NULL,
+    author  varchar(50) NOT NULL,
+    reply_to varchar(50),
+    after_min int NOT NULL,
+    content text NOT NULL
+) ON COMMIT DROP;
+
+INSERT INTO demo_comments VALUES
+(1, 'yunho-choi', NULL, 40, 'OSIV 꺼 두는 거 저희 팀도 신입 온보딩 체크리스트에 있어요. 로그로 안 보여서 더 무섭죠.'),
+(1, 'minjae-kang', NULL, 90, '혹시 OSIV를 끄고 나서 LazyInitializationException은 어떻게 정리하셨나요?'),
+(1, 'jihoon-han', 'minjae-kang', 120, '서비스에서 DTO로 바꿔서 반환하도록 했어요. 화면에 필요한 건 fetch join이나 전용 조회 쿼리로 미리 읽습니다.'),
+(1, 'jiwon-kim', NULL, 200, '제 프로젝트에도 켜져 있네요... 바로 확인해 보겠습니다!'),
+(2, 'jihoon-han', NULL, 30, '바뀐 버전도 게시판에 올려 주세요. 한 번 더 볼게요!'),
+(2, 'seungwoo-oh', NULL, 60, '저도 첫 문장부터 바꿔 봐야겠어요. 좋은 팁 공유 감사합니다.'),
+(3, 'harin-lee', NULL, 25, 'memo부터 붙이지 말라는 말 공감해요. Profiler 먼저!'),
+(3, 'seojun.park', NULL, 80, '이미지 width/height 지정은 레이아웃 흔들림까지 잡아 줘서 꼭 챙기게 되더라고요.'),
+(4, 'yerin-song', NULL, 35, '서비스 소개는 한두 줄로 짧게, 그다음부터는 소아님이 맡은 화면 이야기만 쓰세요. 면접관은 지원자가 한 일을 궁금해해요.'),
+(4, 'gaeun-baek', NULL, 70, '저도 같은 고민했는데 README에 "내가 맡은 부분" 섹션을 따로 만들었어요.'),
+(4, 'soah-yoon', 'yerin-song', 100, '서비스 소개는 짧게! 바로 고쳐 볼게요. 감사합니다.'),
+(5, 'jihoon-han', NULL, 50, '숫자로 보여 주니까 확 와닿네요. 커서 방식은 정렬 기준이 유일해야 한다는 것도 같이 적어 두면 좋을 것 같아요.'),
+(5, 'minjae-kang', 'jihoon-han', 75, '맞아요, created_at만 쓰면 같은 시각 글이 빠져서 id를 같이 넣었습니다!'),
+(6, 'jiwon-kim', NULL, 30, '지원 준비 중입니다! 온보딩 1:1이 정말 매력적이네요.'),
+(6, 'seungwoo-oh', NULL, 90, '졸업 예정자도 지원 가능한가요?'),
+(6, 'finroad', 'seungwoo-oh', 150, '네, 2027년 2월 이전 졸업 예정이시면 지원하실 수 있어요.'),
+(7, 'daeun-jeong', NULL, 45, '와 축하해요! 알림톡 비용은 저도 궁금하네요. 웹 푸시로 일부 옮기는 건 어때요?'),
+(7, 'taeyang-lim', 'daeun-jeong', 80, '웹 푸시 고민 중이에요. iOS 지원이 아직 걸려서요.'),
+(8, 'yerin-song', NULL, 60, '실제 사용자 인터뷰를 하셨다는 게 정말 대단해요. 이력서에도 꼭 넣으세요.'),
+(9, 'harin-lee', NULL, 40, '저는 "전공 지식을 개발에 어떻게 썼는지" 사례 하나로 답했어요. 길게 설명하기보다 사례 하나가 강한 것 같아요.'),
+(9, 'yerin-song', NULL, 120, '경영학 전공은 데이터와 사용자 이해 쪽으로 연결하기 좋아요. 가계부 대시보드 이야기를 꼭 하세요!'),
+(10, 'jihoon-han', NULL, 30, 'JdbcCursorItemReader로 바꾼 효과가 가장 컸다는 거 공감합니다.'),
+(10, 'jiwon-kim', NULL, 90, '파티셔닝할 때 가맹점마다 거래량 차이가 크면 어떻게 나누셨나요?'),
+(10, 'yunho-choi', 'jiwon-kim', 130, '거래량 기준으로 미리 범위를 계산해서 나눴어요. 처음엔 id로만 나눴다가 한 스레드만 오래 걸리더라고요.'),
+(12, 'taeyang-lim', NULL, 20, 'SameSite=None; Secure 설정이랑 CORS의 allowCredentials 둘 다 확인해 보세요. 저도 그거였어요.'),
+(12, 'daeun-jeong', 'taeyang-lim', 60, '해결했어요!! SameSite였네요. 감사합니다.'),
+(13, 'jiwon-kim', NULL, 15, '제 이력서도 리뷰해 주셔서 감사했습니다!'),
+(13, 'soah-yoon', NULL, 50, '팀 프로젝트 부분 저장해 둡니다.'),
+(13, 'minjae-kang', NULL, 90, '성과를 문장 맨 앞에. 바로 적용해 볼게요.'),
+(14, 'jihoon-han', NULL, 40, '저희는 통합 테스트에서는 @Transactional을 빼고 테스트마다 데이터를 지우는 쪽으로 가요. 지연 로딩처럼 트랜잭션 밖에서 터지는 문제를 테스트가 숨겨 버릴 수 있어서요.'),
+(15, 'harin-lee', NULL, 60, '지원하려고 앱 써 보고 있어요. 반찬 사진이 정말 맛있어 보여요.'),
+(15, 'gaeun-baek', NULL, 120, '저도 지원했습니다!'),
+(17, 'jihoon-han', NULL, 45, '세 가지를 직접 비교한 게 정말 좋아요. 이 내용이 이력서에서 가장 강한 부분입니다.'),
+(17, 'yunho-choi', NULL, 100, '락 획득 실패 시 재시도 횟수는 몇 번으로 두셨어요?'),
+(17, 'jiwon-kim', 'yunho-choi', 140, '3번으로 두고 그 뒤에는 대기 순번을 보여 줬어요!'),
+(19, 'jihoon-han', NULL, 60, '사용자 사전은 파일로 두고 배포할 때 같이 올렸어요. 약어는 동의어 사전으로 묶으면 편합니다.'),
+(20, 'jiwon-kim', NULL, 50, '디스코드 웹훅 알림 좋네요. 바로 따라 해 봐야겠어요.'),
+(22, 'jihoon-han', NULL, 30, '저도 함께할게요!'),
+(22, 'soah-yoon', NULL, 80, '피드백 남겨 주셔서 정말 큰 도움이 됐어요. 감사합니다!'),
+(24, 'yerin-song', NULL, 60, '수료 축하해요! 디자인 전공은 프론트엔드에서 정말 큰 무기예요.'),
+(24, 'harin-lee', NULL, 90, '축하해요 소아님! 같이 취업해요.'),
+(26, 'taeyang-lim', NULL, 40, '"왜?"를 한 번 더 묻는 습관 공감합니다. 어떤 도구 쓰셨어요?');
+
+INSERT INTO comments (post_id, user_id, content, created_at, updated_at)
+SELECT pst.id, u.id, c.content,
+       pst.created_at + make_interval(mins => c.after_min), pst.created_at + make_interval(mins => c.after_min)
+FROM demo_comments c JOIN pst ON pst.k = c.post_k JOIN u ON u.name = c.author
+WHERE c.reply_to IS NULL;
+
+INSERT INTO comments (post_id, parent_id, user_id, content, created_at, updated_at)
+SELECT pst.id, parent.id, u.id, c.content,
+       pst.created_at + make_interval(mins => c.after_min), pst.created_at + make_interval(mins => c.after_min)
+FROM demo_comments c JOIN pst ON pst.k = c.post_k JOIN u ON u.name = c.author
+JOIN u pu ON pu.name = c.reply_to
+JOIN comments parent ON parent.post_id = pst.id AND parent.user_id = pu.id AND parent.parent_id IS NULL
+WHERE c.reply_to IS NOT NULL;
+
+-- 11. 결과 확인
 SELECT '회원' AS 항목, count(*) FROM users WHERE email LIKE '%@demo.resuit.kr'
 UNION ALL SELECT '공통 이력서', count(*) FROM common_resumes WHERE user_id IN (SELECT id FROM u)
 UNION ALL SELECT '공고', count(*) FROM jb
 UNION ALL SELECT '특화 이력서', count(*) FROM target_resumes WHERE user_id IN (SELECT id FROM u)
 UNION ALL SELECT '지원', count(*) FROM job_applications WHERE user_id IN (SELECT id FROM u)
 UNION ALL SELECT '피드백 요청', count(*) FROM fr
-UNION ALL SELECT '피드백 댓글', count(*) FROM feedback_comments WHERE feedback_id IN (SELECT id FROM fr);
+UNION ALL SELECT '피드백 댓글', count(*) FROM feedback_comments WHERE feedback_id IN (SELECT id FROM fr)
+UNION ALL SELECT '피드 글', count(*) FROM pst
+UNION ALL SELECT '피드 댓글', count(*) FROM comments WHERE post_id IN (SELECT id FROM pst)
+UNION ALL SELECT '피드 좋아요', count(*) FROM post_like WHERE post_id IN (SELECT id FROM pst);
 
 COMMIT;
