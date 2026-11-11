@@ -520,7 +520,8 @@ CREATE TEMP TABLE demo_posts (
     likes   int NOT NULL,
     tech    text[] NOT NULL,
     tags    text[] NOT NULL,
-    content text NOT NULL
+    content text NOT NULL,
+    repo    varchar(200)
 ) ON COMMIT DROP;
 
 INSERT INTO demo_posts VALUES
@@ -578,8 +579,37 @@ E'equals를 재정의하면 hashCode도 재정의해야 하는 이유를 HashSet
 E'Next.js 프로젝트에 AI 코드 리뷰를 붙여 봤어요. PR마다 자동으로 리뷰가 달리게 했더니 혼자 개발할 때 놓치던 에러 처리 누락을 꽤 잡아 줍니다. 다만 제안을 그대로 받기보다 "왜?"를 한 번 더 묻는 습관이 중요하더라고요.')
 ;
 
-INSERT INTO posts (user_id, type, content, created_at, updated_at)
-SELECT u.id, p.type, p.content,
+-- Resuit CLI(cli/)로 쓴 글. CLI가 보내는 그대로 넣는다.
+--   resuit post / resuit code  → type NORMAL, resuit ask → QUESTION, resuit tech → TECH
+--   resuit code 는 본문에 "제목 + 빈 줄 + ```언어 filename=파일명" 코드 블록을 넣고 repo_full_name 을 채운다.
+--   ask/tech/post 는 제목 한 줄만 본문이 된다.
+INSERT INTO demo_posts (k, author, type, hours, likes, tech, tags, content, repo) VALUES
+(101, 'jiwon-kim', 'NORMAL', 2, 9, '{}', '{Redis,동시성,Spring}',
+E'좌석 예매 Redis 분산 락 적용 코드 공유합니다\n\n```java filename=SeatLockService.java\n@Service\n@RequiredArgsConstructor\npublic class SeatLockService {\n    private final RedissonClient redisson;\n\n    public void reserve(Long seatId, Runnable task) {\n        RLock lock = redisson.getLock("seat:" + seatId);\n        try {\n            // 최대 3초 기다리고, 5초 뒤에는 자동으로 풀린다\n            if (!lock.tryLock(3, 5, TimeUnit.SECONDS)) {\n                throw new SeatBusyException(seatId);\n            }\n            task.run();\n        } catch (InterruptedException e) {\n            Thread.currentThread().interrupt();\n        } finally {\n            if (lock.isHeldByCurrentThread()) lock.unlock();\n        }\n    }\n}\n```',
+ 'jiwon-kim/concert-ticketing'),
+(102, 'minjae-kang', 'NORMAL', 12, 7, '{}', '{MySQL,페이지네이션}',
+E'커서 기반 페이지네이션 쿼리 (QueryDSL)\n\n```java filename=PostQueryRepository.java\npublic List<Post> findPage(Long cursorId, int size) {\n    return query.selectFrom(post)\n        .where(cursorId == null ? null : post.id.lt(cursorId))\n        .orderBy(post.id.desc())\n        .limit(size)\n        .fetch();\n}\n```',
+ 'minjae-kang/lecture-review'),
+(103, 'taeyang-lim', 'NORMAL', 28, 6, '{}', '{Docker,배포}',
+E'사이드 프로젝트 compose 헬스체크 설정\n\n```yml filename=compose.yml\nservices:\n  app:\n    image: camp-alert:latest\n    restart: unless-stopped\n    healthcheck:\n      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]\n      interval: 30s\n      retries: 3\n```',
+ 'taeyang-lim/camp-alert'),
+(104, 'yunho-choi', 'NORMAL', 55, 8, '{}', '{Kotlin,결제,멱등성}',
+E'환불 API 멱등키 처리 (같은 요청이 두 번 와도 한 번만 환불)\n\n```kt filename=RefundService.kt\nfun refund(key: String, request: RefundRequest): RefundResult {\n    idempotencyRepository.findByKey(key)?.let { return it.result }\n    val result = paymentClient.refund(request)\n    idempotencyRepository.save(IdempotencyRecord(key, result))\n    return result\n}\n```',
+ 'yunho-choi/payment-lab'),
+(105, 'seojun.park', 'NORMAL', 90, 5, '{}', '{React,접근성}',
+E'모달 열릴 때 포커스 가두는 훅\n\n```tsx filename=useFocusTrap.tsx\nexport function useFocusTrap(ref: RefObject<HTMLElement>, open: boolean) {\n  useEffect(() => {\n    if (!open || !ref.current) return;\n    const first = ref.current.querySelector<HTMLElement>("button, [href], input");\n    first?.focus();\n  }, [open, ref]);\n}\n```',
+ 'seojun-park/a11y-kit'),
+(106, 'daeun-jeong', 'NORMAL', 7, 6, '{}', '{CLI,개발생산성}',
+ 'IDE에서 커밋하고 터미널에서 resuit post로 바로 근황 올리는 중. 브라우저 안 켜도 돼서 편하다', NULL),
+(107, 'harin-lee', 'TECH', 16, 5, '{React,TypeScript}', '{디자인시스템,Storybook}',
+ 'Storybook 8로 올리면서 컴포넌트 문서를 MDX에서 autodocs로 옮긴 후기', NULL),
+(108, 'seungwoo-oh', 'QUESTION', 33, 2, '{}', '{Spring,JPA}',
+ '@Transactional(readOnly = true)를 조회 메서드에 꼭 붙여야 하나요? 성능 차이가 체감될 만큼인지 궁금합니다', NULL),
+(109, 'jihoon-han', 'TECH', 64, 8, '{Spring,Docker}', '{테스트,Testcontainers}',
+ 'H2 대신 Testcontainers로 통합 테스트를 돌렸더니 운영 DB에서만 나던 버그가 테스트에서 잡히기 시작했습니다', NULL);
+
+INSERT INTO posts (user_id, type, content, repo_full_name, created_at, updated_at)
+SELECT u.id, p.type, p.content, p.repo,
        LOCALTIMESTAMP - make_interval(hours => p.hours), LOCALTIMESTAMP - make_interval(hours => p.hours)
 FROM demo_posts p JOIN u ON u.name = p.author
 ORDER BY p.hours DESC;
@@ -654,7 +684,18 @@ INSERT INTO demo_comments VALUES
 (22, 'soah-yoon', NULL, 80, '피드백 남겨 주셔서 정말 큰 도움이 됐어요. 감사합니다!'),
 (24, 'yerin-song', NULL, 60, '수료 축하해요! 디자인 전공은 프론트엔드에서 정말 큰 무기예요.'),
 (24, 'harin-lee', NULL, 90, '축하해요 소아님! 같이 취업해요.'),
-(26, 'taeyang-lim', NULL, 40, '"왜?"를 한 번 더 묻는 습관 공감합니다. 어떤 도구 쓰셨어요?');
+(26, 'taeyang-lim', NULL, 40, '"왜?"를 한 번 더 묻는 습관 공감합니다. 어떤 도구 쓰셨어요?'),
+(101, 'jihoon-han', NULL, 20, 'isHeldByCurrentThread 확인까지 넣으신 거 좋네요. 락 대기 시간 3초는 부하 테스트로 정하신 건가요?'),
+(101, 'jiwon-kim', 'jihoon-han', 45, '네, 1초·3초·5초로 돌려 보고 실패율과 응답 시간이 가장 균형 잡힌 3초로 정했어요!'),
+(101, 'seungwoo-oh', NULL, 70, '코드로 보니까 이해가 훨씬 잘 돼요. 저장소 구경하러 갑니다.'),
+(102, 'jihoon-han', NULL, 30, '정렬 기준이 id 하나라 깔끔하네요. 최신순 정렬이 created_at이면 id를 보조 키로 꼭 넣어 주세요.'),
+(103, 'daeun-jeong', NULL, 40, '헬스체크 실패 시 알림은 어떻게 보내세요?'),
+(103, 'taeyang-lim', 'daeun-jeong', 75, '컨테이너 상태를 cron으로 확인해서 unhealthy면 디스코드 웹훅을 쏴요.'),
+(104, 'jiwon-kim', NULL, 25, '멱등키 저장과 환불 호출 사이에 서버가 죽으면 어떻게 되나요?'),
+(104, 'yunho-choi', 'jiwon-kim', 60, '좋은 질문이에요. 실제로는 요청을 먼저 PENDING으로 저장하고, 결과를 받은 뒤 갱신해요. 공유용으로 줄인 코드라 빠졌네요.'),
+(106, 'taeyang-lim', NULL, 15, 'resuit code도 써 보세요. 저장소 연결까지 한 번에 돼서 코드 공유할 때 좋아요.'),
+(108, 'jihoon-han', NULL, 35, '플러시와 변경 감지를 건너뛰어서 조회가 많은 화면에선 차이가 나요. 무엇보다 읽기 전용이라는 의도가 코드에 드러나서 저는 붙이는 편입니다.'),
+(109, 'yunho-choi', NULL, 50, '저희도 옮겼어요. 테스트 시간은 늘었지만 운영에서만 나는 쿼리 문제를 미리 잡게 됐어요.');
 
 INSERT INTO comments (post_id, user_id, content, created_at, updated_at)
 SELECT pst.id, u.id, c.content,
