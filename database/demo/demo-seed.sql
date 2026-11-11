@@ -97,10 +97,14 @@ DELETE FROM users WHERE id IN (SELECT id FROM old_users);
 
 -- 3. 회원
 -- 프로필 이미지는 프론트 정적 파일(frontend/public/demo/avatars)이라 배포에 함께 올라간다.
+-- 실제 서비스처럼 섞는다: 사진(jpg, Unsplash 무료 사진), 일러스트·회사 로고(png), 사진 없음(오승우).
 INSERT INTO users (id, username, email, password, role, nickname, self_introduction, region, subscription, profile_image_url, created_at, updated_at)
 SELECT gen_random_uuid(), d.username, d.username || '@demo.resuit.kr',
        '{bcrypt}$2a$10$3PleSKCU/Eh1LWMpAH.KWuBiQfcnTseogpduGtaJw10tH.3Q5u1TS',
-       d.role, d.nickname, d.intro, d.region, false, '/demo/avatars/' || d.username || '.png',
+       d.role, d.nickname, d.intro, d.region, false,
+       CASE WHEN d.username = 'seungwoo-oh' THEN NULL
+            WHEN d.role = 'COMPANY' OR d.username IN ('jiwon-kim', 'yerin-song') THEN '/demo/avatars/' || d.username || '.png'
+            ELSE '/demo/avatars/' || d.username || '.jpg' END,
        LOCALTIMESTAMP - make_interval(days => d.joined_days),
        LOCALTIMESTAMP - make_interval(days => d.joined_days)
 FROM demo_users d;
